@@ -47,6 +47,11 @@ typedef struct PadEvent {
 } PadEvent;
 static PadEvent *pad_events;
 static int pad_event_count;
+
+/* --warp FRAME:LEVEL requests a level change the way the map does, for
+ * loading tests. */
+static u32 warp_frame;
+static s32 warp_level = -1;
 static Uint64 next_frame_ns;
 static u32 frame_count;
 static const char *vram_path;
@@ -170,6 +175,8 @@ int Platform_VSync(int mode)
     }
     if (mode == 0)
         frame_count++;
+    if (mode == 0 && warp_level >= 0 && frame_count == warp_frame)
+        gp_pbak_frame_idx = warp_level;
     if (mode == 0 && frame_limit != 0 && frame_count >= frame_limit) {
         if (vram_path != NULL)
             dump_vram(vram_path);
@@ -217,7 +224,8 @@ static int add_pad_event(const char *text)
 static void usage(const char *program)
 {
     printf("Usage: %s --disc <Crash Bandicoot (USA).cue> [--headless]"
-           " [--frame-limit N] [--dump-vram PATH] [--pad-at FRAME:BUTTONS ...]\n", program);
+           " [--frame-limit N] [--dump-vram PATH] [--pad-at FRAME:BUTTONS ...]"
+           " [--warp FRAME:LEVEL]\n", program);
     printf("--pad-at holds the PS1 button mask (pressed = 1, START = 0x800) from FRAME on.\n");
 }
 
@@ -245,6 +253,18 @@ int main(int argc, char **argv)
                 return EXIT_FAILURE;
             }
             frame_limit = (u32)limit;
+        } else if (!strcmp(argv[i], "--warp") && i + 1 < argc) {
+            char *end;
+            unsigned long frame, level;
+            errno = 0;
+            frame = strtoul(argv[++i], &end, 10);
+            level = *end == ':' ? strtoul(end + 1, &end, 0) : 0x100;
+            if (errno || *end || frame == 0 || frame > UINT_MAX || level > 0x3F) {
+                fprintf(stderr, "Invalid --warp %s\n", argv[i]);
+                return EXIT_FAILURE;
+            }
+            warp_frame = (u32)frame;
+            warp_level = (s32)level;
         } else if (!strcmp(argv[i], "--pad-at") && i + 1 < argc) {
             if (!add_pad_event(argv[++i])) {
                 fprintf(stderr, "Invalid or out-of-order --pad-at %s\n", argv[i]);

@@ -16,14 +16,22 @@ are judged by behavior, portability, readability and native builds.
 
 ## Status
 
-The port has just started. The native build compiles PsyZ and the original
-math modules, with `Math_Sin`/`Math_Cos` translated from the hand-written
-assembly, and `tests/original_math.c` checks them. Of the 155 engine
-translation units, 120 already compile natively, but most still assume 32-bit
-pointers and the PS1 data layout. The original game entry does not run yet,
-so there is no `crash-bandicoot-pc` executable yet. See
-[the port plan](docs/PC_PORT_PLAN.md) for the order in which subsystems join
-the build.
+The original game runs natively. From the user's disc image it boots
+through the Sony and Naughty Dog screens to the title menu and the island
+map, loads levels and plays them: N. Sanity Beach runs with Crash moving,
+the camera following and collisions working, rendered by PsyZ (SDL GPU, or
+its software rasterizer headless). Music is not complete yet: PsyZ's libsnd
+sequencer is still being filled in. See [the port plan](docs/PC_PORT_PLAN.md)
+for what is verified and what remains.
+
+How it works:
+
+- Game data lives in a PS1 RAM image with every global at its original
+  address; pointers stored in game memory stay PS1 addresses
+  ([docs/MEMORY_MODEL.md](docs/MEMORY_MODEL.md)).
+- The engine's hand-written R3000 routines are translated to C by
+  `tools/scripts/gen_gte_render.py`.
+- GPU packets stay in PS1 format and reach PsyZ as GP0 commands.
 
 ## Build and run
 
@@ -36,19 +44,28 @@ git clone https://github.com/khasinski/crash-bandicoot-pc
 cd crash-bandicoot-pc
 git submodule update --init third_party/psyz
 git -C third_party/psyz submodule update --init external/SDL
-cmake -S . -B build -DBUILD_TESTING=ON
+cmake -S . -B build
 cmake --build build --parallel
-ctest --test-dir build --output-on-failure --no-tests=error
+./build/crash-bandicoot-pc --disc "/path/to/Crash Bandicoot (USA).cue"
 ```
 
-Once the boot milestone lands, the game will start with
-`./build/crash-bandicoot-pc --disc "/path/to/Crash Bandicoot (USA).cue"` and
-read its data from that user-supplied CUE/BIN image. The image must be the USA
-release (redump 2250, track 1 SHA-1
+The game reads its data from the user-supplied CUE/BIN image. The image must
+be the USA release (redump 2250, track 1 SHA-1
 `61ff4c9e8dcfb9e5d94d37f66330b69d08d6c914`).
 
-Tests that need game data will read the image named by `CRASH_TEST_DISC`
-and skip with code 77 when it is unset.
+Diagnostics for automated runs: `--headless` renders without a window,
+`--frame-limit N` stops after N frames and `--dump-vram PATH` then writes the
+1024×512 VRAM (convert with `tools/scripts/vram_to_png.py`). `--pad-at
+FRAME:BUTTONS` holds a PS1 button mask from a frame on (START 0x800, ✕ 0x40,
+up 0x1000), and `--warp FRAME:LEVEL` requests a level change, e.g.:
+
+```sh
+./build/crash-bandicoot-pc --disc "Crash Bandicoot (USA).cue" --headless \
+    --frame-limit 3600 --pad-at 1800:0x800 --pad-at 1810:0 \
+    --pad-at 3000:0x40 --pad-at 3010:0 --dump-vram beach.bin
+```
+
+`cmake -DBUILD_TESTING=ON` builds the tests in `tests/`.
 
 `tools/scripts/gool_lisp.py` decompiles GOOL bytecode in NSF files to a Lisp
 form and assembles it back (see [docs/GOOL_LISP.md](docs/GOOL_LISP.md)).

@@ -39,6 +39,14 @@ static s32 game_result;
 
 static u32 frame_limit;
 static int headless;
+
+/* --pad-at FRAME:MASK holds PS1 button bits (pressed = 1) from FRAME on. */
+typedef struct PadEvent {
+    u32 frame;
+    u32 buttons;
+} PadEvent;
+static PadEvent *pad_events;
+static int pad_event_count;
 static Uint64 next_frame_ns;
 static u32 frame_count;
 static const char *vram_path;
@@ -160,7 +168,9 @@ int Platform_VSync(int mode)
         if (next_frame_ns > now)
             SDL_DelayPrecise(next_frame_ns - now);
     }
-    if (mode == 0 && frame_limit != 0 && ++frame_count >= frame_limit) {
+    if (mode == 0)
+        frame_count++;
+    if (mode == 0 && frame_limit != 0 && frame_count >= frame_limit) {
         if (vram_path != NULL)
             dump_vram(vram_path);
         printf("{\"frames\": %u}\n", frame_count);
@@ -169,10 +179,46 @@ int Platform_VSync(int mode)
     return result;
 }
 
+unsigned int Platform_PadRead(int id)
+{
+    unsigned int buttons = (unsigned int)(PadRead)(id); /* PsyZ */
+    u32 scheduled = 0;
+    int i;
+    for (i = 0; i < pad_event_count && pad_events[i].frame <= frame_count; i++)
+        scheduled = pad_events[i].buttons;
+    return buttons | scheduled;
+}
+
+static int add_pad_event(const char *text)
+{
+    char *end;
+    unsigned long frame, buttons;
+    PadEvent *grown;
+
+    errno = 0;
+    frame = strtoul(text, &end, 10);
+    if (errno || *end != ':' || frame > UINT_MAX)
+        return 0;
+    buttons = strtoul(end + 1, &end, 0);
+    if (errno || *end || buttons > 0xFFFF)
+        return 0;
+    if (pad_event_count && frame < pad_events[pad_event_count - 1].frame)
+        return 0;
+    grown = realloc(pad_events, (size_t)(pad_event_count + 1) * sizeof(*pad_events));
+    if (grown == NULL)
+        return 0;
+    pad_events = grown;
+    pad_events[pad_event_count].frame = (u32)frame;
+    pad_events[pad_event_count].buttons = (u32)buttons;
+    pad_event_count++;
+    return 1;
+}
+
 static void usage(const char *program)
 {
     printf("Usage: %s --disc <Crash Bandicoot (USA).cue> [--headless]"
-           " [--frame-limit N] [--dump-vram PATH]\n", program);
+           " [--frame-limit N] [--dump-vram PATH] [--pad-at FRAME:BUTTONS ...]\n", program);
+    printf("--pad-at holds the PS1 button mask (pressed = 1, START = 0x800) from FRAME on.\n");
 }
 
 int main(int argc, char **argv)
@@ -199,6 +245,11 @@ int main(int argc, char **argv)
                 return EXIT_FAILURE;
             }
             frame_limit = (u32)limit;
+        } else if (!strcmp(argv[i], "--pad-at") && i + 1 < argc) {
+            if (!add_pad_event(argv[++i])) {
+                fprintf(stderr, "Invalid or out-of-order --pad-at %s\n", argv[i]);
+                return EXIT_FAILURE;
+            }
         } else if (!strcmp(argv[i], "--dump-vram") && i + 1 < argc) {
             vram_path = argv[++i];
         } else {

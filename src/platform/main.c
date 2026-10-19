@@ -38,6 +38,8 @@ static ucontext_t host_context, game_context;
 static s32 game_result;
 
 static u32 frame_limit;
+static int headless;
+static Uint64 next_frame_ns;
 static u32 frame_count;
 static const char *vram_path;
 
@@ -143,9 +145,21 @@ static void dump_vram(const char *path)
         fclose(out);
 }
 
+/* NTSC field rate. Headless PsyZ does not pace VSync, but the root counters
+ * the game times itself with run on the wall clock, so pace it here. */
+#define FIELD_NS 16683350u
+
 int Platform_VSync(int mode)
 {
     int result = (VSync)(mode); /* PsyZ, not the macro */
+    if (mode == 0 && headless) {
+        Uint64 now = SDL_GetTicksNS();
+        if (next_frame_ns == 0 || now > next_frame_ns + 4 * (Uint64)FIELD_NS)
+            next_frame_ns = now;
+        next_frame_ns += FIELD_NS;
+        if (next_frame_ns > now)
+            SDL_DelayPrecise(next_frame_ns - now);
+    }
     if (mode == 0 && frame_limit != 0 && ++frame_count >= frame_limit) {
         if (vram_path != NULL)
             dump_vram(vram_path);
@@ -174,6 +188,7 @@ int main(int argc, char **argv)
             disc = argv[++i];
         } else if (!strcmp(argv[i], "--headless")) {
             SDL_SetEnvironmentVariable(SDL_GetEnvironment(), "PSYZ_HEADLESS", "1", true);
+            headless = 1;
         } else if (!strcmp(argv[i], "--frame-limit") && i + 1 < argc) {
             char *end;
             unsigned long limit;

@@ -63,17 +63,13 @@ static __inline__ BufferToken *Gpu_RoundTicks_inline(void)
     return &g_pbak_header_byte_0[0];
 }
 
-/* full: a logic frame (audio, timing, the original 30 Hz pacing). Without
- * it, present an interpolated frame: same buffers and drawing, but the
- * stamps keep measuring time from the last logic frame. */
-static void gpu_present(s32 full)
+void Gpu_Update(void)
 {
-    s32 stamp;
     BufferToken *token;
     RenderBufferFull *swap;
 
     token = Gpu_RoundTicks_inline();
-    if (full && gp_next_lid == 0 && (g_cur_lid_ro[0] & 0x1000)) {
+    if (gp_next_lid == 0 && (g_cur_lid_ro[0] & 0x1000)) {
         g_draw_stamp[0]++;
     }
     if (g_cam_rot_xz[0] != 0) {
@@ -99,15 +95,10 @@ static void gpu_present(s32 full)
             Gpu_DrawRect(0, 0, 0x200, 0xD8, 0, 0, 0);
         }
     }
-    if (full) {
-        Audio_Update();
-        RAM_AT(RenderBufferFull, g_db_prev)->word80 = frame_counter;
-    }
+    Audio_Update();
+    RAM_AT(RenderBufferFull, g_db_prev)->word80 = frame_counter;
     DrawSync(0);
-    stamp = RAM_AT(RenderBufferFull, g_db_prev)->word7C;
-    if (!full) {
-        /* nothing: the logic step keeps its own elapsed time */
-    } else if (g_pbak_frame_step == 0) {
+    if (g_pbak_frame_step == 0) {
         g_box_count = frame_counter - RAM_AT(RenderBufferFull, g_db_prev)->word7C;
     } else {
         g_box_count = 0x11;
@@ -119,14 +110,15 @@ static void gpu_present(s32 full)
         g_ot_cur = Ram_Addr(swap);
     }
     VSync(0);
-    if (!full) {
-        /* The interpolated frame took the first of the two blanks. */
-        RAM_AT(RenderBufferFull, g_db_prev)->word7C = stamp;
-        goto draw;
-    }
-    if (!Platform_MidFramePresented()
-        && (u32)(frame_counter - RAM_AT(RenderBufferFull, g_db_cur.buf)->word7C) < 0x19) {
+    if (Gpu_SecondBlankDue()) {
+        /* --fps60 shows an interpolated frame during the second blank. */
+        if (Platform_InterpolateFrames()) {
+            Platform_MidFrame(gp_next_lid == 0 && g_ns_load_done_flag[0] == 0);
+        }
         VSync(0);
+    }
+    if (Platform_InterpolateFrames()) {
+        Platform_RecordFrame();
     }
     if (g_cur_lid_ro[0] & 0x100000) {
         if (!gp_rcnt_stopped) {
@@ -151,7 +143,6 @@ static void gpu_present(s32 full)
     }
     RAM_AT(RenderBufferFull, g_db_prev)->word7C = frame_counter;
     ExitCriticalSection();
-draw:
     RAM_AT(RenderBufferFull, g_db_cur.buf)->word84 = Gfx_TgeoGetTexinfoArray(RAM_AT(RenderBufferFull, g_db_prev)->word7C - RAM_AT(RenderBufferFull, g_db_cur.buf)->word7C);
     PutDispEnv(&RAM_AT(RenderBufferFull, g_db_cur.buf)->display);
     PutDrawEnv(&RAM_AT(RenderBufferFull, g_db_prev)->drawing);
@@ -163,18 +154,27 @@ draw:
     }
     RAM_AT(RenderBufferFull, g_ot_cur)->word78 = RAM_AT(RenderBufferFull, g_ot_cur)->word74;
     Gpu_RResetOT(RAM_AT(RenderBufferFull, g_ot_cur)->ordering_table, 0x800);
-    if (full) {
-        g_cur_lid_ro[0] = g_fade_counter;
-    }
+    g_cur_lid_ro[0] = g_fade_counter;
 }
 
-void Gpu_Update(void)
+/* Whether the original 30 Hz pacing waits for another blank this frame. */
+s32 Gpu_SecondBlankDue(void)
 {
-    gpu_present(1);
+    return (u32)(frame_counter - RAM_AT(RenderBufferFull, g_db_cur.buf)->word7C) < 0x19;
 }
 
-void Gpu_PresentInterpolated(void)
+/* Between the two blanks of a logic frame the screen shows the area that
+ * the frame just built (g_db_prev) is about to be drawn into. Draw what was
+ * built in the free buffer's ordering table into that area, so the second
+ * blank shows it, and leave that table empty again. */
+void Gpu_DrawInterpolated(void)
 {
-    gpu_present(0);
-}
+    RenderBufferFull *scratch = RAM_AT(RenderBufferFull, g_ot_cur);
 
+    DrawSync(0);
+    PutDrawEnv(&RAM_AT(RenderBufferFull, g_db_prev)->drawing);
+    DrawOTag(scratch->ordering_table);
+    DrawSync(0);
+    scratch->word78 = scratch->word74;
+    Gpu_RResetOT(scratch->ordering_table, 0x800);
+}

@@ -139,6 +139,20 @@ static void core_draw_title(void)
     }
 }
 
+/* --fps60: draw the scene again without logic (an interpolated frame; see
+ * src/platform/interp.c). */
+void Core_DrawRenderPasses(void)
+{
+    /* The free buffer still holds the previous frame's primitives. */
+    Gpu_ResetPrims(RAM_AT(RenderBuffer, g_ot_cur));
+    Platform_SetRenderOnly(1);
+    Gfx_UpdateMatrices();
+    core_draw_world();
+    Gool_UpdateObjects(0);
+    core_draw_title();
+    Platform_SetRenderOnly(0);
+}
+
 /* Run levels until the exit flag is set: pause toggling, demo playback,
  * level transitions, per-frame update and zone-specific drawing. */
 void CORE_Loop(s32 level)
@@ -241,30 +255,9 @@ not_paused:
         }
         Gfx_UpdateMatrices();
 
-        if (!Platform_InterpolateFrames()) {
-            core_draw_world();
-            Gool_UpdateObjects(gp_next_lid == 0);
-            core_draw_title();
-        } else {
-            /* --fps60: run the objects' logic without drawing, show a frame
-             * interpolated from the previous logic state, then draw this
-             * one. The game's pacing and timing are unchanged. */
-            Platform_SetObjectRender(0);
-            Gool_UpdateObjects(gp_next_lid == 0);
-            Platform_SetObjectRender(1);
-            if (gp_next_lid == 0 && g_ns_load_done_flag[0] == 0 && Platform_BeginMidFrame()) {
-                Gfx_UpdateMatrices();
-                core_draw_world();
-                Gool_UpdateObjects(0);
-                core_draw_title();
-                Gpu_PresentInterpolated();
-                Platform_EndMidFrame();
-            }
-            Platform_RecordFrame();
-            core_draw_world();
-            Gool_UpdateObjects(0);
-            core_draw_title();
-        }
+        core_draw_world();
+        Gool_UpdateObjects(gp_next_lid == 0);
+        core_draw_title();
         Gpu_Update();
     } while (gp_bonus_return == 0);
 

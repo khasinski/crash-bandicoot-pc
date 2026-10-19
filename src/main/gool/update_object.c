@@ -161,7 +161,9 @@ s32 GOOL_UpdateObject(GoolObj *obj, s32 flag) {
     if (obj->word_04 != 3) {
         return -0xFF;
     }
-    if (Ram_Addr(obj) == gp_crash_obj) {
+    /* The player's update polls the pad (and steps demo playback); a pass
+     * that only draws must not poll again. */
+    if (Ram_Addr(obj) == gp_crash_obj && !Platform_RenderOnly()) {
         Pad_Update();
     }
     g_savestate[0] = Ram_Addr(obj);
@@ -247,7 +249,7 @@ s32 GOOL_UpdateObject(GoolObj *obj, s32 flag) {
                 break;
             }
         }
-        if (update_flag != 0 && Platform_ObjectRender()) {
+        if (update_flag != 0) {
             Gool_ObjectTransform(obj);
         }
     }

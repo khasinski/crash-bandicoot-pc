@@ -1,16 +1,20 @@
 /*
- * --fps60: one interpolated frame between the game's 30 Hz logic frames.
+ * --fps60: an interpolated frame during the second blank of each logic frame.
  *
- * After each logic frame the camera and every object's position, rotation
- * and scale are recorded. Before drawing the next logic frame, the game
- * memory is saved, the camera and objects are moved halfway between the
- * previous and the current state, that frame is drawn and presented, and
- * the memory is restored. Drawing has side effects on game state (screen
- * shake counters, animation caches, object fields read by the logic); the
- * restore keeps them out of the simulation, which therefore runs exactly
- * as at 30 frames per second. What is kept across the restore: the render
- * buffers (the buffer swap and its timestamps belong to the presented
- * frame) and the tick counter that the root-counter interrupt advances.
+ * The game runs its logic at 30 Hz: Gpu_Update waits for two blanks per
+ * logic frame, and the image shown during those blanks is the one from two
+ * logic frames back (k-1 while frame k+1 is presented; k comes next). So
+ * during the second blank this module shows a frame halfway between k-1 and
+ * k: it saves the live game memory, loads the snapshot taken at the same
+ * point of the previous logic frame (state k), moves the camera and objects
+ * to the midpoint of their recorded k-1 and k transforms, draws the scene
+ * without logic (Core_DrawRenderPasses) into the area on screen, and puts the
+ * live memory back. The logic never sees any of it and runs exactly as at 30
+ * frames per second; the blanks stay where the original has them.
+ *
+ * Kept across the swaps: the render buffers (ordering tables, environments,
+ * buffer pointers, which belong to the presentation) and the tick counter
+ * that the root-counter interrupt advances.
  */
 #include <stdint.h>
 #include <stdlib.h>
@@ -20,6 +24,8 @@
 
 struct Node;
 void Gool_ForEachObject(int32_t (*visitor)(struct Node *, void *), void *context);
+void Core_DrawRenderPasses(void);
+void Gpu_DrawInterpolated(void);
 
 /* Game symbols, used only for their addresses. */
 extern unsigned char g_cam_trans_x[]; /* trans x, y, z, rot x, y, z */
@@ -35,7 +41,7 @@ extern unsigned char frame_counter[];
 #define OBJ_ENTITY 0x110
 
 #define MAX_OBJECTS 256
-#define SNAPSHOT_SIZE 0x200000u
+#define RAM_USED 0x200000u
 /* A larger step between logic frames is a teleport, not motion. */
 #define MAX_STEP (1 << 20)
 
@@ -45,43 +51,42 @@ typedef struct ObjectState {
 } ObjectState;
 
 typedef struct FrameState {
+    uint32_t level[2]; /* g_ns level number and level data: same scene */
     int32_t camera[6];
     int count;
     ObjectState objects[MAX_OBJECTS];
 } FrameState;
 
 static int enabled = -1;
-static int object_render = 1;
-static int mid_frame_presented;
-static int have_previous;
-static FrameState previous, current;
-static unsigned char *ram_copy;
-static unsigned char scratch_copy[RAM_SCRATCH_SIZE];
+static int render_only;
+static int recorded; /* logic frames recorded, up to 2 */
+static FrameState older, newer;  /* k-1 and k */
+static unsigned char *newer_ram; /* game memory at frame k */
+static unsigned char *live_ram;
+static unsigned char newer_scratch[RAM_SCRATCH_SIZE], live_scratch[RAM_SCRATCH_SIZE];
 
 int Platform_InterpolateFrames(void)
 {
     if (enabled < 0) {
         const char *env = getenv("CRASH_FPS60");
         enabled = env && env[0] == '1';
+        if (enabled) {
+            newer_ram = malloc(RAM_USED);
+            live_ram = malloc(RAM_USED);
+            enabled = newer_ram && live_ram;
+        }
     }
     return enabled;
 }
 
-int Platform_ObjectRender(void)
+int Platform_RenderOnly(void)
 {
-    return object_render;
+    return render_only;
 }
 
-void Platform_SetObjectRender(int on)
+void Platform_SetRenderOnly(int on)
 {
-    object_render = on;
-}
-
-int Platform_MidFramePresented(void)
-{
-    int presented = mid_frame_presented;
-    mid_frame_presented = 0;
-    return presented;
+    render_only = on;
 }
 
 static int32_t word(uint32_t addr)
@@ -117,9 +122,16 @@ static int32_t record_object(struct Node *node, void *context)
     return -0xFF;
 }
 
+static void level_key(uint32_t key[2])
+{
+    memcpy(key, g_ns + 4, 4);
+    memcpy(key + 1, g_ns + 0x14, 4);
+}
+
 static void record(FrameState *state)
 {
     int i;
+    level_key(state->level);
     for (i = 0; i < 6; i++)
         memcpy(&state->camera[i], g_cam_trans_x + 4 * i, 4);
     state->count = 0;
@@ -149,40 +161,59 @@ static int far_apart(const int32_t *a, const int32_t *b)
     return 0;
 }
 
-static const ObjectState *find_previous(const ObjectState *o)
+static const ObjectState *find_older(const ObjectState *o)
 {
     int i;
-    for (i = 0; i < previous.count; i++) {
-        const ObjectState *p = &previous.objects[i];
+    for (i = 0; i < older.count; i++) {
+        const ObjectState *p = &older.objects[i];
         if (p->addr == o->addr)
             return p->exec == o->exec && p->entity == o->entity ? p : NULL;
     }
     return NULL;
 }
 
-int Platform_BeginMidFrame(void)
+/* Copy saved game memory into the image, leaving the render buffers and the
+ * tick counter as they are. */
+static void swap_in(const unsigned char *ram, const unsigned char *scratch)
+{
+    uint32_t keep_lo = Ram_Addr(g_context) & 0x1FFFFF;
+    uint32_t keep_hi = Ram_Addr(g_ns) & 0x1FFFFF;
+    uint32_t counter = Ram_Addr(frame_counter) & 0x1FFFFF;
+    int32_t ticks;
+
+    memcpy(&ticks, g_ps1_ram + counter, 4);
+    memcpy(g_ps1_ram, ram, keep_lo);
+    memcpy(g_ps1_ram + keep_hi, ram + keep_hi, RAM_USED - keep_hi);
+    memcpy(g_ps1_ram + counter, &ticks, 4);
+    memcpy(g_ps1_scratch, scratch, RAM_SCRATCH_SIZE);
+}
+
+void Platform_MidFrame(int allowed)
 {
     int i, k;
-    int32_t camera[6];
+    uint32_t live_level[2];
 
-    if (!have_previous)
-        return 0;
-    record(&current);
-    if (ram_copy == NULL && (ram_copy = malloc(SNAPSHOT_SIZE)) == NULL)
-        return 0;
-    memcpy(ram_copy, g_ps1_ram, SNAPSHOT_SIZE);
-    memcpy(scratch_copy, g_ps1_scratch, RAM_SCRATCH_SIZE);
+    level_key(live_level);
+    /* Both recorded frames and the live one must show the same loaded level;
+     * across a level change the snapshot belongs to another scene. */
+    if (!allowed || recorded < 2 || memcmp(older.level, newer.level, sizeof(live_level))
+        || memcmp(newer.level, live_level, sizeof(live_level)))
+        return;
+    memcpy(live_ram, g_ps1_ram, RAM_USED);
+    memcpy(live_scratch, g_ps1_scratch, RAM_SCRATCH_SIZE);
+    swap_in(newer_ram, newer_scratch);
 
-    if (!far_apart(previous.camera, current.camera)) {
+    if (!far_apart(older.camera, newer.camera)) {
+        int32_t camera[6];
         for (i = 0; i < 3; i++) {
-            camera[i] = mid(previous.camera[i], current.camera[i]);
-            camera[3 + i] = mid_angle(previous.camera[3 + i], current.camera[3 + i]);
+            camera[i] = mid(older.camera[i], newer.camera[i]);
+            camera[3 + i] = mid_angle(older.camera[3 + i], newer.camera[3 + i]);
         }
         memcpy(g_cam_trans_x, camera, sizeof(camera));
     }
-    for (k = 0; k < current.count; k++) {
-        const ObjectState *o = &current.objects[k];
-        const ObjectState *p = find_previous(o);
+    for (k = 0; k < newer.count; k++) {
+        const ObjectState *o = &newer.objects[k];
+        const ObjectState *p = find_older(o);
         if (p == NULL || far_apart(p->trans, o->trans))
             continue;
         for (i = 0; i < 3; i++) {
@@ -191,26 +222,17 @@ int Platform_BeginMidFrame(void)
             set_word(o->addr + OBJ_SCALE + 4 * i, mid(p->scale[i], o->scale[i]));
         }
     }
-    return 1;
-}
-
-void Platform_EndMidFrame(void)
-{
-    uint32_t keep_lo = Ram_Addr(g_context) & 0x1FFFFF;
-    uint32_t keep_hi = Ram_Addr(g_ns) & 0x1FFFFF;
-    uint32_t counter = Ram_Addr(frame_counter) & 0x1FFFFF;
-    int32_t ticks;
-
-    memcpy(&ticks, g_ps1_ram + counter, 4);
-    memcpy(g_ps1_ram, ram_copy, keep_lo);
-    memcpy(g_ps1_ram + keep_hi, ram_copy + keep_hi, SNAPSHOT_SIZE - keep_hi);
-    memcpy(g_ps1_ram + counter, &ticks, 4);
-    memcpy(g_ps1_scratch, scratch_copy, RAM_SCRATCH_SIZE);
-    mid_frame_presented = 1;
+    Core_DrawRenderPasses();
+    Gpu_DrawInterpolated();
+    swap_in(live_ram, live_scratch);
 }
 
 void Platform_RecordFrame(void)
 {
-    record(&previous);
-    have_previous = 1;
+    older = newer;
+    record(&newer);
+    memcpy(newer_ram, g_ps1_ram, RAM_USED);
+    memcpy(newer_scratch, g_ps1_scratch, RAM_SCRATCH_SIZE);
+    if (recorded < 2)
+        recorded++;
 }

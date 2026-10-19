@@ -41,12 +41,6 @@ function(crash_original_module target)
     endif()
 endfunction()
 
-# PsyQ libsnd functions the game uses that PsyZ has only as assembly.
-add_library(crash-psyz-extra OBJECT src/platform/libsnd.c)
-target_include_directories(crash-psyz-extra PRIVATE ${PSYZ_DIR}/decomp/src/libsnd)
-target_link_libraries(crash-psyz-extra PRIVATE psyz)
-target_compile_definitions(crash-psyz-extra PRIVATE __psyz)
-
 # Game memory (a PS1 RAM image with every global at its original address)
 # and the host side of the PS1-format interfaces.
 add_library(crash-platform OBJECT
@@ -236,7 +230,6 @@ add_executable(crash-bandicoot-pc
     src/platform/bios.c
     src/platform/ram_code.c
     $<TARGET_OBJECTS:crash-platform>
-    $<TARGET_OBJECTS:crash-psyz-extra>
     $<TARGET_OBJECTS:crash-original-math>
     $<TARGET_OBJECTS:crash-original-camera>
     $<TARGET_OBJECTS:crash-original-core>

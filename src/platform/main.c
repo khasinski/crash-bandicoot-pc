@@ -42,7 +42,6 @@ static u32 frame_limit;
 static u32 frame_count;
 static const char *vram_path;
 static const char *capture_path;
-static int high_frame_rate;
 static unsigned render_scale = 1;
 
 /* --pad-at FRAME:MASK holds PS1 button bits (pressed = 1) from FRAME on. */
@@ -250,11 +249,6 @@ int Platform_VSync(int mode)
     return result;
 }
 
-int Platform_HighFrameRate(void)
-{
-    return high_frame_rate;
-}
-
 unsigned int Platform_PadRead(int id)
 {
     unsigned int buttons = (unsigned int)(PadRead)(id); /* PsyZ */
@@ -297,7 +291,7 @@ static void usage(const char *program)
     printf("Usage: %s --disc <Crash Bandicoot (USA).cue> [--headless]"
            " [--frame-limit N] [--dump-vram PATH] [--pad-at FRAME:BUTTONS ...]"
            " [--warp FRAME:LEVEL] [--scale N] [--fps60]\n", program);
-    printf("--scale renders at N times the PS1 resolution; --fps60 runs at 60 frames per second.\n");
+    printf("--scale renders at N times the PS1 resolution; --fps60 adds an interpolated frame between logic frames.\n");
     printf("--pad-at holds the PS1 button mask (pressed = 1, START = 0x800) from FRAME on.\n");
 }
 
@@ -349,7 +343,7 @@ int main(int argc, char **argv)
                 return EXIT_FAILURE;
             }
         } else if (!strcmp(argv[i], "--fps60")) {
-            high_frame_rate = 1;
+            setenv("CRASH_FPS60", "1", 1); /* read by src/platform/interp.c */
         } else if (!strcmp(argv[i], "--scale") && i + 1 < argc) {
             render_scale = (unsigned)strtoul(argv[++i], NULL, 10);
             if (render_scale < 1 || render_scale > 8) {

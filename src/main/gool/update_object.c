@@ -247,7 +247,7 @@ s32 GOOL_UpdateObject(GoolObj *obj, s32 flag) {
                 break;
             }
         }
-        if (update_flag != 0) {
+        if (update_flag != 0 && Platform_ObjectRender()) {
             Gool_ObjectTransform(obj);
         }
     }

@@ -63,13 +63,17 @@ static __inline__ BufferToken *Gpu_RoundTicks_inline(void)
     return &g_pbak_header_byte_0[0];
 }
 
-void Gpu_Update(void)
+/* full: a logic frame (audio, timing, the original 30 Hz pacing). Without
+ * it, present an interpolated frame: same buffers and drawing, but the
+ * stamps keep measuring time from the last logic frame. */
+static void gpu_present(s32 full)
 {
+    s32 stamp;
     BufferToken *token;
     RenderBufferFull *swap;
 
     token = Gpu_RoundTicks_inline();
-    if (gp_next_lid == 0 && (g_cur_lid_ro[0] & 0x1000)) {
+    if (full && gp_next_lid == 0 && (g_cur_lid_ro[0] & 0x1000)) {
         g_draw_stamp[0]++;
     }
     if (g_cam_rot_xz[0] != 0) {
@@ -95,10 +99,15 @@ void Gpu_Update(void)
             Gpu_DrawRect(0, 0, 0x200, 0xD8, 0, 0, 0);
         }
     }
-    Audio_Update();
-    RAM_AT(RenderBufferFull, g_db_prev)->word80 = frame_counter;
+    if (full) {
+        Audio_Update();
+        RAM_AT(RenderBufferFull, g_db_prev)->word80 = frame_counter;
+    }
     DrawSync(0);
-    if (g_pbak_frame_step == 0) {
+    stamp = RAM_AT(RenderBufferFull, g_db_prev)->word7C;
+    if (!full) {
+        /* nothing: the logic step keeps its own elapsed time */
+    } else if (g_pbak_frame_step == 0) {
         g_box_count = frame_counter - RAM_AT(RenderBufferFull, g_db_prev)->word7C;
     } else {
         g_box_count = 0x11;
@@ -110,9 +119,12 @@ void Gpu_Update(void)
         g_ot_cur = Ram_Addr(swap);
     }
     VSync(0);
-    /* The original holds 30 frames per second; game logic scales with the
-     * elapsed ticks, so --fps60 can skip the second blank. */
-    if (!Platform_HighFrameRate()
+    if (!full) {
+        /* The interpolated frame took the first of the two blanks. */
+        RAM_AT(RenderBufferFull, g_db_prev)->word7C = stamp;
+        goto draw;
+    }
+    if (!Platform_MidFramePresented()
         && (u32)(frame_counter - RAM_AT(RenderBufferFull, g_db_cur.buf)->word7C) < 0x19) {
         VSync(0);
     }
@@ -139,6 +151,7 @@ void Gpu_Update(void)
     }
     RAM_AT(RenderBufferFull, g_db_prev)->word7C = frame_counter;
     ExitCriticalSection();
+draw:
     RAM_AT(RenderBufferFull, g_db_cur.buf)->word84 = Gfx_TgeoGetTexinfoArray(RAM_AT(RenderBufferFull, g_db_prev)->word7C - RAM_AT(RenderBufferFull, g_db_cur.buf)->word7C);
     PutDispEnv(&RAM_AT(RenderBufferFull, g_db_cur.buf)->display);
     PutDrawEnv(&RAM_AT(RenderBufferFull, g_db_prev)->drawing);
@@ -150,6 +163,18 @@ void Gpu_Update(void)
     }
     RAM_AT(RenderBufferFull, g_ot_cur)->word78 = RAM_AT(RenderBufferFull, g_ot_cur)->word74;
     Gpu_RResetOT(RAM_AT(RenderBufferFull, g_ot_cur)->ordering_table, 0x800);
-    g_cur_lid_ro[0] = g_fade_counter;
+    if (full) {
+        g_cur_lid_ro[0] = g_fade_counter;
+    }
+}
+
+void Gpu_Update(void)
+{
+    gpu_present(1);
+}
+
+void Gpu_PresentInterpolated(void)
+{
+    gpu_present(0);
 }
 

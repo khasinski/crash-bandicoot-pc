@@ -266,6 +266,8 @@ void Gool_Transform(struct Vec3 *arg0, struct Vec3 *arg1, struct Vec3 *arg2, str
 s32 Gool_Transform2(struct Vec3 *arg0, struct Vec3 *arg1, s32 arg2);
 u32 Gool_TranslateOutGop(struct GoolObjView *obj, u32 gop, s32 mode);
 void Gool_UpdateObjects(s32 arg0);
+void Gpu_PresentInterpolated(void);
+void Gool_ForEachObject(s32 (*visitor)(struct Node *, void *), void *context);
 s32 Gool_ZoneObjectTerminate(struct Node *node, void *context);
 void Gool_ZoneObjectsTerminate(void *object);
 void Gpu_DrawOverlay(u32 fade);

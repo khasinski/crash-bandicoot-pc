@@ -229,6 +229,7 @@ add_executable(crash-bandicoot-pc
     src/platform/main.c
     src/platform/bios.c
     src/platform/ram_code.c
+    src/platform/interp.c
     $<TARGET_OBJECTS:crash-platform>
     $<TARGET_OBJECTS:crash-original-math>
     $<TARGET_OBJECTS:crash-original-camera>

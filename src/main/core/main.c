@@ -104,6 +104,41 @@ extern s32 gp_use_cd;
 extern u32 gp_rcnt_event;
 extern u32 gp_core_init_done;
 
+/* Draw the zone's world geometry for the current camera. */
+static void core_draw_world(void)
+{
+    ZoneHeaderView *zone;
+    u32 flags;
+
+    if (g_cur_lid_ro[0] & 1) {
+        zone = RAM_AT(ZoneHeaderView, RAM_AT(ResourceEntry, g_pads)->data);
+        if (zone->word00 != 0 && gp_cur_lid == 0) {
+            flags = zone->flags;
+            if (flags & 0x400) {
+                Gfx_TransformWorldsDark2((s32)Ram_Addr(RAM_AT(RenderBuffer, g_ot_cur)->ordering_table));
+            } else if ((flags & 0x210) == 0x210) {
+                Gfx_TransformWorldsDark((s32)Ram_Addr(RAM_AT(RenderBuffer, g_ot_cur)->ordering_table));
+            } else if (flags & 0x10) {
+                Gfx_TransformWorldsFog((s32)Ram_Addr(RAM_AT(RenderBuffer, g_ot_cur)->ordering_table));
+            } else if (flags & 0x100) {
+                Gfx_TransformWorldsRipple((s32)Ram_Addr(RAM_AT(RenderBuffer, g_ot_cur)->ordering_table));
+            } else if (flags & 0x200) {
+                Gfx_TransformWorldsLightning((s32)Ram_Addr(RAM_AT(RenderBuffer, g_ot_cur)->ordering_table));
+            } else {
+                Gfx_TransformWorlds((s32)Ram_Addr(RAM_AT(RenderBuffer, g_ot_cur)->ordering_table));
+            }
+        }
+    }
+}
+
+/* Draw the map screen's overlay (level 0x19). */
+static void core_draw_title(void)
+{
+    if (RAM_AT(LevelDataView, g_ns.level)->level_id == 0x19) {
+        Title_Update((struct GpuPacketTag *)RAM_AT(RenderBuffer, g_ot_cur)->ordering_table);
+    }
+}
+
 /* Run levels until the exit flag is set: pause toggling, demo playback,
  * level transitions, per-frame update and zone-specific drawing. */
 void CORE_Loop(s32 level)
@@ -111,8 +146,6 @@ void CORE_Loop(s32 level)
     s32 arg;
     s32 restore;
     s32 id;
-    u32 flags;
-    ZoneHeaderView *zone;
 
     Level_InitGlobals();
     Ns_Init(&g_ns, level);
@@ -208,28 +241,29 @@ not_paused:
         }
         Gfx_UpdateMatrices();
 
-        if (g_cur_lid_ro[0] & 1) {
-            zone = RAM_AT(ZoneHeaderView, RAM_AT(ResourceEntry, g_pads)->data);
-            if (zone->word00 != 0 && gp_cur_lid == 0) {
-                flags = zone->flags;
-                if (flags & 0x400) {
-                    Gfx_TransformWorldsDark2((s32)Ram_Addr(RAM_AT(RenderBuffer, g_ot_cur)->ordering_table));
-                } else if ((flags & 0x210) == 0x210) {
-                    Gfx_TransformWorldsDark((s32)Ram_Addr(RAM_AT(RenderBuffer, g_ot_cur)->ordering_table));
-                } else if (flags & 0x10) {
-                    Gfx_TransformWorldsFog((s32)Ram_Addr(RAM_AT(RenderBuffer, g_ot_cur)->ordering_table));
-                } else if (flags & 0x100) {
-                    Gfx_TransformWorldsRipple((s32)Ram_Addr(RAM_AT(RenderBuffer, g_ot_cur)->ordering_table));
-                } else if (flags & 0x200) {
-                    Gfx_TransformWorldsLightning((s32)Ram_Addr(RAM_AT(RenderBuffer, g_ot_cur)->ordering_table));
-                } else {
-                    Gfx_TransformWorlds((s32)Ram_Addr(RAM_AT(RenderBuffer, g_ot_cur)->ordering_table));
-                }
+        if (!Platform_InterpolateFrames()) {
+            core_draw_world();
+            Gool_UpdateObjects(gp_next_lid == 0);
+            core_draw_title();
+        } else {
+            /* --fps60: run the objects' logic without drawing, show a frame
+             * interpolated from the previous logic state, then draw this
+             * one. The game's pacing and timing are unchanged. */
+            Platform_SetObjectRender(0);
+            Gool_UpdateObjects(gp_next_lid == 0);
+            Platform_SetObjectRender(1);
+            if (gp_next_lid == 0 && g_ns_load_done_flag[0] == 0 && Platform_BeginMidFrame()) {
+                Gfx_UpdateMatrices();
+                core_draw_world();
+                Gool_UpdateObjects(0);
+                core_draw_title();
+                Gpu_PresentInterpolated();
+                Platform_EndMidFrame();
             }
-        }
-        Gool_UpdateObjects(gp_next_lid == 0);
-        if (RAM_AT(LevelDataView, g_ns.level)->level_id == 0x19) {
-            Title_Update((struct GpuPacketTag *)RAM_AT(RenderBuffer, g_ot_cur)->ordering_table);
+            Platform_RecordFrame();
+            core_draw_world();
+            Gool_UpdateObjects(0);
+            core_draw_title();
         }
         Gpu_Update();
     } while (gp_bonus_return == 0);

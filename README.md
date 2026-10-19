@@ -54,9 +54,10 @@ be the USA release (redump 2250, track 1 SHA-1
 `61ff4c9e8dcfb9e5d94d37f66330b69d08d6c914`).
 
 `--scale N` renders 3D at N times the PS1 resolution (1 to 8). `--fps60`
-runs the frame loop at 60 frames per second instead of the original 30; the
-game scales its logic by elapsed time, so play stays playable, but movement
-measures about 12% slower than at 30 and menu timings change.
+shows 60 frames per second: the game logic still runs at the original 30 Hz
+and an extra frame, with the camera and objects halfway between two logic
+frames, is drawn in between (src/platform/interp.c). Simulation, timing and
+animations are exactly those of 30 frames per second.
 
 Controls (PsyZ defaults): arrow keys move, X is ✕ (jump), Z is □ (spin),
 D is ○, S is △, Enter is START, Backspace is SELECT, Q/R are L1/R1 and

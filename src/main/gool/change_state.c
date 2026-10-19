@@ -192,6 +192,20 @@ void Gool_UpdateObjects(s32 arg0)
     }
 }
 
+/* Visit every live object in the update lists, in update order. */
+void Gool_ForEachObject(s32 (*visitor)(struct Node *, void *), void *context)
+{
+    s32 i;
+    s32 *ptr = gool_update.db8;
+
+    if (gp_crash_obj == 0) {
+        return;
+    }
+    for (i = 0; i < 8; i++, ptr += 2) {
+        Gool_ObjectHandleTraverseTreePreorder((struct Node *)ptr, visitor, context);
+    }
+}
+
 s32 GOOL_ChangeObjectState(GoolObj *arg0, s32 arg1, s32 arg2, s32 *arg3)
 {
     u32 saved_f0;

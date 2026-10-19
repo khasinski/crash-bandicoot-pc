@@ -76,11 +76,12 @@ typedef struct GoolActorView {
     s32 radius[3];
 } GoolActorView;
 
-/* Built on the host stack by the senders; argv points at host locals. */
+/* Built on the game stack by the senders (Gool_SendToColliders and
+ * Gool_SendToColliders2), with argv as the PS1 address of their arguments. */
 typedef struct GoolMessage {
     RAM_REF(GoolActorView) source;
     s32 word04, word08, selector, count;
-    s32 *argv;
+    RAM_REF(s32) argv;
 } GoolMessage;
 
 s32 Gool_ObjectPopFrame(GoolRuntimeObject *object, s32 *flags);

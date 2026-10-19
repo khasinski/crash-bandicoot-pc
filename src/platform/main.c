@@ -14,6 +14,7 @@
 #include <psyz.h>
 #include "common.h"
 #include "platform.h"
+#include "ns.h"
 
 #define EXE_HEADER_SIZE 0x800
 #define EXE_SIZE 0x47000u /* SCUS_949.00 including its header */
@@ -38,7 +39,9 @@ static ucontext_t host_context, game_context;
 static s32 game_result;
 
 static u32 frame_limit;
-static int headless;
+static u32 frame_count;
+static const char *vram_path;
+static const char *capture_path;
 
 /* --pad-at FRAME:MASK holds PS1 button bits (pressed = 1) from FRAME on. */
 typedef struct PadEvent {
@@ -52,9 +55,18 @@ static int pad_event_count;
  * loading tests. */
 static u32 warp_frame;
 static s32 warp_level = -1;
-static Uint64 next_frame_ns;
-static u32 frame_count;
-static const char *vram_path;
+
+/* --trace N prints the player's position and the game state every N frames. */
+static u32 trace_period;
+
+/* --control-at N: from frame N, read commands from stdin between frames:
+ * "advance FRAMES BUTTONS", "dump PATH", "quit". Each advance ends with a
+ * state line. Meant for driving the game from scripts. */
+static u32 control_at;
+static u32 control_until;
+static u32 control_buttons;
+
+extern u32 gp_crash_obj;
 
 /* crt0's __main runs global constructors; the game has none. */
 void __main(void)
@@ -158,31 +170,78 @@ static void dump_vram(const char *path)
         fclose(out);
 }
 
-/* NTSC field rate. Headless PsyZ does not pace VSync, but the root counters
- * the game times itself with run on the wall clock, so pace it here. */
-#define FIELD_NS 16683350u
+/* The frame as the video backend presented it, as a binary PPM. */
+static void capture_frame(const char *path)
+{
+    int w, h;
+    unsigned char *rgb = Psyz_VideoAllocCapturedFrame(&w, &h);
+    FILE *out = rgb ? fopen(path, "wb") : NULL;
+    if (out != NULL) {
+        fprintf(out, "P6\n%d %d\n255\n", w, h);
+        fwrite(rgb, 3, (size_t)w * (size_t)h, out);
+        fclose(out);
+    } else {
+        fprintf(stderr, "Cannot capture the presented frame to %s\n", path);
+    }
+    free(rgb);
+}
+
+static void print_state(void)
+{
+    const s32 *obj = gp_crash_obj ? RAM_AT(s32, gp_crash_obj) : NULL;
+    printf("{\"frame\": %u, \"level\": %d, \"substate\": %d", frame_count,
+           (int)g_ns.level, (int)g_game_substate);
+    if (obj)
+        printf(", \"x\": %d, \"y\": %d, \"z\": %d, \"status_b\": %u",
+               (int)obj[0x80 / 4], (int)obj[0x84 / 4], (int)obj[0x88 / 4],
+               (unsigned)obj[0xCC / 4]);
+    printf("}\n");
+    fflush(stdout);
+}
+
+static void run_control(void)
+{
+    char line[512];
+    print_state();
+    while (fgets(line, sizeof(line), stdin)) {
+        unsigned frames, buttons;
+        char path[480];
+        if (sscanf(line, "advance %u %i", &frames, (int *)&buttons) == 2) {
+            control_until = frame_count + frames;
+            control_buttons = buttons;
+            return;
+        }
+        if (sscanf(line, "dump %479s", path) == 1) {
+            dump_vram(path);
+            printf("{\"dumped\": \"%s\"}\n", path);
+            fflush(stdout);
+            continue;
+        }
+        if (!strncmp(line, "quit", 4))
+            break;
+    }
+    exit(EXIT_SUCCESS);
+}
 
 int Platform_VSync(int mode)
 {
     int result = (VSync)(mode); /* PsyZ, not the macro */
-    if (mode == 0 && headless) {
-        Uint64 now = SDL_GetTicksNS();
-        if (next_frame_ns == 0 || now > next_frame_ns + 4 * (Uint64)FIELD_NS)
-            next_frame_ns = now;
-        next_frame_ns += FIELD_NS;
-        if (next_frame_ns > now)
-            SDL_DelayPrecise(next_frame_ns - now);
-    }
     /* Escape or closing the window: the game loop itself never ends. */
     if (Psyz_QuitRequested())
         exit(EXIT_SUCCESS);
     if (mode == 0)
         frame_count++;
+    if (mode == 0 && trace_period && frame_count % trace_period == 0)
+        print_state();
+    if (mode == 0 && control_at && frame_count >= control_at && frame_count >= control_until)
+        run_control();
     if (mode == 0 && warp_level >= 0 && frame_count == warp_frame)
         gp_pbak_frame_idx = warp_level;
     if (mode == 0 && frame_limit != 0 && frame_count >= frame_limit) {
         if (vram_path != NULL)
             dump_vram(vram_path);
+        if (capture_path != NULL)
+            capture_frame(capture_path);
         printf("{\"frames\": %u}\n", frame_count);
         exit(EXIT_SUCCESS);
     }
@@ -196,6 +255,8 @@ unsigned int Platform_PadRead(int id)
     int i;
     for (i = 0; i < pad_event_count && pad_events[i].frame <= frame_count; i++)
         scheduled = pad_events[i].buttons;
+    if (control_at && frame_count >= control_at)
+        scheduled = control_buttons;
     return buttons | scheduled;
 }
 
@@ -245,7 +306,9 @@ int main(int argc, char **argv)
             disc = argv[++i];
         } else if (!strcmp(argv[i], "--headless")) {
             SDL_SetEnvironmentVariable(SDL_GetEnvironment(), "PSYZ_HEADLESS", "1", true);
-            headless = 1;
+            /* Game time follows frames, so headless runs are deterministic
+             * and run as fast as the host allows. */
+            SDL_SetEnvironmentVariable(SDL_GetEnvironment(), "PSYZ_VIRTUAL_CLOCK", "1", true);
         } else if (!strcmp(argv[i], "--frame-limit") && i + 1 < argc) {
             char *end;
             unsigned long limit;
@@ -256,6 +319,10 @@ int main(int argc, char **argv)
                 return EXIT_FAILURE;
             }
             frame_limit = (u32)limit;
+        } else if (!strcmp(argv[i], "--control-at") && i + 1 < argc) {
+            control_at = (u32)strtoul(argv[++i], NULL, 10);
+        } else if (!strcmp(argv[i], "--trace") && i + 1 < argc) {
+            trace_period = (u32)strtoul(argv[++i], NULL, 10);
         } else if (!strcmp(argv[i], "--warp") && i + 1 < argc) {
             char *end;
             unsigned long frame, level;
@@ -273,6 +340,8 @@ int main(int argc, char **argv)
                 fprintf(stderr, "Invalid or out-of-order --pad-at %s\n", argv[i]);
                 return EXIT_FAILURE;
             }
+        } else if (!strcmp(argv[i], "--capture") && i + 1 < argc) {
+            capture_path = argv[++i];
         } else if (!strcmp(argv[i], "--dump-vram") && i + 1 < argc) {
             vram_path = argv[++i];
         } else {

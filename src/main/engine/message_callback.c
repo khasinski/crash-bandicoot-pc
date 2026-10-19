@@ -86,6 +86,6 @@ s32 Gool_SendIfColliding(struct Node *node, void *context) {
 send_message:
     arg1->count++;
     Gool_ExecStateCode(RAM_AT(struct GoolObjView, arg1->source), (struct GoolObjView *)arg0,
-                       arg1->word04, arg1->word08, arg1->argv);
+                       arg1->word04, arg1->word08, RAM_AT(s32, arg1->argv));
     return -0xFF;
 }

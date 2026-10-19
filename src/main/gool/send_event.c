@@ -114,10 +114,10 @@ s32 Gool_ExecStateCode(GoolObjView *sender, GoolObjView *recipient, s32 event, s
                 sender->misc_flag = sp10[1];
             }
         }
-        exec = RAM_AT(GoolExecView, recipient->exec);
+        exec = RAM_DEREF(GoolExecView, recipient->exec); /* 0 reads low RAM, as on the PS1 */
         if (res >= -0xFE) {
             idx = event >> 8;
-            if (idx < RAM_AT(GoolExecHeader, exec->header)->word_10) {
+            if (idx < RAM_DEREF(GoolExecHeader, exec->header)->word_10) {
                 state = RAM_AT(u16, exec->states)[idx];
             } else {
                 state = 0xFF;

@@ -6,7 +6,7 @@
 
 s32 Gool_SendToColliders2(Node *arg0, Node *arg1, s32 arg2, s32 arg3, s32 arg4, s32 arg5)
 {
-    struct { Node *sender; s32 word04, word08, word0C, word10, word14; } message;
+    struct { RAM_REF(Node) sender; s32 word04, word08, word0C, word10, word14; } message;
     void *context = &message;
     Node *node, *next, *child, *next_child;
 
@@ -45,16 +45,16 @@ s32 Gool_SendToColliders2(Node *arg0, Node *arg1, s32 arg2, s32 arg3, s32 arg4, 
 
 typedef struct GoolScriptHeader {
     u8 reserved_00[0x14];
-    u8 *code;
+    RAM_REF(u8) code;
 } GoolScriptHeader;
 
 typedef struct GoolStackObj {
     u8 reserved_00[0x20];
-    GoolScriptHeader *script;
+    RAM_REF(GoolScriptHeader) script;
     u8 reserved_24[0xDC - 0x24];
-    u32 *sp;
-    u8 *pc;
-    u32 *fp;
+    RAM_REF(u32) sp;
+    RAM_REF(u8) pc;
+    RAM_REF(u32) fp;
 } GoolStackObj;
 
 s32 Gool_ObjectInterrupt(GoolStackObj *obj, u32 arg1, s32 argc, u32 *argv)
@@ -89,8 +89,8 @@ typedef struct LevelDesc {
 #include "gool_externs.h"
 #undef CRASH_EXT_GOOL_BROADCAST_0
 
-s32 gp_cur_zone = 0;
-s32 gp_cur_path = 1;
+extern s32 gp_cur_zone;
+extern s32 gp_cur_path;
 
 #define CRASH_EXT_GOOL_BROADCAST_1
 #include "gool_externs.h"

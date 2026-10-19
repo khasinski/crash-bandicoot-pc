@@ -12,40 +12,40 @@ s32 Ns_PageFree(ResourceSlot *request)
     ResourceEntry *entry;
     s32 (*release)(ResourceEntry *);
 
-    if ((ResourceSlot *)g_ns.wordA84 == request) {
+    if ((u32)g_ns.wordA84 == Ram_Addr(request)) {
         g_ns.wordA84 = 0;
     }
     if ((u16)(request->state - 20) >= 2) {
         goto done;
     }
-    header = request->header;
+    header = RAM_AT(ResourceHeader, request->header);
     if (header->kind != 0) {
-        g_ns.page_map[request->id >> 1] = (ResourceSlot *)-0x12;
+        RAM_AT(s32, g_ns.page_map)[request->id >> 1] = -0x12;
     done:
         request->state = 1;
         return -0xFF;
     }
-    bucket = g_ns.buckets[(header->entries[0]->id >> 15) & 0xFF];
+    bucket = RAM_AT(ResourceBucket, RAM_AT(u32, g_ns.buckets)[(RAM_AT(ResourceEntry, header->entries[0])->id >> 15) & 0xFF]);
     id = request->id;
     i = 0;
     if (header->count != 0) {
         id_pointer = &bucket->id;
         do {
-            entry = request->header->entries[i];
+            entry = RAM_AT(ResourceEntry, header->entries[i]);
             while (*id_pointer != entry->id) {
                 id_pointer += 2;
                 bucket++;
             }
-            release = g_ns_page_free_sentinel[entry->kind].release;
+            release = RAM_FN(s32 (*)(ResourceEntry *), g_ns_page_free_sentinel[entry->kind].release);
             i++;
             if (release != NULL) {
                 release(entry);
             }
             bucket->entry = id;
-        } while (i < request->header->count);
+        } while (i < header->count);
     }
     request->state = 1;
-    g_ns.page_map[request->id >> 1] = (ResourceSlot *)-0x12;
+    RAM_AT(s32, g_ns.page_map)[request->id >> 1] = -0x12;
     return -0xFF;
 }
 
@@ -64,23 +64,23 @@ void Ns_Update(s32 arg0)
     s32 page_idx;
     s32 next_page;
     s32 next_id;
-    ResourceSlot *next_slot;
+    s32 next_addr;
 
     if (g_ns.pool.active_count != 0) {
-        if ((ResourceSlot *)g_ns.wordA84 != NULL) {
+        if (g_ns.wordA84 != 0) {
             if (arg0 != -1) {
-                slot = (ResourceSlot *)g_ns.wordA84;
+                slot = RAM_AT(ResourceSlot, g_ns.wordA84);
                 total = (s32)slot->base;
                 j = 0;
                 slot -= total - 1;
                 for (; j < total; j++, slot++) {
                     if ((s16)slot->state == 3 || (s16)slot->state == 13) {
-                        Ns_PageUpdate(slot, arg0);
+                        Ns_PageUpdate((struct PageSlot *)slot, arg0);
                     }
                 }
             }
         }
-        if ((ResourceSlot *)g_ns.wordA84 == NULL && arg0 == -1) {
+        if (g_ns.wordA84 == 0 && arg0 == -1) {
             best_idx = -1;
             for (i = 0; i < g_ns.pool.count; i++) {
                 pool_slot = &g_ns.pool.slots[i];
@@ -95,14 +95,14 @@ void Ns_Update(s32 arg0)
             if (best_idx != -1) {
                 count = 1;
                 if (gp_pause_B_pressed != 0) {
-                    page_count = g_ns.directory->page_count;
+                    page_count = RAM_AT(NsDirectory, g_ns.directory)->page_count;
                     page_idx = min_id >> 1;
                     if (page_idx < page_count - 1) {
                         do {
                             next_id = page_idx + 1;
                             next_page = (next_id << 1) >> 1;
-                            next_slot = g_ns.page_map[next_page];
-                            if ((s32)next_slot >= -0xFE || next_slot->word06 != 0) {
+                            next_addr = RAM_AT(s32, g_ns.page_map)[next_page];
+                            if (next_addr >= -0xFE || RAM_AT(ResourceSlot, next_addr)->word06 != 0) {
                                 break;
                             }
                             page_idx = next_page;
@@ -114,7 +114,7 @@ void Ns_Update(s32 arg0)
             }
         }
         for (i = 0; i < g_ns.physical_count; i++) {
-            Ns_PageUpdate(&g_ns.physical[i], arg0);
+            Ns_PageUpdate((struct PageSlot *)&g_ns.physical[i], arg0);
         }
     }
 }

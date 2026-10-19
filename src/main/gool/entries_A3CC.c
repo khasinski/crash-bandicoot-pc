@@ -8,7 +8,7 @@ typedef struct ZoneFogHeader {
 
 typedef struct ZoneHeader {
     u8 reserved[0x10];
-    ZoneFogHeader *data;
+    RAM_REF(ZoneFogHeader) data;
 } ZoneHeader;
 
 typedef struct NsdHeader {
@@ -78,19 +78,19 @@ static __inline__ void Gfx_GetFar(u32 *arg0, s32 *arg1)
         *(arg1) = _flag; \
     }
 
-typedef struct {
+typedef struct WgeoHeaderView {
     u8 reserved_00[0x1C];
     s32 flags;
 } WgeoHeaderView;
 
-typedef struct {
+typedef struct GoolEntry64 {
     u32 word0;
     u32 reserved[3];
-    WgeoHeaderView *ptr10;
+    RAM_REF(WgeoHeaderView) ptr10;
     u32 reserved_2[11];
 } GoolEntry64;
 
-typedef struct {
+typedef struct GoolAnimData {
     s32 count;
     u32 data[1];
 } GoolAnimData;

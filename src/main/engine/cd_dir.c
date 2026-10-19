@@ -4,7 +4,7 @@
  * Section 1: CD Directory Reader (asm/USA/main/text_200C4.s)
  * ========================================================================= */
 
-typedef struct {
+typedef struct NsFileMapBits {
     u32 directory_sector : 23;
     u32 reserved_0 : 9;
     u32 directory_size : 17;

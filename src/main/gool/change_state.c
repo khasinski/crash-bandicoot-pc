@@ -4,13 +4,13 @@
 #include "gool_externs.h"
 #undef CRASH_EXT_GOOL_CHANGE_STATE_0
 
-typedef struct {
+typedef struct GoolAnim {
     u8 type;
     u8 reserved[3];
     u32 eid;
 } GoolAnim;
 
-typedef struct {
+typedef struct SvtxFrame {
     u8 reserved_00[0x14];
     s32 box[6];
     s32 col_x;
@@ -18,12 +18,12 @@ typedef struct {
     s32 col_z;
 } SvtxFrame;
 
-typedef struct {
+typedef struct GoolHeader {
     u8 reserved_00[0x0C];
     s32 sp_offset;
 } GoolHeader;
 
-typedef struct {
+typedef struct GoolState {
     u32 flags;
     u32 status_c;
     u16 extern_idx;
@@ -32,27 +32,27 @@ typedef struct {
     u16 pc_code;
 } GoolState;
 
-typedef struct {
+typedef struct GoolExecutable {
     u8 reserved_00[0x10];
-    GoolHeader *header;
-    u32 *code;
-    u32 *externs;
-    u32 *events;
-    GoolState *states;
+    RAM_REF(GoolHeader) header;
+    RAM_REF(u32) code;
+    RAM_REF(u32) externs;
+    RAM_REF(u32) events;
+    RAM_REF(GoolState) states;
 } GoolExecutable;
 
-typedef struct {
+typedef struct GoolObj {
     s32 header;
-    void *process;
+    RAM_REF(void) process;
     s32 bound_x1;
     s32 bound_y1;
     s32 bound_z1;
     s32 bound_x2;
     s32 bound_y2;
     s32 bound_z2;
-    GoolExecutable *global;
-    GoolExecutable *external;
-    void *zone;
+    RAM_REF(GoolExecutable) global;
+    RAM_REF(GoolExecutable) external;
+    RAM_REF(void) zone;
     s32 state_idx;
     u8 reserved_30[0x60 - 0x30];
     s32 regs[14];
@@ -65,18 +65,18 @@ typedef struct {
     u32 status_c;
     s32 subtype;
     s32 pid_flags;
-    s32 *sp;
-    u32 *pc;
-    s32 *fp;
-    u32 *tp;
-    u32 *ep;
+    RAM_REF(s32) sp;
+    RAM_REF(u32) pc;
+    RAM_REF(s32) fp;
+    RAM_REF(u32) tp;
+    RAM_REF(u32) ep;
     u32 once_p;
     u32 misc_flag;
-    void *entity;
+    RAM_REF(void) entity;
     s32 path_progress;
     s32 state_stamp;
     u32 anim_counter;
-    GoolAnim *anim_seq;
+    RAM_REF(GoolAnim) anim_seq;
     u32 anim_frame;
     u8 reserved_110[0x120 - 0x110];
     u32 state_flags;
@@ -151,8 +151,8 @@ void Gool_ObjectLocalBound(GoolObj *arg0, s32 *arg1)
 typedef struct GoolUpdateGlobals {
     s32 db8[16];
     s32 df8;
-    u8 *dfc;
-    void *e00;
+    RAM_REF(u8) dfc;
+    RAM_REF(void) e00;
     s32 e04;
 } GoolUpdateGlobals;
 

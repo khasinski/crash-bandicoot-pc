@@ -25,13 +25,13 @@ static __inline__ void ns_pool_active_inc(void)
 void Ns_ZoneUnload(ZoneLoadList *load)
 {
     s32 i;
-    ResourceSlot *slot;
+    s32 slot;
 
     if (load != NULL) {
         for (i = 0; i < load->entry_count; i++) {
             slot = Ns_PageStruct(&load->entries[i]);
-            if ((s32)slot < -0xFE && slot != (ResourceSlot *)-0xFF) {
-                ns_slot_unref(slot);
+            if (slot < -0xFE && slot != -0xFF) {
+                ns_slot_unref(RAM_AT(ResourceSlot, slot));
             }
         }
         for (i = 0; i < load->page_count; i++) {

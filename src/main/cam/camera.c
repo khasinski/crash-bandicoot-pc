@@ -4,8 +4,8 @@
 /* One viewpoint considered by Cam_Follow: a path, the progress the camera
  * would take on it and how far that is from the current progress. */
 typedef struct CamCandidate {
-    ZonePath *path;
-    ZonePath *next_path;
+    RAM_REF(ZonePath) path;
+    RAM_REF(ZonePath) next_path;
     s32 progress;
     s32 exit;
     s32 entrance;
@@ -29,7 +29,7 @@ typedef struct CamObject {
     CamVec rot;
     CamVec scale;
     u8 reserved_a4[0x108 - 0xA4];
-    u32 *anim;
+    RAM_REF(u32) anim;
     u32 anim_frame;
     u8 reserved_110[0x140 - 0x110];
     s32 cam_zoom;
@@ -59,30 +59,21 @@ typedef struct CamLevelView {
     s32 level_id;
 } CamLevelView;
 
-/* Camera offsets (z, zoom, x pan, y pan) and their seek directions; only this
- * unit addresses them through $gp. */
-s32 gp_cam_speed = -0x12C00;
-s32 gp_cam_follow_dist_max = 0x6A400;
-s32 gp_cam_follow_vel_x = 0;
-s32 gp_cam_follow_vel_y = 0;
-s32 gp_cam_follow_dist_min = 0x3E800;
-s32 gp_cam_follow_vel_z = 0;
+extern s32 gp_cam_speed;
+extern s32 gp_cam_follow_dist_max;
+extern s32 gp_cam_follow_vel_x;
+extern s32 gp_cam_follow_vel_y;
+extern s32 gp_cam_follow_dist_min;
+extern s32 gp_cam_follow_vel_z;
 
 /* .sbss owned by this unit: camera speed along the path and death-cam state. */
-asm(".globl gp_cam_follow_state");
-s32 gp_cam_follow_state;
-asm(".globl gp_cam_death_rot_x");
-s32 gp_cam_death_rot_x;
-asm(".globl gp_cam_death_rot_y");
-s32 gp_cam_death_rot_y;
-asm(".globl gp_cam_death_rot_z");
-s32 gp_cam_death_rot_z;
-asm(".globl gp_cam_death_pan_x");
-s32 gp_cam_death_pan_x;
-asm(".globl gp_cam_death_pan_y");
-s32 gp_cam_death_pan_y;
-asm(".globl gp_cam_death_pan_z");
-s32 gp_cam_death_pan_z;
+extern s32 gp_cam_follow_state;
+extern s32 gp_cam_death_rot_x;
+extern s32 gp_cam_death_rot_y;
+extern s32 gp_cam_death_rot_z;
+extern s32 gp_cam_death_pan_x;
+extern s32 gp_cam_death_pan_y;
+extern s32 gp_cam_death_pan_z;
 
 /* View of the global state object at g_pause_state (camera fields only). */
 typedef struct CamGlobals {
@@ -92,7 +83,7 @@ typedef struct CamGlobals {
     u8 reserved_ac8[0xAE0 - 0xAC8];
     s32 game_state;         /* 0x800618D0 */
     u8 reserved_ae4[0xB2C - 0xAE4];
-    CamObject *death_obj;   /* 0x8006191C */
+    RAM_REF(CamObject) death_obj;   /* 0x8006191C */
     u8 reserved_b30[0xB60 - 0xB30];
     u32 death_vert;         /* 0x80061950 */
     u8 reserved_b64[0xB7C - 0xB64];

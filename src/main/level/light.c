@@ -1,7 +1,7 @@
 #include "common.h"
 #include "zone.h"
 
-typedef struct {
+typedef struct LightMat {
     s16 v[3][3];
     s16 b[3];
     s16 c[3][3];

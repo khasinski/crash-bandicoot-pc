@@ -14,12 +14,12 @@ static __inline__ void ns_pool_active_inc(void)
         ResourceSlot *_cand; \
         s32 _i; \
         u32 _ticks; \
-        (res_slot) = g_ns.page_map[(page_id) >> 1]; \
-        if ((res_slot) == (ResourceSlot *)-0x12) { \
+        (res_slot) = RAM_AT(s32, g_ns.page_map)[(page_id) >> 1]; \
+        if ((res_slot) == -0x12) { \
             goto search_label; \
         } \
-        if ((res_slot) != (ResourceSlot *)-0xFF) { \
-            (res_slot)->word18 = (ent_id); \
+        if ((res_slot) != -0xFF) { \
+            RAM_AT(ResourceSlot, res_slot)->word18 = (ent_id); \
         } \
         goto done_label; \
     found_label: \
@@ -29,9 +29,9 @@ static __inline__ void ns_pool_active_inc(void)
         _cand->references = 0; \
         _cand->word18 = (ent_id); \
         _cand->word28 = _ticks; \
-        g_ns.page_map[(page_id) >> 1] = _cand; \
+        RAM_AT(u32, g_ns.page_map)[(page_id) >> 1] = Ram_Addr(_cand); \
         ns_pool_active_inc(); \
-        (res_slot) = _cand; \
+        (res_slot) = (s32)Ram_Addr(_cand); \
         goto done_label; \
     search_label: \
         for (_i = 0; _i < g_ns_virtual_page_pool.count; _i++) { \
@@ -40,24 +40,24 @@ static __inline__ void ns_pool_active_inc(void)
                 goto found_label; \
             } \
         } \
-        (res_slot) = NULL; \
+        (res_slot) = 0; \
     done_label:; \
     } while (0)
 
 s32 Ns_PageOpen(s32 id, s32 sync, s32 delta, s32 entry_id)
 {
-    ResourceSlot *slot;
+    s32 slot;
 
     if (sync != 0) {
         slot = Ns_PagePhysical(id, entry_id);
     } else {
-        ResourceSlot *inlined_slot;
+        s32 inlined_slot;
         NS_FIND_OR_ALLOC_SLOT(inlined_slot, id, entry_id, found_1, search_1, done_1);
         slot = inlined_slot;
     }
-    if (slot == (ResourceSlot *)-0xFF) {
+    if (slot == -0xFF) {
         return 1;
     }
-    return slot->references += delta;
+    return RAM_AT(ResourceSlot, slot)->references += delta;
 }
 

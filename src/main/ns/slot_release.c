@@ -7,8 +7,8 @@ s32 Ns_TexturePageFree(s32 arg0) {
     temp_v1 = g_slst_buf1[arg0].state;
     switch (temp_v1) {                              /* irregular */
     case 20:
-        *g_slst_buf1[arg0].id_pointer = g_slst_buf1[arg0].id;
-        g_ns_page_status_map[g_slst_buf1[arg0].id >> 1] = -0x12;
+        *RAM_AT(s32, g_slst_buf1[arg0].id_pointer) = g_slst_buf1[arg0].id;
+        RAM_AT(s32, g_ns_page_status_map)[g_slst_buf1[arg0].id >> 1] = -0x12;
         /* fallthrough */
     case 21:
         g_slst_buf1[arg0].state = 1;

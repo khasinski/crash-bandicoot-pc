@@ -4,11 +4,11 @@
 #include "common.h"
 typedef struct Node {
     s32 kind;
-    struct Node *word04;
+    RAM_REF(struct Node) word04;
     u8 reserved_08[0x5C];
-    struct Node *parent;
-    struct Node *next;
-    struct Node *children;
+    RAM_REF(struct Node) parent;
+    RAM_REF(struct Node) next;
+    RAM_REF(struct Node) children;
 } Node;
 typedef s32 (*Visitor)(Node *, void *);
 typedef s32 (*Traversal)(Node *, Visitor, void *);
@@ -17,5 +17,5 @@ s32 Gool_ObjectHandleTraverseTreePostorder();
 void Gool_ForEachObjectHandle(Traversal traversal, Visitor visitor, void *context);
 s32 Gool_ObjectTerminate();
 
-extern Node *g_level_pause_menu_obj;
+extern RAM_REF(Node) g_level_pause_menu_obj;
 #endif

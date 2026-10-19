@@ -12,7 +12,7 @@ s32 Gool_ObjectTerminate(Node *obj, void *context)
 
 typedef struct ObjectRoot {
     s32 kind;
-    Node *word04;
+    RAM_REF(Node) word04;
 } ObjectRoot;
 
 void Gool_ZoneObjectsTerminate(void *object)

@@ -1,7 +1,7 @@
 #include "common.h"
 #include "audio_channels.h"
 
-typedef struct {
+typedef struct SpuCommonAttributes {
     u32 mask;
     s16 volume_left, volume_right;
     s16 mode_left, mode_right;
@@ -12,7 +12,7 @@ typedef struct {
     s32 external_mix, external_reverb;
 } SpuCommonAttributes;
 
-typedef struct {
+typedef struct VoiceEntry {
     s32 word_00;
     u32 b0 : 1;
     u32 b1 : 1;
@@ -27,7 +27,7 @@ typedef struct {
     u32 b10 : 1;
     u32 b11 : 1;
     s32 word_08;
-    void *word_0c;
+    RAM_REF(void) word_0c;
     u8 word_10;
     u8 word_11;
     u16 word_12;

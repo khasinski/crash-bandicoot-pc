@@ -53,9 +53,9 @@ typedef struct EngineMode25State {
 /* File I/O cleanup: descriptor address, creation flag, and path to remove
  * when an operation fails. The writer stores its path in the third word. */
 typedef struct EngineFileRequest {
-    s32 *resource;
-    s32 *pending;
-    char *path;
+    RAM_REF(s32) resource;
+    RAM_REF(s32) pending;
+    RAM_REF(char) path;
 } EngineFileRequest;
 typedef EngineFileRequest EngineEventRequest;
 
@@ -118,8 +118,8 @@ extern s32 gp_title_once, gp_title_not_seen;
 extern char gp_game_over_zone_name[8], gp_main_menu_zone_name[8], gp_naughty_dog_zone_name[8], gp_load_menu_zone_name[8];
 extern char gp_options_menu_zone_name[8], gp_island_1b_zone_name[8], gp_island_1a_zone_name[8], gp_island_2_zone_name[8];
 extern char gp_island_3_zone_name[8], gp_scea_universal_zone_name[8], gp_mdat_fmt_name[8], gp_mdat_default_name[8];
-extern EngineState *gp_card;
-extern EngineMode25State *gp_title;
+extern RAM_REF(EngineState) gp_card;
+extern RAM_REF(EngineMode25State) gp_title;
 #endif
 void Card_OnWriteError(EngineFileRequest *request);
 void Card_OnReadGlobalsError(EngineFileRequest *request);

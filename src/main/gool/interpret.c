@@ -36,11 +36,11 @@ typedef struct GoolState {
 
 typedef struct GoolExecutable {
     u8 reserved_00[0x10];
-    GoolCodeHeader *header;
-    u32 *code;
-    u32 *data;
-    void *word_1c;
-    GoolState *states;
+    RAM_REF(GoolCodeHeader) header;
+    RAM_REF(u32) code;
+    RAM_REF(u32) data;
+    RAM_REF(void) word_1c;
+    RAM_REF(GoolState) states;
     u8 * const anims;
 } GoolExecutable;
 
@@ -62,7 +62,7 @@ typedef struct ResourceEntry {
     u32 id;
     s32 kind;
     s32 word0C;
-    ZoneHeaderView *data;
+    RAM_REF(ZoneHeaderView) data;
 } ResourceEntry;
 
 typedef struct GoolAnimVertex {
@@ -86,7 +86,7 @@ typedef struct GoolAnimModel {
 
 typedef struct GoolAnimEntry {
     u8 reserved_00[0x10];
-    void *items[1];
+    RAM_REF(void) items[1];
 } GoolAnimEntry;
 
 typedef struct GoolAnimSeq {
@@ -100,19 +100,19 @@ typedef struct GoolObj {
     s32 kind;
     s32 word_04;
     GoolBound bound;
-    const GoolExecutable *exec;
-    GoolExecutable *external;
-    ResourceEntry *zone;
+    RAM_REF(const GoolExecutable) exec;
+    RAM_REF(GoolExecutable) external;
+    RAM_REF(ResourceEntry) zone;
     s32 word_2c;
     u16 defaults[24];
-    struct GoolObj *self;
-    struct GoolObj *parent;
-    struct GoolObj *next;
-    struct GoolObj *children;
-    struct GoolObj *creator;
-    struct GoolObj *player;
-    struct GoolObj *collider;
-    struct GoolObj *interrupter;
+    RAM_REF(struct GoolObj) self;
+    RAM_REF(struct GoolObj) parent;
+    RAM_REF(struct GoolObj) next;
+    RAM_REF(struct GoolObj) children;
+    RAM_REF(struct GoolObj) creator;
+    RAM_REF(struct GoolObj) player;
+    RAM_REF(struct GoolObj) collider;
+    RAM_REF(struct GoolObj) interrupter;
     Vec3 trans;
     Vec3 rot;
     Vec3 scale;
@@ -124,20 +124,20 @@ typedef struct GoolObj {
     u32 status_c;
     s32 subtype;
     s32 pid_flags;
-    s32 *sp;
-    u32 *pc;
-    s32 *fp;
-    u32 *tp;
-    u32 *ep;
+    RAM_REF(s32) sp;
+    RAM_REF(u32) pc;
+    RAM_REF(s32) fp;
+    RAM_REF(u32) tp;
+    RAM_REF(u32) ep;
     s32 result_v;
     s32 misc_flag;
     s32 arg0;
     s32 arg1;
     s32 arg2;
     s32 arg3_v;
-    GoolAnimSeq *anim_seq;
+    RAM_REF(GoolAnimSeq) anim_seq;
     s32 anim_frame;
-    void *entity;
+    RAM_REF(void) entity;
     s32 path_progress;
     s32 path_length;
     s32 floor_y;
@@ -165,15 +165,15 @@ typedef struct GoolStateOut {
 
 typedef struct GoolQuery {
     s32 kind;
-    GoolObj *obj;
-    GoolObj *result;
+    RAM_REF(GoolObj) obj;
+    RAM_REF(GoolObj) result;
     s32 best_dist;
     s32 max_dist;
 } GoolQuery;
 
 typedef struct ObjectRoot {
     s32 kind;
-    GoolObj *word04;
+    RAM_REF(GoolObj) word04;
 } ObjectRoot;
 
 typedef struct LevelStateView {

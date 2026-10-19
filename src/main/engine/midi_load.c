@@ -1,21 +1,21 @@
 #include "common.h"
 #include "audio_channels.h"
 
-typedef struct {
+typedef struct MidiHeaderItem {
     u16 count;
     u16 reserved_02;
     s32 bank_ref;
     s32 refs[7];
 } MidiHeaderItem;
 
-typedef struct {
+typedef struct MidiResourceEntry {
     u32 word00;
     s32 id;
     s32 kind;
     s32 word0C;
-    MidiHeaderItem *header;
-    void *vh;
-    void *sep;
+    RAM_REF(MidiHeaderItem) header;
+    RAM_REF(void) vh;
+    RAM_REF(void) sep;
 } MidiResourceEntry;
 
 typedef void noreturn_fn(s32);

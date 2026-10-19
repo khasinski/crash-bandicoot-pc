@@ -4,7 +4,7 @@
 #include "common.h"
 
 /* Layout recovered from SPU attribute readback and update code. */
-typedef struct {
+typedef struct VoiceAttributes {
     s32 voice;
     s32 mask;
     u16 vol_left;

@@ -41,13 +41,13 @@ typedef struct SubExec {
 typedef struct SubObj {
     u8 reserved_00[8];
     ZqBound bound;
-    SubExec *word_20;
+    RAM_REF(SubExec) word_20;
     u8 reserved_24[4];
-    ResourceEntry *entry;
+    RAM_REF(ResourceEntry) entry;
     u8 reserved_2c[0x64 - 0x2C];
-    struct SubObj *parent;
+    RAM_REF(struct SubObj) parent;
     u8 reserved_68[0x78 - 0x68];
-    struct SubObj *collider;
+    RAM_REF(struct SubObj) collider;
     u8 reserved_7c[4];
     ZqVec trans;
     u8 reserved_8c[0xA8 - 0x8C];
@@ -59,7 +59,7 @@ typedef struct SubObj {
     u8 reserved_d4[0xFC - 0xD4];
     u32 arg1;
     u8 reserved_100[0x110 - 0x100];
-    u16 *word_110;
+    RAM_REF(u16) word_110;
     u8 reserved_114[0x120 - 0x114];
     u32 flags120;
     u8 reserved_124[4];
@@ -98,7 +98,7 @@ typedef struct SubWorkspace {
 
 typedef struct SubBox {
     ZqBound bound;
-    SubObj *obj;
+    RAM_REF(SubObj) obj;
 } SubBox;
 
 typedef struct SubBoxList {

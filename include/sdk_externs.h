@@ -3,11 +3,11 @@ extern IntrState g_event_handlers;
 #endif
 
 #ifdef CRASH_EXT_SDK_KERNEL_INTR_INIT_1
-extern Dispatch *g_intr_ctrl_ptr;
+extern RAM_REF(Dispatch) g_intr_ctrl_ptr;
 #endif
 
 #ifdef CRASH_EXT_SDK_LIBAPI_CALLBACK_DISPATCH
-extern Dispatch *g_intr_ctrl_ptr;
+extern RAM_REF(Dispatch) g_intr_ctrl_ptr;
 #endif
 
 #ifdef CRASH_EXT_SDK_LIBAPI_RESUME
@@ -189,18 +189,18 @@ extern VoiceU8 g_spu_vm_voice_auto_flag[];
 #endif
 
 #ifdef CRASH_EXT_SDK_LIBSPU_BANK_SELECT
-extern u8 *g_vab_prog_tables[];
-extern u8 *g_vab_master_vol_table[];
-extern u8 *g_vab_cur_master_vol;
+extern RAM_REF(u8) g_vab_prog_tables[];
+extern RAM_REF(u8) g_vab_master_vol_table[];
+extern RAM_REF(u8) g_vab_cur_master_vol;
 #endif
 
 #ifdef CRASH_EXT_SDK_LIBSPU_BANK_TRANSFER
-extern VabHdr *g_vab_master_vol_table[];
-extern ProgAtr *g_vab_prog_tables[];
+extern RAM_REF(VabHdr) g_vab_master_vol_table[];
+extern RAM_REF(ProgAtr) g_vab_prog_tables[];
 #endif
 
 #ifdef CRASH_EXT_SDK_LIBSPU_NOISE_VOICE_0
-extern volatile u16 *g_snd_tempo;
+extern RAM_REF(volatile u16) g_snd_tempo;
 #endif
 
 #ifdef CRASH_EXT_SDK_LIBSPU_NOISE_VOICE_1
@@ -244,18 +244,18 @@ extern u8 g_midi_seq_table[];
 #ifdef CRASH_EXT_SDK_LIBSPU_SEQUENCE_VOLUME_1
 extern ProgramVoice g_spu_vm_voice_tone_prog[];
 extern PanVoice g_spu_vm_voice_pan[];
-extern Master *g_vab_cur_master_vol;
+extern RAM_REF(Master) g_vab_cur_master_vol;
 #endif
 
 #ifdef CRASH_EXT_SDK_LIBSPU_VM_NOISE_OFF
-extern SpuPorts *g_snd_tempo;
+extern RAM_REF(SpuPorts) g_snd_tempo;
 extern u8 g_spu_vm_voice_pitch[];
 extern u8 g_spu_vm_voice_auto_flag[];
 #endif
 
 #ifdef CRASH_EXT_SDK_LIBSPU_VOICE_ADSR_TABLE
 extern VoiceStruct g_spu_vm_voice_table[];
-extern u16 *g_snd_tempo;
+extern RAM_REF(u16) g_snd_tempo;
 extern u16 g_midi_seq_table[];
 #endif
 
@@ -270,7 +270,7 @@ extern u8 g_spu_vm_voice_tone_idx[];
 extern u8 g_spu_vm_voice_vab_id[];
 extern u8 g_spu_vm_voice_prior[];
 extern u8 g_spu_vm_voice_auto_flag[];
-extern VabHeader *g_vab_cur_master_vol;
+extern RAM_REF(VabHeader) g_vab_cur_master_vol;
 #endif
 
 #ifdef CRASH_EXT_SDK_LIBSPU_VOICE_NOTE_1
@@ -284,7 +284,7 @@ extern VoiceByte g_spu_vm_voice_auto_flag[];
 #endif
 
 #ifdef CRASH_EXT_SDK_LIBSPU_VOICE_STATE_INIT
-extern volatile u8 *g_snd_tempo;
+extern RAM_REF(volatile u8) g_snd_tempo;
 extern s32 g_spu_reverb_attr;
 extern u8 g_spu_vm_voice_table[];
 extern u8 g_spu_vm_voice_age[];
@@ -306,7 +306,7 @@ extern u8 g_midi_sep[];
 #ifdef CRASH_EXT_SDK_LIBSPU_VOICE_TRIGGER
 extern u8 g_spu_vm_voice_pitch[];
 extern u8 g_spu_vm_voice_auto_flag[];
-extern u8 *g_vab_cur_master_vol;
+extern RAM_REF(u8) g_vab_cur_master_vol;
 #endif
 
 #ifdef CRASH_EXT_SDK_LIBSPU_VOICE_UPDATE_0
@@ -319,5 +319,5 @@ extern VoiceWord g_spu_vm_voice_vab_id[];
 
 #ifdef CRASH_EXT_SDK_LIBSPU_VOICE_UPDATE_1
 extern VoiceVol g_midi_seq_table[];
-extern u8 *g_vab_cur_master_vol;
+extern RAM_REF(u8) g_vab_cur_master_vol;
 #endif

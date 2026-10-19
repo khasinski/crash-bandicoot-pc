@@ -15,15 +15,16 @@ s32 Ns_VirtualPagePhysicalIdx(ResourceEntry *entry)
     case 0:
     case 3:
     case 4:
-        item = (s32 *)((page->count << 2) + (s32)page);
+        item = (s32 *)((u8 *)page + (page->count << 2));
     common:
+        /* Translated pages hold PS1 addresses, which are negative as s32. */
         size = item[4];
         if (size < 0) {
-            return size - (s32)page;
+            return size - (s32)Ram_Addr(page);
         }
         return size;
     case 0x100:
-        item = (s32 *)((entry->word0C << 2) + (s32)entry);
+        item = (s32 *)((u8 *)entry + (entry->word0C << 2));
         goto common;
     default:
         return -14;
@@ -43,10 +44,11 @@ s32 Ns_EntryItemSize(s32 *page, s32 index)
     return result;
 }
 
-void *Ns_ReadSectors(void *arg0, void *buffer, s32 read_full)
+/* Returns the buffer's PS1 address, or a negative error code. */
+s32 Ns_ReadSectors(void *arg0, void *buffer, s32 read_full)
 {
     u8 result[8];
-    u8 position[4];
+    CdlLOC position;
     NsFileMap *map;
 
     if (gp_pause_B_pressed) {
@@ -55,19 +57,21 @@ void *Ns_ReadSectors(void *arg0, void *buffer, s32 read_full)
             if (buffer == NULL) {
                 buffer = LIBC_Malloc(((map->directory_size & 0x1FFFF) + 0x7FF) / 0x800 * 0x800);
                 if (buffer == NULL) {
-                    return (void *)-15;
+                    return -15;
                 }
             }
-            CdIntToPos(map->directory_sector & 0x7FFFFF, position);
-            CdControl(2, position, result);
+            CdIntToPos(map->directory_sector & 0x7FFFFF, &position);
+            CdControl(2, (u_char *)&position, result);
             if (!CdRead(((map->directory_size & 0x1FFFF) + 0x7FF) / 0x800, buffer, 0x80)
                 || CdReadSync(0, 0)) {
-                return (void *)-16;
+                return -16;
             }
             buffer = LIBC_Realloc(buffer, map->directory_size & 0x1FFFF);
         }
-        return buffer;
+        return (s32)Ram_Addr(buffer);
     }
+    /* Without CD access the original returned the zero flag it tested. */
+    return 0;
 }
 
 s32 Ns_FileOpen(NsState *ns, s32 type)
@@ -75,8 +79,10 @@ s32 Ns_FileOpen(NsState *ns, s32 type)
     s32 i;
     s32 count = 0;
 
-    for (i = 0; i < ns->directory->entry_count; i++) {
-        if (Ns_EIDType(&ns->directory->entries[i]) == type) {
+    NsDirectory *directory = RAM_AT(NsDirectory, ns->directory);
+
+    for (i = 0; i < directory->entry_count; i++) {
+        if (Ns_EIDType(&directory->entries[i]) == type) {
             count++;
         }
     }
@@ -86,7 +92,8 @@ s32 Ns_FileOpen(NsState *ns, s32 type)
 s32 Ns_PageTranslateOffsets(ResourceHeader *page)
 {
     s32 count = page->count;
-    ResourceEntry **entries = page->entries;
+    u32 *entries = page->entries;
+    u32 base = Ram_Addr(page);
     s32 i, j;
     ResourceEntry *entry;
     u32 *items;
@@ -98,14 +105,14 @@ s32 Ns_PageTranslateOffsets(ResourceHeader *page)
         return -0x12;
     }
     for (i = count - 1; i >= 0; i--) {
-        entry = (ResourceEntry *)((u32)page + (u32)entries[i]);
-        entries[i] = entry;
+        entries[i] += base;
+        entry = RAM_AT(ResourceEntry, entries[i]);
         items = (u32 *)&entry->data;
         for (j = entry->word0C; j >= 0; j--) {
-            items[j] = (u32)entry + items[j];
+            items[j] += entries[i];
         }
     }
-    entries[count] = (ResourceEntry *)((u32)page + (u32)entries[count]);
+    entries[count] += base;
     return -0xFF;
 }
 

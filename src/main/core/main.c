@@ -39,7 +39,7 @@ typedef struct LevelDataView {
 
 typedef struct NsState {
     u8 reserved_00[0x14];
-    LevelDataView *level;
+    RAM_REF(LevelDataView) level;
     u8 reserved_18[0xC];
     s32 draw_skip;
 } NsState;
@@ -94,17 +94,15 @@ void Core_ObjectsCreate(void)
 #include "core_externs.h"
 #undef CRASH_EXT_CORE_MAIN_1
 
-/* .sdata owned by this unit (gp-addressed only here). */
-s32 gp_cur_lid = 0;
-s32 gp_next_lid = 0;
-s32 gp_paused = 0x1000;
-s32 gp_ram_size_bytes = 0x200000;
-s32 gp_use_cd = 0;
+extern s32 gp_cur_lid;
+extern s32 gp_next_lid;
+extern s32 gp_paused;
+extern s32 gp_ram_size_bytes;
+extern s32 gp_use_cd;
 
 /* .sbss owned by this unit. */
-asm(".globl gp_rcnt_event, gp_core_init_done");
-u32 gp_rcnt_event;
-u32 gp_core_init_done;
+extern u32 gp_rcnt_event;
+extern u32 gp_core_init_done;
 
 /* Run levels until the exit flag is set: pause toggling, demo playback,
  * level transitions, per-frame update and zone-specific drawing. */

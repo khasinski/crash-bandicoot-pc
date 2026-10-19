@@ -25,15 +25,17 @@ static __inline__ void ns_pool_active_inc(void)
 s32 Ns_PageClose(s32 id, s32 count)
 {
     ResourceSlot *slot;
+    s32 addr;
     s32 i;
 
-    slot = g_ns.page_map[id >> 1];
-    if ((s32)slot >= -0xFE) {
+    addr = RAM_AT(s32, g_ns.page_map)[id >> 1];
+    if (addr >= -0xFE) {
         return 0;
     }
-    if (slot == (ResourceSlot *)-0xFF) {
+    if (addr == -0xFF) {
         return 1;
     }
+    slot = RAM_AT(ResourceSlot, addr);
     if ((u16)slot->word06 >= 2 && (u16)slot->word06 <= 3) {
         return 1;
     }
@@ -67,12 +69,14 @@ void * Ns_EntryPage(s32 addr)
     ResourceSlot *slot = Ns_EntryPageStruct(addr);
 
     if (slot != NULL) {
-        return slot->header;
+        return RAM_AT(void, slot->header);
     }
     return NULL;
 }
 
-void * Ns_PageStruct(u32 *ref)
+/* Returns the page slot's PS1 address, or a negative status (-0xFF when the
+ * entry is not paged). Resolves an EID reference to its bucket in place. */
+s32 Ns_PageStruct(u32 *ref)
 {
     s32 id;
     ResourceBucket *bucket;
@@ -82,19 +86,19 @@ void * Ns_PageStruct(u32 *ref)
     id = *ref;
     if (id & 1) {
         bucket = Ns_Probe(id);
-        *ref = (u32)bucket;
+        *ref = Ram_Addr(bucket);
     } else {
-        bucket = (ResourceBucket *)id;
+        bucket = RAM_AT(ResourceBucket, id);
     }
     entry = bucket->entry;
     if (entry & 1) {
-        return g_ns.page_map[entry >> 1];
+        return RAM_AT(s32, g_ns.page_map)[entry >> 1];
     }
     slot = Ns_EntryPageStruct(entry);
     if (slot != NULL) {
-        return slot;
+        return (s32)Ram_Addr(slot);
     }
-    return (ResourceSlot *)-0xFF;
+    return -0xFF;
 }
 
 static __inline__ ResourceSlot *ns_find_physical(s32 addr)

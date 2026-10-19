@@ -9,7 +9,7 @@ typedef struct GpuPolyF4 {
     s16 x3, y3;
 } GpuPolyF4;
 
-typedef struct {
+typedef struct FadeTable {
     u8 bytes[19];
 } FadeTable;
 

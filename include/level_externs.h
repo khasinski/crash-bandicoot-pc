@@ -1,9 +1,9 @@
 #ifdef CRASH_EXT_LEVEL_CHECKPOINT_0
-extern LevelHeader *g_ns_page_pool[];
+extern RAM_REF(LevelHeader) g_ns_page_pool[];
 #endif
 
 #ifdef CRASH_EXT_LEVEL_CHECKPOINT_1
-extern SaveObj *gp_crash_obj[2];
+extern RAM_REF(SaveObj) gp_crash_obj[2];
 extern SaveVec g_checkpoint_spawn_trans;
 #endif
 
@@ -13,7 +13,7 @@ extern u32 g_fade_counter;
 #endif
 
 #ifdef CRASH_EXT_LEVEL_COLLISION_0
-extern LevelStateView *g_ns_page_pool[];
+extern RAM_REF(LevelStateView) g_ns_page_pool[];
 #endif
 
 #ifdef CRASH_EXT_LEVEL_COLLISION_1
@@ -30,11 +30,11 @@ extern SubBoxList g_obj_bounds;
 #endif
 
 #ifdef CRASH_EXT_LEVEL_LIGHT
-extern LevelHeader *g_ns_page_pool[];
+extern RAM_REF(LevelHeader) g_ns_page_pool[];
 #endif
 
 #ifdef CRASH_EXT_LEVEL_OCTREE_0
-extern SubObj *gp_crash_obj[];
+extern RAM_REF(SubObj) gp_crash_obj[];
 #endif
 
 #ifdef CRASH_EXT_LEVEL_OCTREE_1
@@ -48,5 +48,5 @@ extern s32 g_mdat_title_str_ptr[];
 #endif
 
 #ifdef CRASH_EXT_LEVEL_UPDATE_1
-extern void *gp_level_entry;
+extern RAM_REF(void) gp_level_entry;
 #endif

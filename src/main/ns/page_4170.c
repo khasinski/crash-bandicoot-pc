@@ -16,7 +16,7 @@ typedef struct NsDirectoryExt {
 } NsDirectoryExt;
 
 typedef struct PageSlot {
-    u8 *header;
+    RAM_REF(u8) header;
     u16 state;
     s16 word06;
     s16 word08;
@@ -28,7 +28,7 @@ typedef struct PageSlot {
     s32 word18;
     s32 word1C;
     s32 word20;
-    struct PageSlot *slot;
+    RAM_REF(struct PageSlot) slot;
     u32 word28;
 } PageSlot;
 
@@ -108,7 +108,8 @@ void Ns_PageDecompress(u8 *src, u8 *dst)
 static __inline__ s32 ns_page_resolve(ResourceHeader *page)
 {
     s32 count = page->count;
-    ResourceEntry **entries = page->entries;
+    u32 *entries = page->entries;
+    u32 base = Ram_Addr(page);
     s32 i, j;
     ResourceEntry *entry;
     u32 *items;
@@ -120,14 +121,14 @@ static __inline__ s32 ns_page_resolve(ResourceHeader *page)
         return -0x12;
     }
     for (i = count - 1; i >= 0; i--) {
-        entry = (ResourceEntry *)((u32)page + (u32)entries[i]);
-        entries[i] = entry;
+        entries[i] += base;
+        entry = RAM_AT(ResourceEntry, entries[i]);
         items = (u32 *)&entry->data;
         for (j = entry->word0C; j >= 0; j--) {
-            items[j] = (u32)entry + items[j];
+            items[j] += entries[i];
         }
     }
-    entries[count] = (ResourceEntry *)((u32)page + (u32)entries[count]);
+    entries[count] += base;
     return -0xFF;
 }
 
@@ -141,25 +142,26 @@ static __inline__ s32 ns_cd_check(s32 enabled)
 
 static __inline__ s32 ns_cd_read(PageSlot *slot, s32 count)
 {
-    u8 loc[16];
+    CdlLOC loc;
     s32 id;
     s32 sectors;
     u8 *buf;
     s32 pos;
+    NsDirectoryExt *directory = RAM_AT(NsDirectoryExt, g_ns.directory);
 
     id = slot->id;
     if (slot->word0E != 0) {
         sectors = (count << 5) - slot->word0C;
-        buf = slot->header + (slot->word0C << 11);
-        pos = g_ns.nsf_sector + (((NsDirectoryExt *)g_ns.directory)->words420[id >> 1] >> 6);
+        buf = RAM_AT(u8, slot->header) + (slot->word0C << 11);
+        pos = g_ns.nsf_sector + (directory->words420[id >> 1] >> 6);
     } else {
         sectors = count << 5;
-        pos = g_ns.nsf_sector + ((NsDirectoryExt *)g_ns.directory)->word418 + ((id >> 1) << 5);
-        buf = slot->header;
+        pos = g_ns.nsf_sector + directory->word418 + ((id >> 1) << 5);
+        buf = RAM_AT(u8, slot->header);
     }
-    CdIntToPos(pos, loc);
-    CdControlF(2, loc);
-    if (CdRead(sectors, buf, 0x80) == 0) {
+    CdIntToPos(pos, &loc);
+    CdControlF(2, (u_char *)&loc);
+    if (CdRead(sectors, (u_long *)buf, 0x80) == 0) {
         return -0x10;
     }
     return -0xFF;
@@ -174,23 +176,24 @@ PageSlot *Ns_PageTranslate(PageSlot *slot)
     s32 i;
     s32 next_offset;
     PageSlot *prev;
+    NsDirectoryExt *directory = RAM_AT(NsDirectoryExt, g_ns.directory);
 
     if (state == 3 || state == 0xD) {
         if (slot->word0E != 0) {
-            Ns_PageDecompress(slot->header + (slot->word0C << 11), slot->header);
+            Ns_PageDecompress(RAM_AT(u8, slot->header) + (slot->word0C << 11), RAM_AT(u8, slot->header));
         }
         slot->state = 4;
-        ns_page_resolve((ResourceHeader *)slot->header);
+        ns_page_resolve(RAM_AT(ResourceHeader, slot->header));
         return NULL;
     }
 
-    compressed = (slot->id >> 1) < ((NsDirectoryExt *)g_ns.directory)->word41C && g_ns.wordA98 != 0;
+    compressed = (slot->id >> 1) < directory->word41C && g_ns.wordA98 != 0;
     for (i = 0; i < count; i++) {
         if (state == 2) {
             slot->word0E = compressed;
             if (compressed != 0) {
                 next_offset = offset + 0x20;
-                offset = next_offset - (((NsDirectoryExt *)g_ns.directory)->words420[slot->id >> 1] & 0x3F);
+                offset = next_offset - (directory->words420[slot->id >> 1] & 0x3F);
                 slot->word0C = offset;
             }
             if ((s16)slot->state == state) {
@@ -198,11 +201,11 @@ PageSlot *Ns_PageTranslate(PageSlot *slot)
             } else {
                 slot->state = 0xD;
                 if (compressed != 0) {
-                    slot->word10 = (u32)(slot->header + (((((NsDirectoryExt *)g_ns.directory)->words420[slot->id >> 1] & 0x3F) + slot->word0C) << 11));
+                    slot->word10 = slot->header + (((directory->words420[slot->id >> 1] & 0x3F) + slot->word0C) << 11);
                 } else {
-                    slot->word10 = (u32)slot[1].header;
+                    slot->word10 = slot[1].header;
                 }
-                *(u16 *)slot->word10 = 0x8765;
+                *RAM_AT(u16, slot->word10) = 0x8765;
             }
         }
         prev = slot;
@@ -228,14 +231,14 @@ loop:
     switch ((s16)slot->state) {
     case 13:
         if (id == -1) {
-            if (*(u16 *)slot->word10 == 0x8765) {
+            if (*RAM_AT(u16, slot->word10) == 0x8765) {
                 break;
             }
         } else if (!ns_cd_check(1)) {
             break;
         }
         Ns_PageTranslate(slot);
-        if (id != -1 && slot != slot->slot) {
+        if (id != -1 && Ram_Addr(slot) != slot->slot) {
             Ns_PageUpdate(slot + 1, id);
         }
         goto case_4;
@@ -245,7 +248,7 @@ loop:
         }
         if (id != -1) {
             shifted_id = id >> 1;
-            max = slot->slot->id >> 1;
+            max = RAM_AT(PageSlot, slot->slot)->id >> 1;
             in_range = shifted_id <= max && shifted_id > max - slot->word1C;
             if (!in_range) {
                 break;
@@ -259,12 +262,12 @@ loop:
             break;
         }
         next_slot = Ns_PageTranslate(slot);
-        g_ns.wordA84 = (s32)slot;
+        g_ns.wordA84 = (s32)Ram_Addr(slot);
         ns_cd_read(next_slot, slot->word1C);
         slot = next_slot;
         goto loop;
     case 3:
-        if (gp_pause_B_pressed != 0 && (PageSlot *)g_ns.wordA84 == slot) {
+        if (gp_pause_B_pressed != 0 && (u32)g_ns.wordA84 == Ram_Addr(slot)) {
             if (id == -1) {
                 if (ns_cd_check(0)) {
                     goto finish_cd;
@@ -288,7 +291,7 @@ loop:
         }
     case 4:
     case_4:
-        if ((u16)(((ResourceHeader *)slot->header)->kind - 3) >= 2) {
+        if ((u16)(RAM_AT(ResourceHeader, slot->header)->kind - 3) >= 2) {
             Ns_PageUpdateEntries(slot->word08);
             g_ns.pool.active_count--;
             break;
@@ -302,9 +305,10 @@ loop:
             break;
         }
         arg1 = -1;
-        kind = ((ResourceHeader *)slot->header)->kind;
+        kind = RAM_AT(ResourceHeader, slot->header)->kind;
         if (kind == 4) {
-            arg1 = *(s32 *)(((ResourceHeader *)slot->header)->entries[0]->data) + g_ns.audio_page_count;
+            entry = RAM_AT(ResourceEntry, RAM_AT(ResourceHeader, slot->header)->entries[0]);
+            arg1 = *RAM_AT(s32, entry->data) + g_ns.audio_page_count;
         }
         idx = Ns_AudioPageAllocate(kind, arg1);
         if (idx == -12) {
@@ -314,20 +318,21 @@ loop:
         }
         spu_slot = &g_spu_slots[idx];
         slot->state = 11;
-        slot->slot = (PageSlot *)spu_slot;
-        g_ns.wordA8C = (s32)slot;
+        slot->slot = Ram_Addr(spu_slot);
+        g_ns.wordA8C = (s32)Ram_Addr(slot);
         spu_slot->state = 11;
         spu_slot->id = slot->id;
-        SpuSetTransferStartAddr((u32)spu_slot->base);
-        header = (ResourceHeader *)slot->header;
+        SpuSetTransferStartAddr(spu_slot->base);
+        header = RAM_AT(ResourceHeader, slot->header);
         if (header->kind == 3) {
-            SpuWrite(header, 0x10000);
+            SpuWrite((u_char *)header, 0x10000);
         } else if (header->kind == 4) {
-            entry = header->entries[0];
-            SpuWrite((&entry->data)[1], ((s32 *)entry->data)[1]);
+            entry = RAM_AT(ResourceEntry, header->entries[0]);
+            /* Item 1 is the sample data; item 0 starts with its size. */
+            SpuWrite(RAM_AT(u_char, (&entry->data)[1]), RAM_AT(s32, entry->data)[1]);
         }
     case 11:
-        if ((PageSlot *)g_ns.wordA8C == slot) {
+        if ((u32)g_ns.wordA8C == Ram_Addr(slot)) {
             if (SpuIsTransferCompleted(id == slot->id)) {
                 Ns_PageUpdateEntries(slot->word08);
                 g_ns.wordA8C = 0;
@@ -357,7 +362,7 @@ s32 Ns_PageAllocate(s32 *count)
         phys = g_ns.physical;
         cost = 0;
         for (j = 0; j < (*count < g_ns.physical_count - i ? *count : g_ns.physical_count - i); j++) {
-            slot = (ResourceSlot *)((i + j) * sizeof(ResourceSlot) + (s32)phys);
+            slot = &phys[i + j];
             state = slot->state;
             if (state != 1) {
                 if ((u16)(state - 20) >= 2) {

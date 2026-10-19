@@ -34,14 +34,14 @@ s32 Ns_TexturePageAllocate(void)
     scan_offset = 15 * 44;
     do
     {
-        if ((*((s16 *) (((u32) g_slst_buf1) + scan_offset))) == wanted)
+        if ((*((s16 *) ((u8 *) g_slst_buf1 + scan_offset))) == wanted)
             goto found;
         i--;
         scan_offset -= 44;
     }
     while (i >= 0);
     i = 15;
-    if (g_pads != NULL)
+    if (g_pads != 0)
         goto search;
     Ns_TexturePageFree(15);
     return 15;
@@ -54,7 +54,7 @@ s32 Ns_TexturePageAllocate(void)
     search:
     bias = 0xFFEC;
 
-    zone = (ZoneLoadInfo *) g_pads->data;
+    zone = RAM_AT(ZoneLoadInfo, RAM_AT(ResourceEntry, g_pads)->data);
     offset = 15 * 44;
     slot = &g_slst_buf0[15];
     do
@@ -64,7 +64,7 @@ s32 Ns_TexturePageAllocate(void)
         {
             for (j = 0; j < zone->count; j++)
             {
-                id = *((u32 *) (((u32) g_ns_tex_hash_table) + offset));
+                id = *((u32 *) ((u8 *) g_ns_tex_hash_table + offset));
                 ref = zone->refs[j];
                 if (ref & 1)
                 {
@@ -72,7 +72,7 @@ s32 Ns_TexturePageAllocate(void)
                         goto hit;
                 }
                 else
-                    if (((ResourceEntry *) ref)->id == id)
+                    if (RAM_AT(ResourceEntry, ref)->id == id)
                     goto hit;
                 continue;
                 hit:

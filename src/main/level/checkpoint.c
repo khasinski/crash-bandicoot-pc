@@ -1,7 +1,7 @@
 #include "common.h"
 #include "zone.h"
 
-typedef struct {
+typedef struct LightMat {
     s16 v[3][3];
     s16 b[3];
     s16 c[3][3];
@@ -29,9 +29,9 @@ typedef struct SaveTransform {
 
 typedef struct SaveObj {
     u8 reserved_00[0x28];
-    ResourceEntry *entry;
+    RAM_REF(ResourceEntry) entry;
     u8 reserved_2c[0x4C];
-    struct SaveObj *collider;
+    RAM_REF(struct SaveObj) collider;
     u8 reserved_7c[4];
     SaveTransform transform;
     s32 vel_x;
@@ -62,7 +62,7 @@ typedef struct LevelSave {
 #define CRASH_EXT_LEVEL_CHECKPOINT_1
 #include "level_externs.h"
 #undef CRASH_EXT_LEVEL_CHECKPOINT_1
-s32 gp_checkpoint_zone_id = 0;
+extern s32 gp_checkpoint_zone_id;
 
 #define CRASH_EXT_LEVEL_CHECKPOINT_2
 #include "level_externs.h"

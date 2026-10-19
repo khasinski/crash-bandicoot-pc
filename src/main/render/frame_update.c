@@ -17,7 +17,7 @@ typedef struct RenderBufferFull {
     u32 ordering_table[0x800];
 } RenderBufferFull;
 
-typedef struct {
+typedef struct BufferToken {
     u8 bytes[4];
 } BufferToken;
 
@@ -25,7 +25,7 @@ typedef struct {
 #include "render_externs.h"
 #undef CRASH_EXT_RENDER_FRAME_UPDATE_0
 
-s32 gp_rcnt_stopped = 0;
+extern s32 gp_rcnt_stopped;
 #define CRASH_EXT_RENDER_FRAME_UPDATE_1
 #include "render_externs.h"
 #undef CRASH_EXT_RENDER_FRAME_UPDATE_1
@@ -47,7 +47,7 @@ typedef struct ZoneHeader8214 {
 
 typedef struct ZoneEntry8214 {
     u8 reserved_00[0x10];
-    ZoneHeader8214 *header;
+    RAM_REF(ZoneHeader8214) header;
 } ZoneEntry8214;
 
 #define CRASH_EXT_RENDER_FRAME_UPDATE_2

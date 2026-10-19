@@ -8,7 +8,7 @@
  */
 typedef struct ObjectView {
     u8 reserved_00[0x10];
-    u8 *resource;
+    RAM_REF(u8) resource;
 } ObjectView;
 
 /* Runtime object view assembled from release, frame restore and flag access.
@@ -16,18 +16,18 @@ typedef struct ObjectView {
  * entry is a tagged word, not an unconditionally dereferenceable pointer. */
 typedef struct GoolRuntimeObject {
     s32 kind;
-    struct GoolRuntimeObject *word04;
+    RAM_REF(struct GoolRuntimeObject) word04;
     u8 reserved_08[0x20];
     s32 entry;
     u8 reserved_2c[0x3C];
-    struct GoolRuntimeObject *next;
-    struct GoolRuntimeObject *children;
+    RAM_REF(struct GoolRuntimeObject) next;
+    RAM_REF(struct GoolRuntimeObject) children;
     u8 reserved_70[0x5C];
     u32 flagsCC;
     u8 reserved_d0[0xC];
-    u32 *stack;
+    RAM_REF(u32) stack;
     u32 pc;
-    u32 *frame;
+    RAM_REF(u32) frame;
     u8 reserved_e8[0x38];
     u32 flags120;
     u8 reserved_124[0x14];
@@ -49,7 +49,7 @@ typedef struct GoolDefaults {
 struct ResourceEntry;
 typedef struct GoolDefaultsObject {
     u8 reserved_00[0x28];
-    struct ResourceEntry *entry;
+    RAM_REF(struct ResourceEntry) entry;
     u32 word2C;
     GoolDefaults defaults;
 } GoolDefaultsObject;
@@ -63,13 +63,13 @@ typedef struct GoolMessageEntry {
 
 typedef struct GoolMessageResource {
     u8 reserved_00[0x10];
-    GoolMessageEntry *entry;
+    RAM_REF(GoolMessageEntry) entry;
 } GoolMessageResource;
 
 typedef struct GoolActorView {
     u8 reserved_00[8];
     s32 bounds[6];
-    GoolMessageResource *resource;
+    RAM_REF(GoolMessageResource) resource;
     u8 reserved_24[0x5C];
     s32 position[3];
     u8 reserved_8c[0x24];
@@ -77,7 +77,7 @@ typedef struct GoolActorView {
 } GoolActorView;
 
 typedef struct GoolMessage {
-    GoolActorView *source;
+    RAM_REF(GoolActorView) source;
     s32 word04, word08, selector, count, word14;
 } GoolMessage;
 

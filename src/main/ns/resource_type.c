@@ -9,7 +9,7 @@ s32 Ns_EIDType(Request *arg0) {
 
     temp_v1 = arg0->entry;
     if (!(temp_v1 & 3)) {
-        return ((Entry *)temp_v1)->kind;
+        return RAM_AT(Entry, temp_v1)->kind;
     }
     temp_a2 = arg0->id;
     var_v1 = 4;

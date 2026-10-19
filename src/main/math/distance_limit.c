@@ -1,6 +1,6 @@
 #include "vector.h"
 
-typedef struct {u8 reserved_00[0xC8];s32 flags;} ObjectFlagsView;
+typedef struct ObjectFlagsView {u8 reserved_00[0xC8];s32 flags;} ObjectFlagsView;
 s32 Math_OutOfRange(ObjectFlagsView *object, Vec3 *a, Vec3 *b, s32 max_x, s32 max_y, s32 max_z) {
     s32 min_x, min_y, min_z;
     s32 dx;

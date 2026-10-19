@@ -1,8 +1,7 @@
 #include "common.h"
 
-/* The two retail generator states both start at one. */
-s32 gp_seed_a = 1;
-s32 gp_seed_b = 1;
+extern s32 gp_seed_a;
+extern s32 gp_seed_b;
 
 /* Advance the corresponding LCG state, normalise through unsigned division
  * and reduction, then take a signed remainder against the supplied bound.

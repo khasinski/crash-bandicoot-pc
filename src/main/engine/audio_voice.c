@@ -4,25 +4,25 @@
  * Section 2: Audio / SPU Voice Management (asm/USA/main/text_20878.s)
  * ========================================================================= */
 
-typedef struct {
+typedef struct AudioVolume {
     s16 left;
     s16 right;
 } AudioVolume;
 
-typedef struct {
+typedef struct Vec3 {
     s32 x;
     s32 y;
     s32 z;
 } Vec3;
 
-typedef struct {
+typedef struct GoolObjectAudio {
     u8 reserved_00[0x80];
     Vec3 trans;
     u8 reserved_8c[0x40];
     u32 status_b;
 } GoolObjectAudio;
 
-typedef struct {
+typedef struct VoiceParams {
     u32 b0 : 1;
     u32 b1 : 1;
     u32 b2 : 1;
@@ -36,7 +36,7 @@ typedef struct {
     u32 b10 : 1;
     u32 b11 : 1;
     s32 word_04;
-    GoolObjectAudio *obj;
+    RAM_REF(GoolObjectAudio) obj;
     u8 word_0c;
     u8 priority;
     s16 volume;
@@ -52,12 +52,12 @@ typedef struct {
     s32 pitch_step;
 } VoiceParams;
 
-typedef struct {
+typedef struct VoiceEntry {
     s32 id;
     VoiceParams params;
 } VoiceEntry;
 
-typedef struct {
+typedef struct SpuVoiceAttrLocal {
     u32 voice;
     u32 mask;
     AudioVolume volume;
@@ -82,7 +82,7 @@ typedef struct {
     u16 reserved;
 } SpuVoiceAttrLocal;
 
-typedef struct {
+typedef struct LevelHeaderInfo {
     s32 word_00;
     s32 id;
 } LevelHeaderInfo;
@@ -90,17 +90,16 @@ typedef struct {
 #define CRASH_EXT_ENGINE_AUDIO_VOICE_0
 #include "engine_externs.h"
 #undef CRASH_EXT_ENGINE_AUDIO_VOICE_0
-s32 gp_midi_state = 0x1E;
-asm(".globl gp_sfx_vol, gp_mus_vol, gp_sfx_vol_scaled, gp_mus_vol_scaled");
-s32 gp_sfx_vol;
-s16 gp_mus_vol;
-s16 gp_sfx_vol_scaled;
-s16 gp_mus_vol_scaled;
+extern s32 gp_midi_state;
+extern s32 gp_sfx_vol;
+extern s16 gp_mus_vol;
+extern s16 gp_sfx_vol_scaled;
+extern s16 gp_mus_vol_scaled;
 
 #define CRASH_EXT_ENGINE_AUDIO_VOICE_1
 #include "engine_externs.h"
 #undef CRASH_EXT_ENGINE_AUDIO_VOICE_1
-typedef struct {
+typedef struct ZonePtr57914 {
     u8 reserved_00[0x10];
     s32 word_10;
 } ZonePtr57914;

@@ -16,7 +16,7 @@ s32 Gfx_TgeoGetTexinfoArray(s32 arg0)
     return arg0;
 }
 
-typedef struct {
+typedef struct RenderEntryData {
     u32 words[5];
     struct {
         u8 reserved[3];
@@ -24,9 +24,9 @@ typedef struct {
     } entries[1];
 } RenderEntryData;
 
-typedef struct {
+typedef struct RenderEntry {
     u8 reserved_00[0x10];
-    RenderEntryData *data;
+    RAM_REF(RenderEntryData) data;
 } RenderEntry;
 
 s32 Gfx_TgeoLookupEntry(RenderEntry *entry)

@@ -7,7 +7,7 @@
 #undef CRASH_EXT_RENDER_TRI_DRAW_0
 typedef struct PrimBuf9398 {
     u8 reserved_00[0x78];
-    void *prim_ptr;
+    RAM_REF(void) prim_ptr;
 } PrimBuf9398;
 
 #define CRASH_EXT_RENDER_TRI_DRAW_1
@@ -30,15 +30,15 @@ typedef struct Group9DCC {
     s32 try;
     s32 trz;
     s32 word_10;
-    u8 *tris;
-    u8 *verts;
-    u8 *tex_tab;
+    RAM_REF(u8) tris;
+    RAM_REF(u8) verts;
+    RAM_REF(u8) tex_tab;
     u8 reserved_20[0x20];
 } Group9DCC;
 
 typedef struct ZoneEntry9DCC {
     u8 reserved_00[0x10];
-    u8 *header;
+    RAM_REF(u8) header;
 } ZoneEntry9DCC;
 
 typedef struct SortList9DCC {

@@ -9,7 +9,7 @@ typedef struct ZoneFogHeader {
 
 typedef struct ZoneHeader {
     u8 reserved[0x10];
-    ZoneFogHeader *data;
+    RAM_REF(ZoneFogHeader) data;
 } ZoneHeader;
 
 typedef struct NsdHeader {
@@ -17,7 +17,7 @@ typedef struct NsdHeader {
     s32 type;
 } NsdHeader;
 
-typedef struct {
+typedef struct Sp {
     u8 reserved[0x48];
     s32 a, b, c, d, e, f, g, h;
 } Sp;

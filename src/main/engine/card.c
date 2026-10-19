@@ -184,22 +184,22 @@ void Card_OnReadGlobalsError(FileRequest *request) {
     Card_Close(request->resource);
 }
 
-typedef struct {
+typedef struct EngineDirectorySlotView {
     s32 word00;
     s32 word04;
     s32 record_index;
     char title[64];
 } EngineDirectorySlotView;
 
-typedef struct {
+typedef struct EngineDirectoryStateView {
     EngineState prefix;
     s32 empty_scan_count, record_count, record_cursor;
     EngineDirectorySlotView slots[15];
     EngineDirectoryRecord records[15];
 } EngineDirectoryStateView;
 
-typedef struct { s32 v; } WordView;
-typedef struct { u32 v; } UWordView;
+typedef struct WordView { s32 v; } WordView;
+typedef struct UWordView { u32 v; } UWordView;
 
 #define ENGINE_CARD_SCAN_RETRY(io, request) ({ \
     s32 retries = 0, failed; \

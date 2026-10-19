@@ -1,8 +1,8 @@
 #include "common.h"
 
-typedef struct {u8 reserved_00[4];u16 word04;} Context;
-typedef struct {u8 reserved_00[0x2FC];u32 flags;} Data;
-typedef struct {u8 reserved_00[0x10];Data *data;} Root;
+typedef struct Context {u8 reserved_00[4];u16 word04;} Context;
+typedef struct Data {u8 reserved_00[0x2FC];u32 flags;} Data;
+typedef struct Root {u8 reserved_00[0x10];Data *data;} Root;
 #define CRASH_EXT_ENGINE_TAG_LIST
 #include "engine_externs.h"
 #undef CRASH_EXT_ENGINE_TAG_LIST

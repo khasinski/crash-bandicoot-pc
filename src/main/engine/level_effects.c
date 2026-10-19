@@ -1,7 +1,7 @@
 #include "common.h"
 #include "zone.h"
 
-typedef struct {
+typedef struct LightMat {
     s16 v[3][3];
     s16 b[3];
     s16 c[3][3];
@@ -29,9 +29,9 @@ typedef struct SaveTransform {
 
 typedef struct SaveObj {
     u8 reserved_00[0x28];
-    ResourceEntry *entry;
+    RAM_REF(ResourceEntry) entry;
     u8 reserved_2c[0x4C];
-    struct SaveObj *collider;
+    RAM_REF(struct SaveObj) collider;
     u8 reserved_7c[4];
     SaveTransform transform;
     s32 vel_x;
@@ -52,28 +52,28 @@ typedef struct SaveObj {
 #include "engine_externs.h"
 #undef CRASH_EXT_ENGINE_LEVEL_EFFECTS_1
 
-s32 gp_shader_prev_mode = -1;
-s32 gp_octree_root = 0;
+extern s32 gp_shader_prev_mode;
+extern s32 gp_octree_root;
 
-static s32 gp_shader_param_0;
-static s32 gp_shader_param_1;
-static s32 gp_shader_param_2;
-static s32 gp_shader_param_3;
-static s32 gp_shader_param_4;
-static s32 gp_shader_param_5;
-static s32 gp_shader_param_6;
-static s32 gp_shader_param_7;
-static s32 gp_shader_param_8;
-static s32 gp_shader_param_9;
-static s32 gp_shader_param_10;
-static s32 gp_shader_param_11;
-static s32 gp_shader_param_12;
-static s32 gp_shader_param_13;
-static s32 gp_shader_param_14;
-static s32 gp_shader_param_15;
-static s32 gp_shader_param_16;
-static s32 gp_shader_param_17;
-static s32 gp_shader_param_vec[2];
+extern s32 gp_shader_param_0;
+extern s32 gp_shader_param_1;
+extern s32 gp_shader_param_2;
+extern s32 gp_shader_param_3;
+extern s32 gp_shader_param_4;
+extern s32 gp_shader_param_5;
+extern s32 gp_shader_param_6;
+extern s32 gp_shader_param_7;
+extern s32 gp_shader_param_8;
+extern s32 gp_shader_param_9;
+extern s32 gp_shader_param_10;
+extern s32 gp_shader_param_11;
+extern s32 gp_shader_param_12;
+extern s32 gp_shader_param_13;
+extern s32 gp_shader_param_14;
+extern s32 gp_shader_param_15;
+extern s32 gp_shader_param_16;
+extern s32 gp_shader_param_17;
+extern s32 gp_shader_param_vec[2];
 
 void Shader_ParamsUpdateRipple(s32 arg0)
 {

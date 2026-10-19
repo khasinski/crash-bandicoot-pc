@@ -27,7 +27,7 @@ s32 Ns_StringToEID(u8 *name)
             }
         }
         name++;
-    } while ((s32)name < (s32)end);
+    } while (name < end);
     id <<= 1;
     return id | 1;
 }

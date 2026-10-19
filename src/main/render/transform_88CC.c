@@ -16,9 +16,9 @@ typedef struct GoolObj88CC {
     s32 kind;
     s32 word_04;
     s32 bound[6];
-    void *exec;
+    RAM_REF(void) exec;
     s32 word_24;
-    void *zone;
+    RAM_REF(void) zone;
     s32 word_2c;
     LightMat88CC light;
     u8 reserved_60[0x80 - 0x60];
@@ -37,7 +37,7 @@ typedef struct ZoneHeader88CC {
 
 typedef struct ResourceEntry88CC {
     u8 reserved_00[0x10];
-    ZoneHeader88CC *data;
+    RAM_REF(ZoneHeader88CC) data;
 } ResourceEntry88CC;
 
 #define CRASH_EXT_RENDER_TRANSFORM_88CC

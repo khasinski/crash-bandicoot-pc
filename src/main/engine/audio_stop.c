@@ -10,8 +10,7 @@
                                /* extern */
 
 /* Export the real small-common channel identifier. */
-asm(".globl gp_midi_vab_id_2");
-s16 gp_midi_vab_id_2;
+extern s16 gp_midi_vab_id_2;
 
 void Midi_Close(s16 arg0, s32 arg1) {
     if (arg0 != -1) {

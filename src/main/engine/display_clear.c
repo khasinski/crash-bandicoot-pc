@@ -2,9 +2,9 @@
 typedef GpuDrawing Drawing;
 typedef GpuTile Tile;
 
-typedef struct {
+typedef struct RenderSystem {
     s32 count;
-    RenderBuffer *active[3];
+    RAM_REF(RenderBuffer) active[3];
     RenderBuffer buffers[2];
 } RenderSystem;
 

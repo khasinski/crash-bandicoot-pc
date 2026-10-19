@@ -7,5 +7,5 @@
 void Ns_PageDelete(ResourceSlot *slot)
 {
     slot->state = 1;
-    g_ns_page_status_map[slot->id >> 1] = -0x12;
+    RAM_AT(s32, g_ns_page_status_map)[slot->id >> 1] = -0x12;
 }

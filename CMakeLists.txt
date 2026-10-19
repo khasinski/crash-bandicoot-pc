@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.21..3.31)
-project(crash-bandicoot-pc LANGUAGES C)
+project(crash-bandicoot-pc LANGUAGES C ASM)
 
 set(CMAKE_C_STANDARD 11)
 set(CMAKE_C_STANDARD_REQUIRED ON)
@@ -34,6 +34,16 @@ function(crash_original_module target)
     endif()
 endfunction()
 
+# Game memory (a PS1 RAM image with every global at its original address)
+# and the host side of the PS1-format interfaces.
+add_library(crash-platform OBJECT
+    src/main/ram_layout.S
+    src/platform/ram.c
+    src/platform/gpu.c)
+target_include_directories(crash-platform PRIVATE include)
+target_link_libraries(crash-platform PRIVATE psyz)
+target_compile_definitions(crash-platform PRIVATE __psyz)
+
 # Fixed-point math, angles, distances and trigonometry. Modules join as their
 # platform dependencies become portable; no duplicate game logic.
 crash_original_module(crash-original-math
@@ -51,7 +61,7 @@ crash_original_module(crash-original-math
 
 if(BUILD_TESTING)
     add_executable(test-original-math tests/original_math.c
-        $<TARGET_OBJECTS:crash-original-math>)
+        $<TARGET_OBJECTS:crash-original-math> $<TARGET_OBJECTS:crash-platform>)
     target_include_directories(test-original-math PRIVATE include)
     target_compile_definitions(test-original-math PRIVATE __psyz)
     target_link_libraries(test-original-math PRIVATE psyz)

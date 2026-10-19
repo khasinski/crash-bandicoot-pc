@@ -14,7 +14,7 @@ typedef struct ResourceEntry {
     u32 id;
     s32 kind;
     s32 word0C;
-    u8 *data;
+    RAM_REF(u8) data;
 } ResourceEntry;
 
 /* Item-pointer view used by Title_LoadScreen on a resolved resource entry.
@@ -22,7 +22,7 @@ typedef struct ResourceEntry {
  * Keep separate from ResourceHeader, whose page-header fields differ. */
 typedef struct ResourceItemListView {
     u8 reserved_00[0x10];
-    u8 *items[1];
+    RAM_REF(u8) items[1];
 } ResourceItemListView;
 
 /* The first item's word at +0x204 selects another item in that list.
@@ -67,7 +67,7 @@ typedef struct ResourceHeader {
     u32 id;
     u32 count;
     u32 word0C;
-    ResourceEntry *entries[1];
+    RAM_REF(ResourceEntry) entries[1];
 } ResourceHeader;
 
 /* The resource arrays advance by 0x2C bytes. Offsets and signedness are
@@ -75,7 +75,7 @@ typedef struct ResourceHeader {
  * Fields whose purpose remains unknown retain their offset names.
  */
 typedef struct ResourceSlot {
-    ResourceHeader *header;
+    RAM_REF(ResourceHeader) header;
     u16 state;
     s16 word06;
     s16 word08;
@@ -84,9 +84,9 @@ typedef struct ResourceSlot {
     u32 word10;
     s32 id;
     s32 word18;
-    u8 *base;
-    u32 *mapping;
-    struct ResourceSlot *slot;
+    RAM_REF(u8) base;
+    RAM_REF(u32) mapping;
+    RAM_REF(struct ResourceSlot) slot;
     u32 word28;
 } ResourceSlot;
 
@@ -112,7 +112,7 @@ typedef struct ResourceSlotStateView {
     u8 reserved_02[0xE];
     s32 id;
     u8 reserved_14[8];
-    s32 *id_pointer;
+    RAM_REF(s32) id_pointer;
     u8 reserved_20[0xC];
 } ResourceSlotStateView;
 
@@ -124,18 +124,18 @@ typedef struct ZoneLoadInfo {
 } ZoneLoadInfo;
 
 typedef struct ResourceHandler {
-    s32 (*callback)(ResourceEntry *);
-    s32 (*release)(ResourceEntry *);
+    RAM_REF(void) callback; /* s32 (*)(ResourceEntry *) */
+    RAM_REF(void) release; /* s32 (*)(ResourceEntry *) */
     u32 words[5];
 } ResourceHandler;
 
 /* Shared owners confirmed by the lookup, allocation and unref units.
  * Offset aliases and the ambiguously typed g_ns_page_status_map table stay local. */
-extern ResourceEntry *g_pads;
+extern RAM_REF(ResourceEntry) g_pads;
 extern ResourceSlot g_slst_buf0[];
-extern ResourceBucket **g_ns_hash_buckets;
-extern ResourceBucket *g_ns_entry_table;
-extern ResourceHashMetadata *g_ns_nsd_header;
+extern RAM_REF(ResourceBucket *) g_ns_hash_buckets;
+extern RAM_REF(ResourceBucket) g_ns_entry_table;
+extern RAM_REF(ResourceHashMetadata) g_ns_nsd_header;
 extern ResourcePool g_ns_virtual_page_pool;
 
 s32 Ns_EIDType(ResourceHandle *handle);
@@ -145,7 +145,7 @@ s32 Ns_TexturePageFree(s32 index);
 void Ns_PageDecRef(ResourceSlot *slot);
 void Ns_PageDelete(ResourceSlot *slot);
 ResourceBucket *Ns_Probe(s32 id);
-ResourceBucket *Ns_ProbeSafe(u32 id);
+s32 Ns_ProbeSafe(u32 id);
 
 extern ResourceSlot g_spu_slots[8];
 extern ResourceSlot g_ns_physical_pages[];

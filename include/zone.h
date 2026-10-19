@@ -24,7 +24,7 @@ typedef struct ZonePoint {
  * A nonzero direction component tells which way the path runs. */
 typedef struct ZonePath {
     u32 slst;
-    ResourceEntry *zone;
+    RAM_REF(ResourceEntry) zone;
     u32 neighbor_count;
     ZoneNeighbor neighbors[4];
     u8 entrance;
@@ -77,19 +77,19 @@ typedef struct ZoneHeader {
 
 typedef struct ZoneEntry {
     u8 reserved_00[0x10];
-    void *items[1];
+    RAM_REF(void) items[1];
 } ZoneEntry;
 
 /* Current zone, a second zone pointer, the camera path and the progress
  * along that path. */
 typedef struct LevelPosition {
-    ResourceEntry *zone;
-    ResourceEntry *object_zone;
-    ZonePath *path;
+    RAM_REF(ResourceEntry) zone;
+    RAM_REF(ResourceEntry) object_zone;
+    RAM_REF(ZonePath) path;
     s32 progress;
 } LevelPosition;
 
 extern LevelPosition level_position;
 
-extern ZonePath *g_pad2_state;
+extern RAM_REF(ZonePath) g_pad2_state;
 #endif

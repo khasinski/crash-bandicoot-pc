@@ -24,11 +24,11 @@ typedef struct NsDirectory {
 typedef struct NsState {
     s32 initialized;
     s32 level;
-    ResourceBucket **buckets;
-    ResourceBucket *entries;
-    u32 *level_eid;
-    u8 *level_header;
-    NsDirectory *directory;
+    RAM_REF(ResourceBucket *) buckets;
+    RAM_REF(ResourceBucket) entries;
+    RAM_REF(u32) level_eid;
+    RAM_REF(u8) level_header;
+    RAM_REF(NsDirectory) directory;
     u8 reserved_1c[4];
     u32 nsf_sector;
     s32 draw_skip;
@@ -39,7 +39,7 @@ typedef struct NsState {
     s32 audio_page_count;
     s32 wordA8C;
     s32 wordA90;
-    ResourceSlot **page_map;
+    RAM_REF(ResourceSlot *) page_map;
     s32 wordA98;
 } NsState;
 
@@ -54,10 +54,10 @@ typedef struct NsFileMap {
 /* 21 records at g_ns_bootstrap_ldat; +4 runs before the pages are set up, +8 after. */
 typedef struct NsSubsystem {
     u32 word00;
-    void (*init)(void);
-    void (*init_pages)(void);
+    RAM_REF(void) init; /* void (*)(void) */
+    RAM_REF(void) init_pages; /* void (*)(void) */
     u8 reserved_0c[8];
-    void (*kill)(void);
+    RAM_REF(void) kill; /* void (*)(void) */
     u32 word18;
 } NsSubsystem;
 

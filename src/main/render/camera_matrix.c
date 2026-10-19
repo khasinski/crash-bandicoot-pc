@@ -30,7 +30,7 @@ typedef struct ZoneCamData {
 
 typedef struct ZoneCamEntry {
     u8 reserved_00[0x10];
-    ZoneCamData *data;
+    RAM_REF(ZoneCamData) data;
 } ZoneCamEntry;
 
 typedef struct CamBlock {
@@ -38,7 +38,7 @@ typedef struct CamBlock {
     u8 reserved_824[0x80057888 - 0x80057824];
     Copy12 m888;
     u8 reserved_894[0x80057914 - 0x80057894];
-    ZoneCamEntry *z914;
+    RAM_REF(ZoneCamEntry) z914;
     u8 reserved_918[0x80057938 - 0x80057918];
     s32 w938;
 } CamBlock;
@@ -62,11 +62,11 @@ typedef struct WgeoHeader {
 typedef struct ZoneWorld {
     u32 eid;
     s32 trans[3];
-    WgeoHeader *wgeo;
-    void *item1;
-    void *item2;
-    void *polys;
-    void *tpages[8];
+    RAM_REF(WgeoHeader) wgeo;
+    RAM_REF(void) item1;
+    RAM_REF(void) item2;
+    RAM_REF(void) polys;
+    RAM_REF(void) tpages[8];
 } ZoneWorld;
 
 typedef struct ZoneHeader9A2C {

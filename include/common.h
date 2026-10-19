@@ -6,6 +6,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <psyz/types.h>
+#include "ram.h"
 
 typedef int64_t s64;
 typedef uint64_t u64;
@@ -14,5 +15,6 @@ typedef uint64_t u64;
 
 #include "globals.h"
 #include "functions.h"
+#include "gpu.h"
 
 #endif

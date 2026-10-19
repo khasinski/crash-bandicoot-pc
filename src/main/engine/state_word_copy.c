@@ -1,5 +1,5 @@
 #include "common.h"
-typedef struct {u8 bytes[4];} BufferToken;
+typedef struct BufferToken {u8 bytes[4];} BufferToken;
 #define CRASH_EXT_ENGINE_STATE_WORD_COPY
 #include "engine_externs.h"
 #undef CRASH_EXT_ENGINE_STATE_WORD_COPY

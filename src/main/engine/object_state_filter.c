@@ -1,5 +1,5 @@
 #include "common.h"
-typedef struct {
+typedef struct GoolObj {
     u8 reserved_00[0xD8];
     s32 pid_flags;
 } GoolObj;

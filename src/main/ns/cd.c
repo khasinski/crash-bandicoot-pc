@@ -24,7 +24,7 @@ typedef struct CdResourceEntry {
 } CdResourceEntry;
 
 typedef struct CdResourceSlot {
-    u8 *header;
+    RAM_REF(u8) header;
     u16 state;
     s16 word06;
     s16 word08;
@@ -36,30 +36,31 @@ typedef struct CdResourceSlot {
     s32 word18;
     s32 word1C;
     s32 word20;
-    CdResourceEntry *word24;
+    RAM_REF(CdResourceEntry) word24;
 } CdResourceSlot;
 
 s32 Ns_ReadSectorAsync(CdResourceSlot *slot, s32 count)
 {
-    u8 loc[16];
+    CdlLOC loc;
     s32 id;
     s32 sectors;
     u8 *buf;
     s32 pos;
+    CdResourceHash *hash = RAM_AT(CdResourceHash, g_ns_nsd_header);
 
     id = slot->id;
     if (slot->word0E != 0) {
         sectors = (count << 5) - slot->word0C;
-        buf = slot->header + (slot->word0C << 11);
-        pos = g_ns_nsf_base_sector + (((CdResourceHash *)g_ns_nsd_header)->words420[id >> 1] >> 6);
+        buf = RAM_AT(u8, slot->header) + (slot->word0C << 11);
+        pos = g_ns_nsf_base_sector + (hash->words420[id >> 1] >> 6);
     } else {
         sectors = count << 5;
-        pos = g_ns_nsf_base_sector + ((CdResourceHash *)g_ns_nsd_header)->word418 + ((id >> 1) << 5);
-        buf = slot->header;
+        pos = g_ns_nsf_base_sector + hash->word418 + ((id >> 1) << 5);
+        buf = RAM_AT(u8, slot->header);
     }
-    CdIntToPos(pos, loc);
-    CdControlF(2, loc);
-    if (CdRead(sectors, buf, 0x80) == 0) {
+    CdIntToPos(pos, &loc);
+    CdControlF(2, (u_char *)&loc);
+    if (CdRead(sectors, (u_long *)buf, 0x80) == 0) {
         return -0x10;
     }
     return -0xFF;
@@ -73,7 +74,7 @@ s32 Ns_PageOnComplete(CdResourceSlot *slot, s32 id)
         return 1;
     }
     id >>= 1;
-    max = slot->word24->word14 >> 1;
+    max = RAM_AT(CdResourceEntry, slot->word24)->word14 >> 1;
     if (id <= max && id > max - slot->word1C) {
         return 1;
     }

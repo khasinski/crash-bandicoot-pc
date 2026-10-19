@@ -11,18 +11,18 @@ typedef struct GoolCodeHeader {
 
 typedef struct GoolExecutable {
     u8 reserved_00[0x10];
-    GoolCodeHeader *header;
-    void *code;
-    void *data;
-    u16 *states;
+    RAM_REF(GoolCodeHeader) header;
+    RAM_REF(void) code;
+    RAM_REF(void) data;
+    RAM_REF(u16) states;
     s32 states_base;
 } GoolExecutable;
 
 typedef struct GoolObj {
     u8 reserved_00[0x20];
-    GoolExecutable *exec;
+    RAM_REF(GoolExecutable) exec;
     u8 reserved_24[0x58];
-    struct GoolObj *interrupter;
+    RAM_REF(struct GoolObj) interrupter;
     s32 trans[3];
     u8 reserved_8c[0x44];
     u32 status_c;
@@ -34,10 +34,10 @@ typedef struct GoolObj {
     s32 anim_type;
 } GoolObj;
 
-typedef struct {
+typedef struct GoolQuery {
     u32 mask;
-    GoolObj *other;
-    GoolObj *best;
+    RAM_REF(GoolObj) other;
+    RAM_REF(GoolObj) best;
     s32 max_dist;
     s32 event;
 } GoolQuery;

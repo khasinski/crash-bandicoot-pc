@@ -1,13 +1,13 @@
 #include "common.h"
 #include "zone.h"
 
-typedef struct {
+typedef struct CamSample {
     s32 x, y, z;
     s32 rx, ry, rz;
     s32 sx, sy, sz;
 } CamSample;
 
-typedef struct {
+typedef struct ZoneBase {
     s32 x, y, z;
 } ZoneBase;
 

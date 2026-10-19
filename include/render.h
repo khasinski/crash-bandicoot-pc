@@ -44,9 +44,9 @@ typedef struct RenderCameraPrefix {
     RenderProjectionState projection;
 } RenderCameraPrefix;
 
-extern RenderBuffer *g_db_cur[3];
-extern RenderBuffer *g_ot_cur;
-extern RenderContextView *g_ns_page_pool;
+extern RAM_REF(RenderBuffer) g_db_cur[3];
+extern RAM_REF(RenderBuffer) g_ot_cur;
+extern RAM_REF(RenderContextView) g_ns_page_pool;
 extern RenderProjectionState g_view_proj;
 
 void Gpu_ResetPrims(RenderBuffer *buffer);

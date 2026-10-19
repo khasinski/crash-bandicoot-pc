@@ -1,5 +1,5 @@
 #include "common.h"
-typedef struct {
+typedef struct ReverbAttributes {
     u32 mask;
     s32 mode;
     s16 depth_left,depth_right;

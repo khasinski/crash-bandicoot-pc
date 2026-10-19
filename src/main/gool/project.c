@@ -4,16 +4,16 @@
 #include "common.h"
 #include "vector.h"
 
-typedef struct {
+typedef struct Matrix {
     s16 m[3][3];
     s32 t[3];
 } Matrix;
 
-typedef struct {
+typedef struct SVector {
     s16 x, y, z, reserved;
 } SVector;
 
-typedef struct {
+typedef struct LVector {
     s32 x, y, z, reserved;
 } LVector;
 
@@ -147,7 +147,7 @@ s32 Gool_Project(Vec3 *arg0, Vec3 *arg1)
 
 typedef struct CollideObj {
     u8 reserved_00[0x78];
-    struct CollideObj *other;
+    RAM_REF(struct CollideObj) other;
     u8 reserved_7c[4];
     Vec3 pos;
     u8 reserved_8c[0x3C];

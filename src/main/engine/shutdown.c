@@ -2,7 +2,7 @@
 #include "ns.h"
 /* External word view: this unit uses an absolute reference to the flag. */
 
-typedef struct {
+typedef struct PadSlot {
     u32 word00;
     u32 word04;
     u32 word08;
@@ -10,7 +10,7 @@ typedef struct {
     u32 word10;
 } PadSlot;
 
-typedef struct {
+typedef struct PadState {
     s32 count;
     PadSlot slots[2];
 } PadState;
@@ -88,24 +88,24 @@ void Pad_Init(s32 count)
     }
 }
 
-typedef struct {
+typedef struct DemoInput {
     u32 frame;
     u32 buttons;
 } DemoInput;
 
-typedef struct {
+typedef struct DemoRecording {
     s32 count;
     u8 reserved_04[0x524];
     s32 seed;
     DemoInput inputs[1];
 } DemoRecording;
 
-typedef struct {
+typedef struct DemoBufferView {
     u8 reserved_00[0x84];
     s32 word84;
 } DemoBufferView;
 
-typedef struct {
+typedef struct PlaybackState {
     s32 player;
     u8 reserved_04[0x70];
     s32 playback_mode;

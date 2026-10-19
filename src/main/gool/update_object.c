@@ -16,12 +16,12 @@ typedef struct GoolCodeHeader {
 
 typedef struct GoolExecutable {
     u8 reserved_00[0x10];
-    GoolCodeHeader *header;
-    u8 *code;
-    u8 *data;
-    u16 *states;
-    void *word_20;
-    u32 *anims;
+    RAM_REF(GoolCodeHeader) header;
+    RAM_REF(u8) code;
+    RAM_REF(u8) data;
+    RAM_REF(u16) states;
+    RAM_REF(void) word_20;
+    RAM_REF(u32) anims;
 } GoolExecutable;
 
 typedef struct GoolDefaults {
@@ -31,24 +31,24 @@ typedef struct GoolDefaults {
 
 typedef struct ResourceEntry {
     u8 reserved_00[0x10];
-    u8 *data;
+    RAM_REF(u8) data;
 } ResourceEntry;
 
 typedef struct GoolObj {
     s32 kind;
     s32 word_04;
     u8 reserved_08[0x18];
-    GoolExecutable *exec;
+    RAM_REF(GoolExecutable) exec;
     s32 word_24;
-    ResourceEntry *zone;
+    RAM_REF(ResourceEntry) zone;
     s32 word_2c;
     GoolDefaults defaults;
-    struct GoolObj *self;
-    struct GoolObj *parent;
-    struct GoolObj *next;
-    struct GoolObj *children;
+    RAM_REF(struct GoolObj) self;
+    RAM_REF(struct GoolObj) parent;
+    RAM_REF(struct GoolObj) next;
+    RAM_REF(struct GoolObj) children;
     s32 creator;
-    void *player;
+    RAM_REF(void) player;
     s32 collider;
     s32 interrupter;
     GoolVectors vectors;
@@ -66,20 +66,20 @@ typedef struct GoolObj {
     u32 status_c;
     s32 subtype;
     s32 pid_flags;
-    u32 *sp;
-    u32 *pc;
-    u32 *fp;
-    u32 *tp;
-    u32 *ep;
+    RAM_REF(u32) sp;
+    RAM_REF(u32) pc;
+    RAM_REF(u32) fp;
+    RAM_REF(u32) tp;
+    RAM_REF(u32) ep;
     s32 result;
     s32 misc_flag;
     s32 arg0;
     s32 arg1;
     s32 arg2;
     s32 arg3;
-    void *anim_seq;
+    RAM_REF(void) anim_seq;
     s32 anim_frame;
-    void *entity;
+    RAM_REF(void) entity;
     s32 path_progress;
     s32 path_length;
     s32 floor_y;
@@ -131,7 +131,7 @@ typedef struct ZoneEntity {
 
 typedef struct ObjectRoot {
     s32 kind;
-    GoolObj *word04;
+    RAM_REF(GoolObj) word04;
 } ObjectRoot;
 
 typedef struct ZoneHeaderView {
@@ -147,7 +147,7 @@ typedef struct ZoneEntryView {
     u32 id;
     s32 kind;
     s32 word0C;
-    void *items[1];
+    RAM_REF(void) items[1];
 } ZoneEntryView;
 
 #define CRASH_EXT_GOOL_UPDATE_OBJECT_1

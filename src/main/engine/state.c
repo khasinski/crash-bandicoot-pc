@@ -6,28 +6,24 @@
 #include "resource.h"
 #include "gool.h"
 
-/* Mode request and the eight-byte name/format records at 0x80056500. */
-s32 gp_title_once = 1;
-char gp_game_over_zone_name[8] = "0b_pZ";
-char gp_main_menu_zone_name[8] = "0c_pZ";
-char gp_naughty_dog_zone_name[8] = "0d_pZ";
-char gp_load_menu_zone_name[8] = "0e_pZ";
-char gp_options_menu_zone_name[8] = "0f_pZ";
-char gp_island_1b_zone_name[8] = "1e_pZ";
-char gp_island_1a_zone_name[8] = "1a_pZ";
-char gp_island_2_zone_name[8] = "2b_pZ";
-char gp_island_3_zone_name[8] = "3a_pZ";
-char gp_scea_universal_zone_name[8] = "0a_pZ";
-char gp_mdat_fmt_name[8] = "%cMapP";
-char gp_mdat_default_name[8] = "0MapP";
+extern s32 gp_title_once;
+extern char gp_game_over_zone_name[8];
+extern char gp_main_menu_zone_name[8];
+extern char gp_naughty_dog_zone_name[8];
+extern char gp_load_menu_zone_name[8];
+extern char gp_options_menu_zone_name[8];
+extern char gp_island_1b_zone_name[8];
+extern char gp_island_1a_zone_name[8];
+extern char gp_island_2_zone_name[8];
+extern char gp_island_3_zone_name[8];
+extern char gp_scea_universal_zone_name[8];
+extern char gp_mdat_fmt_name[8];
+extern char gp_mdat_default_name[8];
 
-/* Retail initial value at 0x80056564 is zero; preserve its .sdata placement. */
-EngineState *gp_card = NULL;
-/* Preserved render-state flag, initial retail value 1 at 0x80056568. */
-s32 gp_card_new_device = 1;
-/* Sentinel values make the first card flags/mode poll register a change. */
-s32 gp_prev_card_flags = -1;
-u32 gp_prev_card_state = 0xFFFFFFFF;
+extern RAM_REF(EngineState) gp_card;
+extern s32 gp_card_new_device;
+extern s32 gp_prev_card_flags;
+extern u32 gp_prev_card_state;
 
 /* File cleanup requests and lifecycle entry points. */
 typedef EngineFileRequest FileRequest;
@@ -39,44 +35,42 @@ typedef EngineMode25State State;
 /* Real zero-initialized storage at 0x80056678..0x800566C4.
  * Unidentified words retain address names; the two typed owners are shared
  * with object_defaults and update_request. */
-asm(".globl gp_title_not_seen, gp_title_unused_0, gp_title_unused_1, gp_title_unused_2, gp_title_unused_3, gp_save_id, gp_file_is_new, gp_bios_gte_patch_target, gp_gte_patch_handler, gp_title_unused_4, gp_title_unused_5, gp_title_unused_6, gp_cur_pbak_header, gp_solid_scratch_grid, gp_next_level_ldat_eid, gp_crash_obj, gp_level_entry, gp_slst_poly_list_b, gp_card_chan");
-s32 gp_title_not_seen;
-u32 gp_title_unused_0;
-u32 gp_title_unused_1;
-u32 gp_title_unused_2;
-u32 gp_title_unused_3;
-u32 gp_save_id;
-u32 gp_file_is_new;
-u32 gp_bios_gte_patch_target;
-u32 gp_gte_patch_handler;
-u32 gp_title_unused_4;
-u32 gp_title_unused_5;
-u32 gp_title_unused_6;
-u32 gp_cur_pbak_header;
-u32 gp_solid_scratch_grid;
-u32 gp_next_level_ldat_eid;
-GoolDefaultsObject *gp_crash_obj;
-u32 gp_level_entry, gp_slst_poly_list_b;
-s32 gp_card_chan;
+extern s32 gp_title_not_seen;
+extern u32 gp_title_unused_0;
+extern u32 gp_title_unused_1;
+extern u32 gp_title_unused_2;
+extern u32 gp_title_unused_3;
+extern u32 gp_save_id;
+extern u32 gp_file_is_new;
+extern u32 gp_bios_gte_patch_target;
+extern u32 gp_gte_patch_handler;
+extern u32 gp_title_unused_4;
+extern u32 gp_title_unused_5;
+extern u32 gp_title_unused_6;
+extern u32 gp_cur_pbak_header;
+extern u32 gp_solid_scratch_grid;
+extern u32 gp_next_level_ldat_eid;
+extern RAM_REF(GoolDefaultsObject) gp_crash_obj;
+extern u32 gp_level_entry, gp_slst_poly_list_b;
+extern s32 gp_card_chan;
 
 /* Real engine globals in retail address order, 0x800566C4..0x800566FC.
  * The state and grid pointers retain their recovered pointer types. */
-asm(".globl gp_edesc_s_end_io, gp_edesc_s_error, gp_edesc_s_timeout, gp_edesc_s_newdev, gp_dark_target_x, gp_dark_target_y, gp_dark_target_z, gp_title, gp_level_unused_0, gp_level_unused_1, gp_edesc_h_end_io, gp_edesc_h_error, gp_grid_rows, gp_edesc_h_timeout, gp_edesc_h_newdev");
-s32 gp_edesc_s_end_io;
-s32 gp_edesc_s_error;
-s32 gp_edesc_s_timeout;
-s32 gp_edesc_s_newdev;
-s32 gp_dark_target_x;
-s32 gp_dark_target_y;
-s32 gp_dark_target_z;
-State *gp_title;
-s32 gp_level_unused_0;
-s32 gp_level_unused_1;
-s32 gp_edesc_h_end_io;
-s32 gp_edesc_h_error;
-s32 *gp_grid_rows;
-s32 gp_edesc_h_timeout;
-s32 gp_edesc_h_newdev;
+extern s32 gp_edesc_s_end_io;
+extern s32 gp_edesc_s_error;
+extern s32 gp_edesc_s_timeout;
+extern s32 gp_edesc_s_newdev;
+extern s32 gp_dark_target_x;
+extern s32 gp_dark_target_y;
+extern s32 gp_dark_target_z;
+extern RAM_REF(State) gp_title;
+extern s32 gp_level_unused_0;
+extern s32 gp_level_unused_1;
+extern s32 gp_edesc_h_end_io;
+extern s32 gp_edesc_h_error;
+extern RAM_REF(s32) gp_grid_rows;
+extern s32 gp_edesc_h_timeout;
+extern s32 gp_edesc_h_newdev;
 
 s32 Title_Init(void)
 {
@@ -301,7 +295,7 @@ s32 Title_LoadState(void) {
         gp_title->word04 = gp_title->word0C << 4;
         gp_title->word08 = gp_title->word10 << 4;
         for (i = 0; i < header[3]; i++) {
-            typedef struct { u8 reserved_00[0x18]; s16 max_level; } MapItemHeader;
+            typedef struct MapItemHeader { u8 reserved_00[0x18]; s16 max_level; } MapItemHeader;
             if ((u32)((MapItemHeader *)list->items[i + 2])->max_level <= g_next_level_id[0]) {
                 Gool_ObjectSpawn(list, i);
             }

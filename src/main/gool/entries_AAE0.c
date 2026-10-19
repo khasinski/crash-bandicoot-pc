@@ -5,9 +5,9 @@
 #include "gool_externs.h"
 #undef CRASH_EXT_GOOL_ENTRIES_AAE0_0
 
-typedef struct {
+typedef struct ZoneItem64 {
     u32 words[5];
-    u8 *ptr14;
+    RAM_REF(u8) ptr14;
     u32 rest[10];
 } ZoneItem64;
 
@@ -40,17 +40,17 @@ void Gfx_TransformWorldsDark2(s32 arg0)
     }
 }
 
-typedef struct {
+typedef struct WgeoSubHeader {
     u32 reserved_00[3];
     u32 count;
 } WgeoSubHeader;
 
-typedef struct {
+typedef struct WgeoEntry {
     u32 reserved_00[3];
     s32 item_count;
-    WgeoSubHeader *sub;
+    RAM_REF(WgeoSubHeader) sub;
     u32 reserved_14[2];
-    u16 *list;
+    RAM_REF(u16) list;
 } WgeoEntry;
 
 void Gfx_FreezeMapTextures(u32 arg0, u32 arg1)
@@ -105,7 +105,7 @@ void Gfx_FreezeMapTextures(u32 arg0, u32 arg1)
     }
 }
 
-typedef struct {
+typedef struct AnimSpriteDesc {
     u8 bytes[4];
     u32 word;
 } AnimSpriteDesc;
@@ -235,20 +235,20 @@ void Gfx_BlitCardIcon(s32 arg0, u8 *arg1, s32 arg2, u8 *arg3, u8 *arg4)
 typedef struct GoolObj {
     s32 header;
     u8 reserved_04[0x60 - 0x04];
-    struct GoolObj *self;
-    void *parent;
-    struct GoolObj *sibling;
-    struct GoolObj *child;
+    RAM_REF(struct GoolObj) self;
+    RAM_REF(void) parent;
+    RAM_REF(struct GoolObj) sibling;
+    RAM_REF(struct GoolObj) child;
     u8 reserved_70[0x25C - 0x70];
 } GoolObj;
 
 typedef struct GoolAllocGlobals {
-    GoolObj *db0;
-    GoolObj *db4;
+    RAM_REF(GoolObj) db0;
+    RAM_REF(GoolObj) db4;
     s32 db8[16];
     s32 df8;
-    GoolObj *dfc;
-    void *e00;
+    RAM_REF(GoolObj) dfc;
+    RAM_REF(void) e00;
     s32 e04;
 } GoolAllocGlobals;
 

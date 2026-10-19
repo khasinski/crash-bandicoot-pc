@@ -14,7 +14,7 @@ ResourceSlot *Ns_PageCreateVirtual(s32 id, s32 word18)
             slot->references = 0;
             slot->word18 = word18;
             slot->word28 = frame_counter;
-            g_ns.page_map[id >> 1] = slot;
+            RAM_AT(u32, g_ns.page_map)[id >> 1] = Ram_Addr(slot);
             g_ns.pool.active_count++;
             return slot;
         }
@@ -22,7 +22,8 @@ ResourceSlot *Ns_PageCreateVirtual(s32 id, s32 word18)
     return NULL;
 }
 
-void *Ns_PageCreatePhysical(ResourceSlot *slot, s32 id, s32 word18, s32 *count_ptr, s32 arg4)
+/* Returns the head physical slot's PS1 address, or -12 when no pages are free. */
+s32 Ns_PageCreatePhysical(ResourceSlot *slot, s32 id, s32 word18, s32 *count_ptr, s32 arg4)
 {
     s32 index;
     s32 count;
@@ -33,7 +34,7 @@ void *Ns_PageCreatePhysical(ResourceSlot *slot, s32 id, s32 word18, s32 *count_p
 
     index = Ns_PageAllocate(count_ptr);
     if (index == -1) {
-        return (void *)-12;
+        return -12;
     }
     count = *count_ptr;
     phys = &g_ns.physical[index + count - 1];
@@ -43,7 +44,7 @@ void *Ns_PageCreatePhysical(ResourceSlot *slot, s32 id, s32 word18, s32 *count_p
         head = phys;
         if (i >= 0) {
             do {
-                slot = g_ns.page_map[(base_id >> 1) + i];
+                slot = RAM_AT(ResourceSlot, RAM_AT(u32, g_ns.page_map)[(base_id >> 1) + i]);
                 phys->id = slot->id;
                 if (word18 != 0x6396347F) {
                     phys->word18 = word18;
@@ -53,19 +54,19 @@ void *Ns_PageCreatePhysical(ResourceSlot *slot, s32 id, s32 word18, s32 *count_p
                 slot->state = 1;
                 phys->references = slot->references;
                 phys->word28 = slot->word28;
-                phys->base = (u8 *)*count_ptr;
-                phys->slot = head;
+                phys->base = *count_ptr;
+                phys->slot = Ram_Addr(head);
                 if (i == *count_ptr - 1) {
                     phys->state = 2;
                 } else {
                     phys->state = (count = 12);
                 }
-                g_ns.page_map[phys->id >> 1] = phys;
+                RAM_AT(u32, g_ns.page_map)[phys->id >> 1] = Ram_Addr(phys);
                 phys--;
                 i--;
             } while (i >= 0);
         }
-        return head;
+        return (s32)Ram_Addr(head);
     }
     *count_ptr = 1;
     phys->id = id;
@@ -73,9 +74,9 @@ void *Ns_PageCreatePhysical(ResourceSlot *slot, s32 id, s32 word18, s32 *count_p
     phys->references = 0;
     phys->word28 = frame_counter;
     g_ns.pool.active_count++;
-    phys->base = (u8 *)1;
-    phys->slot = phys;
+    phys->base = 1;
+    phys->slot = Ram_Addr(phys);
     phys->state = 2;
-    g_ns.page_map[phys->id >> 1] = phys;
-    return phys;
+    RAM_AT(u32, g_ns.page_map)[phys->id >> 1] = Ram_Addr(phys);
+    return (s32)Ram_Addr(phys);
 }

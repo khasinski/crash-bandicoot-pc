@@ -1,6 +1,8 @@
 #include "common.h"
 #include "resource.h"
-NsItemList *Ns_Lookup(u32 *reference) {
+/* Resolve a reference and page its entry in synchronously. Returns the
+ * entry's PS1 address or -10; an EID reference is resolved in place. */
+s32 Ns_Lookup(u32 *reference) {
     u32 id = *reference;
     ResourceHandle *resolved;
     u32 value;
@@ -8,7 +10,7 @@ NsItemList *Ns_Lookup(u32 *reference) {
     if (id & 1) {
         ResourceHandle *slot,*found;
         u32 key = id;
-        slot = *(ResourceHandle **)(((id >> 13) & 0x3FC) + (u32)g_ns_hash_buckets);
+        slot = RAM_AT(ResourceHandle, RAM_AT(u32, g_ns_hash_buckets)[(id >> 15) & 0xFF]);
         if (slot->id != id) {
             u32 candidate;
             found = slot + 1;
@@ -18,10 +20,10 @@ NsItemList *Ns_Lookup(u32 *reference) {
             } while (candidate != key);
             slot = found - 1;
         }
-        *reference = (u32)slot;
+        *reference = Ram_Addr(slot);
         resolved = slot;
     } else {
-        resolved = (ResourceHandle *)id;
+        resolved = RAM_AT(ResourceHandle, id);
     }
     value = resolved->entry;
     result = value;
@@ -33,5 +35,5 @@ NsItemList *Ns_Lookup(u32 *reference) {
             result = value;
         }
     }
-    return (NsItemList *)result;
+    return result;
 }

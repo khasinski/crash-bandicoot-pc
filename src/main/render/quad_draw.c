@@ -14,7 +14,7 @@ typedef struct Rect9398 {
 
 typedef struct PrimBuf9398 {
     u8 reserved_00[0x78];
-    void *prim_ptr;
+    RAM_REF(void) prim_ptr;
 } PrimBuf9398;
 
 typedef struct UvPair9398 {

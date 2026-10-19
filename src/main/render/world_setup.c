@@ -16,11 +16,11 @@ typedef struct WgeoHeader {
 typedef struct ZoneWorld {
     u32 eid;
     s32 trans[3];
-    WgeoHeader *wgeo;
-    void *item1;
-    void *item2;
-    void *polys;
-    void *tpages[8];
+    RAM_REF(WgeoHeader) wgeo;
+    RAM_REF(void) item1;
+    RAM_REF(void) item2;
+    RAM_REF(void) polys;
+    RAM_REF(void) tpages[8];
 } ZoneWorld;
 
 typedef struct ZoneHeader9A2C {
@@ -30,9 +30,9 @@ typedef struct ZoneHeader9A2C {
 
 typedef struct ResourceItem {
     u8 reserved_00[0x10];
-    void *item0;
-    void *item1;
-    void *item2;
+    RAM_REF(void) item0;
+    RAM_REF(void) item1;
+    RAM_REF(void) item2;
 } ResourceItem;
 
 #define CRASH_EXT_RENDER_WORLD_SETUP

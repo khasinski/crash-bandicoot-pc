@@ -26,31 +26,17 @@ s32 Ns_PageCommitVirtual(ZoneLoadList *load, ResourceSlot *slot)
                 if (val == entry_id) {
                     goto found;
                 }
-            } else if (((ResourceBucket *)val)->id == entry_id) {
+            } else if (RAM_AT(ResourceBucket, val)->id == entry_id) {
             found:
                 return 1;
             }
             i++;
         }
-        {
-            s32 ret;
-            for (i = 0; i < load->page_count; i++) {
-                if (load->pages[i] == (u32)slot->id) {
-                    ret = 1;
-                    goto found2;
-                }
+        for (i = 0; i < load->page_count; i++) {
+            if (load->pages[i] == (u32)slot->id) {
+                return 1;
             }
-            {
-                s32 z = i & 1;
-                if ((z >> 1) == 0) {
-                    goto ret0;
-                }
-            }
-            ret = 0;
-        found2:
-            return ret;
         }
-    ret0:
         return 0;
     }
     return 0;
@@ -61,12 +47,12 @@ s32 Ns_PageCommitVirtual(ZoneLoadList *load, ResourceSlot *slot)
         ResourceSlot *_cand; \
         s32 _i; \
         u32 _ticks; \
-        (res_slot) = g_ns.page_map[(page_id) >> 1]; \
-        if ((res_slot) == (ResourceSlot *)-0x12) { \
+        (res_slot) = RAM_AT(s32, g_ns.page_map)[(page_id) >> 1]; \
+        if ((res_slot) == -0x12) { \
             goto search_label; \
         } \
-        if ((res_slot) != (ResourceSlot *)-0xFF) { \
-            (res_slot)->word18 = (ent_id); \
+        if ((res_slot) != -0xFF) { \
+            RAM_AT(ResourceSlot, res_slot)->word18 = (ent_id); \
         } \
         goto done_label; \
     found_label: \
@@ -76,9 +62,9 @@ s32 Ns_PageCommitVirtual(ZoneLoadList *load, ResourceSlot *slot)
         _cand->references = 0; \
         _cand->word18 = (ent_id); \
         _cand->word28 = _ticks; \
-        g_ns.page_map[(page_id) >> 1] = _cand; \
+        RAM_AT(u32, g_ns.page_map)[(page_id) >> 1] = Ram_Addr(_cand); \
         ns_pool_active_inc(); \
-        (res_slot) = _cand; \
+        (res_slot) = (s32)Ram_Addr(_cand); \
         goto done_label; \
     search_label: \
         for (_i = 0; _i < g_ns_virtual_page_pool.count; _i++) { \
@@ -87,13 +73,14 @@ s32 Ns_PageCommitVirtual(ZoneLoadList *load, ResourceSlot *slot)
                 goto found_label; \
             } \
         } \
-        (res_slot) = NULL; \
+        (res_slot) = 0; \
     done_label:; \
     } while (0)
 
-ResourceSlot *Ns_PageVirtual(s32 id, s32 entry_id)
+/* Returns the virtual slot's PS1 address, -0xFF, or 0 when none is free. */
+s32 Ns_PageVirtual(s32 id, s32 entry_id)
 {
-    ResourceSlot *slot;
+    s32 slot;
 
     NS_FIND_OR_ALLOC_SLOT(slot, id, entry_id, found_0, search_0, done_0);
     return slot;

@@ -53,6 +53,13 @@ The game reads its data from the user-supplied CUE/BIN image. The image must
 be the USA release (redump 2250, track 1 SHA-1
 `61ff4c9e8dcfb9e5d94d37f66330b69d08d6c914`).
 
+Controls (PsyZ defaults): arrow keys move, X is ✕ (jump), Z is □ (spin),
+D is ○, S is △, Enter is START, Backspace is SELECT, Q/R are L1/R1 and
+W/E are L2/R2. SDL game controllers work as a PlayStation pad. F4 toggles
+fullscreen; Escape or closing the window quits.
+Memory card saves are written to the `bu00/` and `bu10/` directories in the
+working directory.
+
 Diagnostics for automated runs: `--headless` renders without a window,
 `--frame-limit N` stops after N frames and `--dump-vram PATH` then writes the
 1024×512 VRAM (convert with `tools/scripts/vram_to_png.py`). `--pad-at

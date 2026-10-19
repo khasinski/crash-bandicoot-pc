@@ -173,6 +173,9 @@ int Platform_VSync(int mode)
         if (next_frame_ns > now)
             SDL_DelayPrecise(next_frame_ns - now);
     }
+    /* Escape or closing the window: the game loop itself never ends. */
+    if (Psyz_QuitRequested())
+        exit(EXIT_SUCCESS);
     if (mode == 0)
         frame_count++;
     if (mode == 0 && warp_level >= 0 && frame_count == warp_frame)

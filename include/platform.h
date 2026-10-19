@@ -6,6 +6,9 @@
 int Platform_VSync(int mode);
 #define VSync(mode) Platform_VSync(mode)
 
+/* Nonzero with --fps60: the frame loop stops waiting for a second blank. */
+int Platform_HighFrameRate(void);
+
 /* PadRead with the --pad-at input schedule merged into port 1. */
 unsigned int Platform_PadRead(int id);
 #define PadRead(id) Platform_PadRead(id)

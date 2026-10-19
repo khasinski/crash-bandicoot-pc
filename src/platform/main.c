@@ -42,6 +42,8 @@ static u32 frame_limit;
 static u32 frame_count;
 static const char *vram_path;
 static const char *capture_path;
+static int high_frame_rate;
+static unsigned render_scale = 1;
 
 /* --pad-at FRAME:MASK holds PS1 button bits (pressed = 1) from FRAME on. */
 typedef struct PadEvent {
@@ -248,6 +250,11 @@ int Platform_VSync(int mode)
     return result;
 }
 
+int Platform_HighFrameRate(void)
+{
+    return high_frame_rate;
+}
+
 unsigned int Platform_PadRead(int id)
 {
     unsigned int buttons = (unsigned int)(PadRead)(id); /* PsyZ */
@@ -289,7 +296,8 @@ static void usage(const char *program)
 {
     printf("Usage: %s --disc <Crash Bandicoot (USA).cue> [--headless]"
            " [--frame-limit N] [--dump-vram PATH] [--pad-at FRAME:BUTTONS ...]"
-           " [--warp FRAME:LEVEL]\n", program);
+           " [--warp FRAME:LEVEL] [--scale N] [--fps60]\n", program);
+    printf("--scale renders at N times the PS1 resolution; --fps60 runs at 60 frames per second.\n");
     printf("--pad-at holds the PS1 button mask (pressed = 1, START = 0x800) from FRAME on.\n");
 }
 
@@ -340,6 +348,14 @@ int main(int argc, char **argv)
                 fprintf(stderr, "Invalid or out-of-order --pad-at %s\n", argv[i]);
                 return EXIT_FAILURE;
             }
+        } else if (!strcmp(argv[i], "--fps60")) {
+            high_frame_rate = 1;
+        } else if (!strcmp(argv[i], "--scale") && i + 1 < argc) {
+            render_scale = (unsigned)strtoul(argv[++i], NULL, 10);
+            if (render_scale < 1 || render_scale > 8) {
+                fprintf(stderr, "--scale takes 1 to 8\n");
+                return EXIT_FAILURE;
+            }
         } else if (!strcmp(argv[i], "--capture") && i + 1 < argc) {
             capture_path = argv[++i];
         } else if (!strcmp(argv[i], "--dump-vram") && i + 1 < argc) {
@@ -359,6 +375,8 @@ int main(int argc, char **argv)
         return EXIT_FAILURE;
     }
     Psyz_SetTitle("Crash Bandicoot");
+    if (render_scale > 1)
+        Psyz_VideoSetInternalResolution(render_scale);
     if (Psyz_CdSetDiskPath(disc) != 0) {
         fprintf(stderr, "Cannot open disc image: %s\n", disc);
         return EXIT_FAILURE;

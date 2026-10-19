@@ -110,7 +110,10 @@ void Gpu_Update(void)
         g_ot_cur = Ram_Addr(swap);
     }
     VSync(0);
-    if ((u32)(frame_counter - RAM_AT(RenderBufferFull, g_db_cur.buf)->word7C) < 0x19) {
+    /* The original holds 30 frames per second; game logic scales with the
+     * elapsed ticks, so --fps60 can skip the second blank. */
+    if (!Platform_HighFrameRate()
+        && (u32)(frame_counter - RAM_AT(RenderBufferFull, g_db_cur.buf)->word7C) < 0x19) {
         VSync(0);
     }
     if (g_cur_lid_ro[0] & 0x100000) {

@@ -76,13 +76,15 @@ typedef struct GoolActorView {
     s32 radius[3];
 } GoolActorView;
 
+/* Built on the host stack by the senders; argv points at host locals. */
 typedef struct GoolMessage {
     RAM_REF(GoolActorView) source;
-    s32 word04, word08, selector, count, word14;
+    s32 word04, word08, selector, count;
+    s32 *argv;
 } GoolMessage;
 
 s32 Gool_ObjectPopFrame(GoolRuntimeObject *object, s32 *flags);
-void *GOOL_TestObjectStateFlags();
+void *GOOL_TestObjectStateFlags(GoolRuntimeObject *object, u32 flags);
 void Gool_ObjectColorByZone(GoolDefaultsObject *object, s32 mode);
 void Level_MdatOnLoad2(ObjectView *object);
 void Zone_TerminateObjects(ObjectView *object);

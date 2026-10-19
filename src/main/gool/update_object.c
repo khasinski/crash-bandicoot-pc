@@ -109,9 +109,6 @@ typedef struct NsdTable {
 #include "gool_externs.h"
 #undef CRASH_EXT_GOOL_UPDATE_OBJECT_0
 
-#define NODE_CHILDREN(n) ((n)->kind == 2 ? (GoolObj *)(n)->word_04 : (n)->children)
-#define NODE_CHILDREN_PTR(n) ((n)->kind == 2 ? (GoolObj **)&(n)->word_04 : &(n)->children)
-
 typedef struct ZoneEntity {
     u8 reserved_00[4];
     u16 flags;
@@ -154,42 +151,26 @@ typedef struct ZoneEntryView {
 #include "gool_externs.h"
 #undef CRASH_EXT_GOOL_UPDATE_OBJECT_1
 
-static __inline__ s32 GOOL_CreateObjectStackFrame_inline(GoolObj *object, s32 arg_words, s32 flags)
-{
-    u32 *sp;
-    u32 *old_fp;
-    u32 *new_sp;
-    u32 *new_fp;
-
-    sp = object->sp;
-    old_fp = object->fp;
-    object->fp = sp;
-    *object->sp++ = flags;
-    *object->sp++ = (u32)object->pc;
-    *object->sp++ = ((u32)(new_sp = sp - arg_words - 24) - (u32)object) | (((u32)(new_fp = old_fp - 24) - (u32)object) << 16);
-    return -0xFF;
-}
-
 s32 GOOL_UpdateObject(GoolObj *obj, s32 flag) {
     u32 update_flag;
     GoolCodeHeader *header;
     s32 res;
-    u32 *sp;
+    u32 sp;
     u32 wait_entry;
 
     if (obj->word_04 != 3) {
         return -0xFF;
     }
-    if (obj == gp_crash_obj) {
+    if (Ram_Addr(obj) == gp_crash_obj) {
         Pad_Update();
     }
-    g_savestate[0] = obj;
+    g_savestate[0] = Ram_Addr(obj);
     update_flag = g_cur_lid_ro[0] & 8;
     if (update_flag != 0) {
         if (((obj->status_b & 0x2000000) || (obj->state_flags & 0x20000)) && (g_cur_lid_ro[0] & 0x8000)) {
             update_flag = 1;
         } else {
-            header = obj->exec->header;
+            header = RAM_AT(GoolCodeHeader, RAM_AT(GoolExecutable, obj->exec)->header);
             switch (header->word_04) {
             case 0x100:
                 update_flag = g_cur_lid_ro[0] & 0x20;
@@ -219,11 +200,11 @@ s32 GOOL_UpdateObject(GoolObj *obj, s32 flag) {
             }
         } else {
             obj->arg1 = g_level_zone_flags[0];
-            if ((obj->status_b & 0x10) && gp_crash_obj->arg1 == obj->arg1) {
+            if ((obj->status_b & 0x10) && RAM_AT(GoolObj, gp_crash_obj)->arg1 == obj->arg1) {
                 Gool_ObjectControlDir(obj);
             }
-            if (obj->tp != NULL) {
-                GOOL_CreateObjectStackFrame_inline(obj, 0, 0xFFFF);
+            if (obj->tp != 0) {
+                GOOL_CreateObjectStackFrame((struct GoolRuntimeObject *)obj, 0, 0xFFFF);
                 obj->pc = obj->tp;
                 res = GOOL_InterpretObject(obj, 3, 0);
                 if (res >= -0xFE) {
@@ -231,25 +212,25 @@ s32 GOOL_UpdateObject(GoolObj *obj, s32 flag) {
                 }
             }
             sp = obj->sp;
-            wait_entry = *(sp - 1);
+            wait_entry = RAM_AT(u32, sp)[-1];
             if (g_level_zone_flags[0] - (wait_entry & 0xFFFFFF) >= (wait_entry >> 24)) {
-                obj->sp = sp - 1;
+                obj->sp = sp - 4;
                 res = GOOL_InterpretObject(obj, 4, 0);
                 if (res >= -0xFE) {
                     return res;
                 }
             }
-            Gool_ObjectColors(obj, flag);
-            Gool_ObjectPhysics(obj, flag);
+            Gool_ObjectColors(obj);
+            Gool_ObjectPhysics(obj);
             obj->status_a &= ~0x20;
         }
     }
-    if (obj->anim_seq != NULL && !(obj->status_b & 0x100) && (g_cur_lid_ro[0] & 4)) {
+    if (obj->anim_seq != 0 && !(obj->status_b & 0x100) && (g_cur_lid_ro[0] & 4)) {
         if (((obj->status_b & 0x2000000) || (obj->state_flags & 0x20000)) && (g_cur_lid_ro[0] & 0x4000)) {
             update_flag = 1;
         } else {
             update_flag = 0;
-            switch (obj->exec->header->word_04) {
+            switch (RAM_AT(GoolCodeHeader, RAM_AT(GoolExecutable, obj->exec)->header)->word_04) {
             case 0x100:
                 update_flag = g_cur_lid_ro[0] & 0x10;
                 break;
@@ -270,7 +251,7 @@ s32 GOOL_UpdateObject(GoolObj *obj, s32 flag) {
             Gool_ObjectTransform(obj);
         }
     }
-    g_savestate[0] = NULL;
+    g_savestate[0] = 0;
     return -0xFF;
 }
 
@@ -305,6 +286,14 @@ typedef struct GoolBound {
     s32 y2;
     s32 z2;
 } GoolBound;
+
+typedef struct GoolItemsEntry {
+    u32 magic;
+    u32 eid;
+    s32 kind;
+    s32 item_count;
+    RAM_REF(u8) items[1];
+} GoolItemsEntry;
 
 typedef struct RenderBufferView {
     u8 reserved_00[0x88];
@@ -343,7 +332,7 @@ void Gool_ObjectTransform(GoolObj *obj) {
     GoolBound bound;
     ResourceEntry *zone;
 
-    anim_seq = (GoolAnimSeq *)obj->anim_seq;
+    anim_seq = RAM_AT(GoolAnimSeq, obj->anim_seq);
     anim_frame = (u32)obj->anim_frame >> 8;
     switch (anim_seq->type) {
     case 2:
@@ -352,16 +341,16 @@ void Gool_ObjectTransform(GoolObj *obj) {
             s32 shift = ABS(obj->vectors.scale[0]) / 27279;
             if (Gte_RCalcSpriteRotMatrix(
                     &obj->vectors,
-                    (obj->status_b & 0x200000) ? &(*(CamTransformState *)g_m_view).vec864 : &(*(CamTransformState *)g_m_view).vec888,
+                    (obj->status_b & 0x200000) ? (u8 *)(*(CamTransformState *)g_m_view).vec864 : (u8 *)(*(CamTransformState *)g_m_view).vec888,
                     obj->status_b & 0x200,
                     shift,
-                    (obj->status_b & 0x200000) ? &(*(CamTransformState *)g_m_view).mat7E4 : &(*(CamTransformState *)g_m_view).mat844,
+                    (obj->status_b & 0x200000) ? (u8 *)(*(CamTransformState *)g_m_view).mat7E4 : (u8 *)(*(CamTransformState *)g_m_view).mat844,
                     g_view_proj.distance,
-                    ((ZoneDrawHeader *)g_pads[0]->data)->depth_offset >> 8,
+                    RAM_AT(ZoneDrawHeader, RAM_AT(ResourceEntry, g_pads[0])->data)->depth_offset >> 8,
                     ((obj->status_b >> 18) ^ 1) & 1)) {
-                void *tex = Ns_Lookup(&anim2->eid);
+                u32 tex = Ns_Lookup(&anim2->eid);
                 Gte_RTransformSprite(
-                    g_ot_cur[0]->ordering_table,
+                    RAM_AT(RenderBufferView, g_ot_cur[0])->ordering_table,
                     anim2->frames[anim_frame],
                     tex,
                     200 << shift,
@@ -381,43 +370,43 @@ void Gool_ObjectTransform(GoolObj *obj) {
                     shift,
                     &(*(CamTransformState *)g_m_view).mat844,
                     g_view_proj.distance,
-                    ((ZoneDrawHeader *)g_pads[0]->data)->depth_offset >> 8,
+                    RAM_AT(ZoneDrawHeader, RAM_AT(ResourceEntry, g_pads[0])->data)->depth_offset >> 8,
                     ((obj->status_b >> 18) ^ 1) & 1)) {
                 GoolAnimSeq *anim5 = anim_seq;
                 s32 i = 0;
                 GoolFrag *frag = &anim5->frags[anim_frame * anim5->count];
-                void *tex = Ns_Lookup(&anim5->eid);
+                u32 tex = Ns_Lookup(&anim5->eid);
                 for (; i < anim5->count; frag++, i++) {
                     bound.x1 = frag->x1 << shift;
                     bound.y1 = frag->y1 << shift;
                     bound.x2 = frag->x2 << shift;
                     bound.y2 = frag->y2 << shift;
-                    Gfx_TransformFragment(frag, obj->cam_zoom, tex, &bound, g_ot_cur[0]->ordering_table);
+                    Gfx_TransformFragment((u32 *)frag, obj->cam_zoom, tex, (struct Rect9398 *)&bound, RAM_AT(RenderBufferView, g_ot_cur[0])->ordering_table);
                 }
             }
         }
         break;
     case 4:
-        Gool_TextObjectTransform(obj, anim_seq, anim_frame, g_ot_cur[0]->ordering_table, obj->status_b & 0x400);
+        Gool_TextObjectTransform(obj, anim_seq, anim_frame, RAM_AT(RenderBufferView, g_ot_cur[0])->ordering_table, obj->status_b & 0x400);
         break;
     case 1:
-        if (Ns_Lookup(&anim_seq->eid)->kind == 20) {
+        if (RAM_AT(GoolItemsEntry, Ns_Lookup(&anim_seq->eid))->kind == 20) {
             Gfx_TransformCvtx(
-                Ns_Lookup(&((GoolAnimSeq *)obj->anim_seq)->eid)->items[(u32)obj->anim_frame >> 8],
-                g_ot_cur[0]->ordering_table,
+                RAM_AT(u8, RAM_AT(GoolItemsEntry, Ns_Lookup(&RAM_AT(GoolAnimSeq, obj->anim_seq)->eid))->items[(u32)obj->anim_frame >> 8]),
+                RAM_AT(RenderBufferView, g_ot_cur[0])->ordering_table,
                 obj);
         } else {
             Gfx_LoadWorlds(
-                Ns_Lookup(&((GoolAnimSeq *)obj->anim_seq)->eid)->items[(u32)obj->anim_frame >> 8],
-                g_ot_cur[0]->ordering_table,
+                RAM_AT(u8, RAM_AT(GoolItemsEntry, Ns_Lookup(&RAM_AT(GoolAnimSeq, obj->anim_seq)->eid))->items[(u32)obj->anim_frame >> 8]),
+                RAM_AT(RenderBufferView, g_ot_cur[0])->ordering_table,
                 obj);
         }
         if (obj->status_b & 0x100000) {
-            if (obj == gp_crash_obj) {
-                obj->defaults = ((ZoneDrawHeader *)obj->zone->data)->player_defaults;
+            if (Ram_Addr(obj) == gp_crash_obj) {
+                obj->defaults = RAM_AT(ZoneDrawHeader, RAM_AT(ResourceEntry, obj->zone)->data)->player_defaults;
             } else {
-                zone = obj->zone ? obj->zone : g_pads[0];
-                obj->defaults = ((ZoneDrawHeader *)zone->data)->obj_defaults;
+                zone = RAM_AT(ResourceEntry, obj->zone ? obj->zone : g_pads[0]);
+                obj->defaults = RAM_AT(ZoneDrawHeader, zone->data)->obj_defaults;
             }
         }
         break;
@@ -438,7 +427,7 @@ typedef struct GoolFont {
     GoolGlyph backdrop;
 } GoolFont;
 
-s32 Gool_TextStringTransform(GoolObj *obj, u8 *str, s32 start_x, GoolFont *font, void *tex, s32 shift, u32 *ot) {
+s32 Gool_TextStringTransform(GoolObj *obj, u8 *str, s32 start_x, GoolFont *font, u32 tex, s32 shift, u32 *ot) {
     GoolBound glyph_bound;
     GoolBound bg_bound;
     u8 num_buf[8];
@@ -484,7 +473,7 @@ s32 Gool_TextStringTransform(GoolObj *obj, u8 *str, s32 start_x, GoolFont *font,
                 }
                 break;
             case 'p':
-                if (*(u32 *)((u32)obj->sp - ((*str++ - 0x2E) << 2)) == 1) {
+                if (*RAM_AT(u32, obj->sp - ((*str++ - 0x2E) << 2)) == 1) {
                     str++;
                 }
                 if (*str == '\0') {
@@ -502,9 +491,9 @@ s32 Gool_TextStringTransform(GoolObj *obj, u8 *str, s32 start_x, GoolFont *font,
                 }
                 num_buf[len] = '\0';
                 if (axis == 'x') {
-                    scale_x = BIOS_AToI(num_buf);
+                    scale_x = BIOS_AToI((char *)num_buf);
                 } else {
-                    scale_y = BIOS_AToI(num_buf);
+                    scale_y = BIOS_AToI((char *)num_buf);
                 }
                 if (*str == '~') {
                     goto tilde_loop;
@@ -532,7 +521,7 @@ s32 Gool_TextStringTransform(GoolObj *obj, u8 *str, s32 start_x, GoolFont *font,
                 bg_bound.x2 = bg_bound.x2 < glyph_bound.x2 ? glyph_bound.x2 : bg_bound.x2;
                 bg_bound.y2 = bg_bound.y2 < glyph_bound.y2 ? glyph_bound.y2 : bg_bound.y2;
             }
-            Gfx_TransformFontChar(obj, glyph, obj->cam_zoom, tex, &glyph_bound, ot, color_flag);
+            Gfx_TransformFontChar((struct LightCols9398 *)obj, (u32 *)glyph, obj->cam_zoom, tex, (struct Rect9398 *)&glyph_bound, ot, color_flag);
         }
         glyph_bound.x1 += glyph->width << shift;
     next_char:
@@ -547,7 +536,7 @@ done:
             bg_bound.y1 -= 0;
             bg_bound.x2 += 100;
             bg_bound.y2 += 0;
-            Gfx_TransformFragment(backdrop, obj->cam_zoom - 10, tex, bg_ptr, ot);
+            Gfx_TransformFragment((u32 *)backdrop, obj->cam_zoom - 10, tex, (struct Rect9398 *)bg_ptr, ot);
         }
     }
     return max_x;

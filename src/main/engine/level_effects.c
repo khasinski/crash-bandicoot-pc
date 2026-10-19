@@ -77,7 +77,7 @@ extern s32 gp_shader_param_vec[2];
 
 void Shader_ParamsUpdateRipple(s32 arg0)
 {
-    switch (g_ns_page_pool[0]->level_id) {
+    switch (RAM_AT(LevelHeader, g_ns_page_pool[0])->level_id) {
     case 0xF:
     case 0x18:
         gp_shader_ripple_speed = 0xA;
@@ -120,7 +120,7 @@ void Shader_ParamsUpdate(s32 arg0)
         gp_shader_color_b = 0;
         gp_octree_root = 0;
         gp_shader_prev_mode = -1;
-        switch (g_ns_page_pool[0]->level_id) {
+        switch (RAM_AT(LevelHeader, g_ns_page_pool[0])->level_id) {
         case 0x21:
             gp_ripple_amp = 0;
             gp_ripple_freq = 0xC8;
@@ -181,17 +181,17 @@ void Shader_ParamsUpdate(s32 arg0)
             break;
         }
     } else {
-        switch (g_ns_page_pool[0]->level_id) {
+        switch (RAM_AT(LevelHeader, g_ns_page_pool[0])->level_id) {
         case 0x28:
         case 0x2A:
             if ((v1 = (s32)g_shader_obj_color_scale) != 0) {
-                gp_dark_target_x = ((SaveObj *)v1)->transform.trans.x;
-                gp_dark_target_y = ((SaveObj *)v1)->transform.trans.y;
-                gp_dark_target_z = ((SaveObj *)v1)->transform.trans.z;
+                gp_dark_target_x = RAM_AT(SaveObj, v1)->transform.trans.x;
+                gp_dark_target_y = RAM_AT(SaveObj, v1)->transform.trans.y;
+                gp_dark_target_z = RAM_AT(SaveObj, v1)->transform.trans.z;
             } else {
-                gp_dark_target_x = gp_crash_obj->transform.trans.x;
-                gp_dark_target_y = gp_crash_obj->transform.trans.y;
-                gp_dark_target_z = gp_crash_obj->transform.trans.z;
+                gp_dark_target_x = RAM_AT(SaveObj, gp_crash_obj)->transform.trans.x;
+                gp_dark_target_y = RAM_AT(SaveObj, gp_crash_obj)->transform.trans.y;
+                gp_dark_target_z = RAM_AT(SaveObj, gp_crash_obj)->transform.trans.z;
             }
             v1 = g_pause_obj;
             if (v1 != 0) {
@@ -244,7 +244,7 @@ void Shader_ParamsUpdate(s32 arg0)
                 gp_lightning_state += gp_shader_param_1;
                 break;
             }
-            gp_octree_root = ++gp_octree_root % 4;
+            gp_octree_root = (gp_octree_root + 1) % 4;
             break;
         case 5:
         case 0xA:
@@ -300,20 +300,20 @@ void Shader_ParamsUpdate(s32 arg0)
         case 0x22:
         case 0x2E:
             if (gp_shader_prev_mode != -1) {
-                v2 = g_shader_color_table_ptrs[gp_shader_prev_mode][gp_octree_root];
+                v2 = RAM_AT(s32, g_shader_color_table_ptrs[gp_shader_prev_mode])[gp_octree_root];
                 if (v2 == -1) {
-                    *(volatile s32 *)&gp_ripple_amp = 0;
+                    gp_ripple_amp = 0;
                     gp_lightning_state = 0;
                     gp_shader_prev_mode = -1;
                 } else {
                     gp_ripple_amp = v2;
-                    gp_lightning_state = g_shader_color_table_ptrs[gp_shader_prev_mode][gp_octree_root++];
+                    gp_lightning_state = RAM_AT(s32, g_shader_color_table_ptrs[gp_shader_prev_mode])[gp_octree_root++];
                 }
             } else {
                 gp_ripple_amp = 0;
                 gp_lightning_state = 0;
                 if (Math_Randb(1000) < 0x19) {
-                    if (g_ns_page_pool[0]->level_id == 0x22 || g_ns_page_pool[0]->level_id == 0x2E) {
+                    if (RAM_AT(LevelHeader, g_ns_page_pool[0])->level_id == 0x22 || RAM_AT(LevelHeader, g_ns_page_pool[0])->level_id == 0x2E) {
                         switch (Math_Randb(3)) {
                         case 0:
                             gp_shader_prev_mode = 5;
@@ -330,7 +330,7 @@ void Shader_ParamsUpdate(s32 arg0)
                     }
                     gp_octree_root = 0;
                     if (gp_next_lid == 0 &&
-                        (g_ns_page_pool[0]->level_id == 0x1B || g_ns_page_pool[0]->level_id == 0x22 || g_ns_page_pool[0]->level_id == 0x2E) &&
+                        (RAM_AT(LevelHeader, g_ns_page_pool[0])->level_id == 0x1B || RAM_AT(LevelHeader, g_ns_page_pool[0])->level_id == 0x22 || RAM_AT(LevelHeader, g_ns_page_pool[0])->level_id == 0x2E) &&
                         (v3 = frame_counter) - gp_shader_param_vec[1] > 0x1800) {
                         __builtin_memcpy(name, gp_str_light_name_tmpl, 6);
                         for (sp18 = 0; sp18 < 1; sp18++) {
@@ -340,14 +340,14 @@ void Shader_ParamsUpdate(s32 arg0)
                         name[2] += Math_Randb(3);
                         sp1C = Ns_StringToEID(name);
                         sp18 = (Math_Randb(0x4CC) + 0xD99) >> 3;
-                        Audio_Control(0, 1, &sp18, 0);
+                        Audio_Control(0, 1, &sp18, NULL);
                         sp18 = Math_Randb(0xF) + 1;
-                        Audio_Control(0, 7, &sp18, 0);
+                        Audio_Control(0, 7, &sp18, NULL);
                         sp18 = Math_Randb(0x14) + 0x14;
                         if (Math_Randb(100) >= 0x15) {
                             sp18 += Math_Randb(0x32);
                         }
-                        Audio_VoiceCreate(0, &sp1C, sp18 * 0x3FFF / 100);
+                        Audio_VoiceCreate(NULL, (u32 *)&sp1C, sp18 * 0x3FFF / 100);
                     }
                 }
             }

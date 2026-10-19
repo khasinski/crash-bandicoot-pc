@@ -38,7 +38,7 @@ static __inline__ s32 zone_has_neighbor(ZoneHeader *header, ZoneEntry *entry)
     s32 i;
 
     for (i = 0; i < header->neighbor_count; i++) {
-        if (Ns_Lookup(&header->neighbors[i]) == entry) {
+        if (Ns_Lookup(&header->neighbors[i]) == (s32)Ram_Addr(entry)) {
             return 1;
         }
     }
@@ -51,19 +51,19 @@ typedef struct ZoneEntityHeader {
 } ZoneEntityHeader;
 
 /* Spawn type-3 entities of zone when its pending-spawn display flag is set. */
-__inline__ void Level_SpawnObjects(ZoneEntry *zone)
+void Level_SpawnObjects(ZoneEntry *zone)
 {
     ZoneHeader *header, *cur;
     ZoneEntityHeader *entity;
     s32 i;
 
-    header = (ZoneHeader *)zone->items[0];
+    header = RAM_AT(ZoneHeader, zone->items[0]);
     if (header->display_flags & 2) {
         for (i = 0; i < header->entity_count; i++) {
-            cur = (ZoneHeader *)zone->items[0];
-            entity = (ZoneEntityHeader *)zone->items[i + cur->path_index + cur->path_count];
+            cur = RAM_AT(ZoneHeader, zone->items[0]);
+            entity = RAM_AT(ZoneEntityHeader, zone->items[i + cur->path_index + cur->path_count]);
             if (entity->group == 3) {
-                Gool_ObjectSpawn(zone, i);
+                Gool_ObjectSpawn((struct ZoneEntryView *)zone, i);
             }
         }
         header->display_flags &= ~2;
@@ -77,12 +77,12 @@ void Level_SpawnObjects2(void)
     ZoneEntry *neighbor;
     s32 i;
 
-    if (level_position.zone == NULL) {
+    if (level_position.zone == 0) {
         return;
     }
-    header = (ZoneHeader *)((ZoneEntry *)level_position.zone)->items[0];
+    header = RAM_AT(ZoneHeader, RAM_AT(ZoneEntry, level_position.zone)->items[0]);
     for (i = 0; i < header->neighbor_count; i++) {
-        neighbor = Ns_Lookup(&header->neighbors[i]);
+        neighbor = RAM_AT(ZoneEntry, Ns_Lookup(&header->neighbors[i]));
         Level_SpawnObjects(neighbor);
     }
 }
@@ -93,10 +93,9 @@ void Level_SpawnObjects2(void)
  * marks its neighbours. Clears the NS update-pending word at the end. */
 void Level_Update(ResourceEntry *zone, ZonePath *path, s32 progress, u32 flags)
 {
-    u8 unused[0x18];        /* frame space with no remaining use */
     ZoneHeader *header, *cur_header, *n_header, *neighbor_header;
     ZoneEntry *slst, *neighbor;
-    void *tmp;
+    u32 tmp;
     s32 last, pt, next, steps, i, flag;
 
     if (path == NULL || zone == NULL) {
@@ -110,24 +109,24 @@ void Level_Update(ResourceEntry *zone, ZonePath *path, s32 progress, u32 flags)
         }
     }
     progress = last;
-    if (((ZoneHeader *)((ZoneEntry *)zone)->items[0])->world_count) {
-        if (level_position.zone != zone || path != level_position.path
+    if (RAM_AT(ZoneHeader, ((ZoneEntry *)zone)->items[0])->world_count) {
+        if (level_position.zone != Ram_Addr(zone) || Ram_Addr(path) != level_position.path
             || (level_position.progress >> 8) != (progress >> 8)) {
-            slst = (ZoneEntry *)Ns_Open(path, 1, 1);
+            slst = RAM_AT(ZoneEntry, Ns_Open(&path->slst, 1, 1));
             pt = progress >> 8;
             steps = (progress - level_position.progress) >> 8;
             /* pt + 1 goes through a variable: written inline, fold turns
              * it into (length - 1) - pt, which retail does not have. */
-            if (path != level_position.path || __builtin_abs(steps) > pt
+            if (Ram_Addr(path) != level_position.path || __builtin_abs(steps) > pt
                 || __builtin_abs(steps) > path->length - (next = pt + 1)) {
                 tmp = gp_slst_poly_list_b;
                 gp_slst_poly_list_b = gp_slst_poly_list_a;
                 gp_slst_poly_list_a = tmp;
                 if (pt < path->length / 2) {
-                    gp_level_entry = Slst_Update(slst->items[0], gp_level_entry, gp_slst_poly_list_a, 1);
+                    gp_level_entry = Ram_Addr(Slst_Update(RAM_AT(struct Stream, slst->items[0]), RAM_AT(struct Stream, gp_level_entry), RAM_AT(struct Stream, gp_slst_poly_list_a), 1));
                     pt = 0;
                 } else {
-                    gp_level_entry = Slst_Update(slst->items[path->length], gp_level_entry, gp_slst_poly_list_a, 0);
+                    gp_level_entry = Ram_Addr(Slst_Update(RAM_AT(struct Stream, slst->items[path->length]), RAM_AT(struct Stream, gp_level_entry), RAM_AT(struct Stream, gp_slst_poly_list_a), 0));
                     pt = path->length - 1;
                 }
             } else {
@@ -140,13 +139,13 @@ void Level_Update(ResourceEntry *zone, ZonePath *path, s32 progress, u32 flags)
                 gp_slst_poly_list_a = tmp;
                 if (steps > 0) {
                     steps--;
-                    gp_level_entry = Slst_Update(slst->items[++pt], gp_level_entry, gp_slst_poly_list_a, 1);
+                    gp_level_entry = Ram_Addr(Slst_Update(RAM_AT(struct Stream, slst->items[++pt]), RAM_AT(struct Stream, gp_level_entry), RAM_AT(struct Stream, gp_slst_poly_list_a), 1));
                 } else {
-                    gp_level_entry = Slst_Update(slst->items[pt--], gp_level_entry, gp_slst_poly_list_a, 0);
+                    gp_level_entry = Ram_Addr(Slst_Update(RAM_AT(struct Stream, slst->items[pt--]), RAM_AT(struct Stream, gp_level_entry), RAM_AT(struct Stream, gp_slst_poly_list_a), 0));
                     steps++;
                 }
             }
-            Ns_Close(path, 1);
+            Ns_Close(&path->slst, 1);
         } else {
             if (level_position.progress == progress) {
                 goto done;
@@ -155,10 +154,10 @@ void Level_Update(ResourceEntry *zone, ZonePath *path, s32 progress, u32 flags)
             goto camera;
         }
     }
-    if (level_position.zone != zone) {
+    if (level_position.zone != Ram_Addr(zone)) {
         flag = 1;
         cur_header = NULL;
-        header = (ZoneHeader *)((ZoneEntry *)zone)->items[0];
+        header = RAM_AT(ZoneHeader, ((ZoneEntry *)zone)->items[0]);
         g_level_first_spawn_flag[0] = 0;
         if (g_game_substate == 0x600) {
             if (flags & 2) {
@@ -167,16 +166,16 @@ void Level_Update(ResourceEntry *zone, ZonePath *path, s32 progress, u32 flags)
                 flag = 0;
             }
         }
-        if (level_position.zone != NULL) {
-            cur_header = (ZoneHeader *)((ZoneEntry *)level_position.zone)->items[0];
+        if (level_position.zone != 0) {
+            cur_header = RAM_AT(ZoneHeader, RAM_AT(ZoneEntry, level_position.zone)->items[0]);
             flag = flags & 2;
-            level_position.object_zone = zone;
+            level_position.object_zone = Ram_Addr(zone);
             for (i = 0; i < cur_header->neighbor_count; i++) {
-                neighbor = Ns_Lookup(&cur_header->neighbors[i]);
-                if (zone_has_neighbor((ZoneHeader *)((ZoneEntry *)zone)->items[0], neighbor)) {
+                neighbor = RAM_AT(ZoneEntry, Ns_Lookup(&cur_header->neighbors[i]));
+                if (zone_has_neighbor(RAM_AT(ZoneHeader, ((ZoneEntry *)zone)->items[0]), neighbor)) {
                     continue;
                 }
-                n_header = (ZoneHeader *)neighbor->items[0];
+                n_header = RAM_AT(ZoneHeader, neighbor->items[0]);
                 if (n_header->display_flags & 1) {
                     Gool_ZoneObjectsTerminate(neighbor);
                     n_header->display_flags &= ~3;
@@ -189,8 +188,8 @@ void Level_Update(ResourceEntry *zone, ZonePath *path, s32 progress, u32 flags)
                 g_spawns[i] &= ~4;
             }
         }
-        level_position.zone = zone;
-        level_position.path = path;
+        level_position.zone = Ram_Addr(zone);
+        level_position.path = Ram_Addr(path);
         level_position.progress = progress;
         Ns_ZoneUnload(cur_header != NULL ? &cur_header->load : NULL);
         for (i = 0; i < header->load.entry_count; i++) {
@@ -203,8 +202,8 @@ void Level_Update(ResourceEntry *zone, ZonePath *path, s32 progress, u32 flags)
             Ns_Update2();
         }
         for (i = 0; i < header->neighbor_count; i++) {
-            neighbor = Ns_Lookup(&header->neighbors[i]);
-            neighbor_header = (ZoneHeader *)neighbor->items[0];
+            neighbor = RAM_AT(ZoneEntry, Ns_Lookup(&header->neighbors[i]));
+            neighbor_header = RAM_AT(ZoneHeader, neighbor->items[0]);
             if (!(neighbor_header->display_flags & 1)) {
                 g_doctor_cortex_obj[0] = 0;
                 g_mdat_title_str_ptr[0] = 0;
@@ -212,20 +211,20 @@ void Level_Update(ResourceEntry *zone, ZonePath *path, s32 progress, u32 flags)
                 neighbor_header->display_flags |= 3;
             }
             if (flag) {
-                ((ZoneHeader *)neighbor->items[0])->display_flags |= 4;
+                RAM_AT(ZoneHeader, neighbor->items[0])->display_flags |= 4;
             } else {
-                ((ZoneHeader *)neighbor->items[0])->display_flags &= ~4;
+                RAM_AT(ZoneHeader, neighbor->items[0])->display_flags &= ~4;
             }
         }
         Level_UpdateMisc(header->gfx, flags);
     } else {
-        level_position.zone = zone;
-        level_position.path = path;
+        level_position.zone = Ram_Addr(zone);
+        level_position.path = Ram_Addr(path);
         level_position.progress = progress;
     }
 camera:
     lvl_camera.rot_before = lvl_camera.rot;
-    Zone_PathProgressToLoc(level_position.path, -level_position.progress, &lvl_camera.trans);
+    Zone_PathProgressToLoc(RAM_AT(ZonePath, level_position.path), -level_position.progress, (struct CamSample *)&lvl_camera.trans);
     lvl_camera.rot_after = lvl_camera.rot;
 done:
     g_ns.wordA98 = 0;

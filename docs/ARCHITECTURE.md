@@ -41,35 +41,43 @@ the engine:
 
 ## Native design
 
-`main()` parses the command line, opens the user's CUE/BIN image and starts
-`CORE_Main`. PsyZ provides the PsyQ API surface (GPU, GTE, SPU, pads, memory
-card, CD) on top of SDL, so the reconstructed `sdk/` sources are not compiled
-into the native executable. They stay in the tree as a behavioral reference.
+`src/platform/main.c` takes the role of the BIOS loader and crt0. It mounts the
+user's CUE/BIN image in PsyZ, loads `SCUS_949.00` into the game's memory,
+sets up the heap as crt0 does and calls the original `CORE_Main` on a stack
+inside game memory. PsyZ provides the PsyQ API surface (GPU, GTE, SPU, pads,
+memory card, CD) on top of SDL, so the reconstructed `sdk/` sources are not
+compiled. They stay in the tree as a behavioral reference.
 
-The CD layer reads ISO 9660 files from the image. The NS system loads NSD and
-NSF pages from those files directly; no CD drive timing is emulated. CD audio
-and XA streams are played through PsyZ.
+The game reads the disc itself: `Cd_ReadFileSys` walks the ISO 9660
+directories and the NS system reads NSD and NSF pages with `CdRead`, which
+PsyZ serves from the image. No CD drive timing is emulated.
 
-Scratchpad buffers and the fixed RAM regions the engine assumes (the page
-pool, object pool and ordering tables) become ordinary host allocations or
-statics. The hand-written scratchpad routines are translated to C that uses
-the PsyZ GTE API.
+### Game memory
 
-### Host pointers
+Game data lives in a host block that mirrors PS1 RAM, with every global at
+its original address and words that hold pointers keeping PS1 addresses.
+This preserves the engine's in-place resolution of disc references, the
+GOOL object fields that bytecode reads as words, and the views that overlay
+several globals. [MEMORY_MODEL.md](MEMORY_MODEL.md) describes the model and
+the conversions host code uses.
 
-The PS1 build stores pointers in 32-bit words throughout: NS entry pointers in
-page tables, GOOL object links in the object field array, and code pointers in
-dispatch tables. On a 64-bit host these words cannot hold a pointer. Each
-module joining the build must resolve this explicitly by one of these means:
+### Hand-written routines
 
-- Typed pointer fields in host-only structures, when the value never reaches
-  serialized data or GOOL.
-- Handles (pool indices or arena offsets) when GOOL bytecode reads or writes
-  the word as a 32-bit value. GOOL object references are the main case.
-- Explicit decoding of on-disc records into host structures at load time,
-  converting offsets into pointers.
+The engine's hand-written R3000 routines (SLST decoding, transformation,
+projection, collision queries) are translated to C as one block by
+`tools/scripts/gen_gte_render.py` (`src/main/engine/gte_render_mips.inc`).
+Every instruction has a label, so the routines' jumps into each other's
+unrolled code work unchanged; branch delay slots and the R3000 division
+results are reproduced, and GTE instructions go to PsyZ's register-level
+GTE. Each routine has a C entry point with its prototype from
+`include/functions.h`.
 
-Never truncate a pointer to 32 bits, and never assume `sizeof(void *) == 4`.
+### Graphics
+
+The game builds GPU packets, ordering tables and drawing environments in PS1
+format in game memory. `include/gpu.h` redirects its libgpu calls to
+`src/platform/gpu.c`, which walks the PS1 packet chain and writes the GP0
+words to PsyZ's GPU.
 
 ## Data formats
 

@@ -157,13 +157,16 @@ s32 Gool_ObjectOrientOnPath(GoolObj *obj, s32 progress, s32 *trans_arr) {
     s32 dot;
     u32 old_status_a;
 
-    entity = (ZoneEntity *)obj->entity;
-    if (obj == NULL || entity == NULL) {
+    if (obj == NULL) {
         return -0xE;
     }
-    switch (entity->zone->kind) {
+    entity = RAM_AT(ZoneEntity, obj->entity);
+    if (entity == NULL) {
+        return -0xE;
+    }
+    switch (RAM_AT(ZoneEntryView, entity->zone)->kind) {
     case 7:
-        origin = (GoolVec3 *)entity->zone->items[1];
+        origin = RAM_AT(GoolVec3, RAM_AT(ZoneEntryView, entity->zone)->items[1]);
         shift = 2;
         break;
     case 17:
@@ -197,13 +200,12 @@ s32 Gool_ObjectOrientOnPath(GoolObj *obj, s32 progress, s32 *trans_arr) {
             ((next_pt.x - trans->x) >> 8) * ((next_pt.x - trans->x) >> 8) +
             dot * dot);
         if (dist != 0) {
-            Unk4Bytes sp40 = gp_path_orient_step;
             s32 abs_dx;
             s32 abs_dz;
             s32 temp;
 
             temp = ((obj->vectors.trans[0] - trans->x) >> 4) * ((next_pt.x - trans->x) >> 4) +
-                   (temp = ((obj->vectors.trans[2] - trans->z) >> 4) * ((next_pt.z - trans->z) >> 4));
+                   ((obj->vectors.trans[2] - trans->z) >> 4) * ((next_pt.z - trans->z) >> 4);
             dot = temp / dist;
             frac = dot / dist;
             if (frac >= 0x100 && (progress >> 8) < entity->path_length - 1) {
@@ -218,7 +220,6 @@ s32 Gool_ObjectOrientOnPath(GoolObj *obj, s32 progress, s32 *trans_arr) {
             } else {
                 obj->rot_vel_y = abs_dz + abs_dx / 2;
             }
-            obj->rot_vel_y = obj->rot_vel_y;
             if (obj->rot_vel_y > obj->hotspot_size || (frac < 0 && idx == 0) || frac >= 0x100) {
                 obj->status_a |= 0x200;
             }

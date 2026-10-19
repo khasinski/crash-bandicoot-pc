@@ -8,6 +8,6 @@
 
 void Gfx_SetGteMatrices(void)
 {
-    SetRotMatrix(g_m_rot);
-    SetTransMatrix(g_m_rot);
+    SetRotMatrix((MATRIX *)g_m_rot);
+    SetTransMatrix((MATRIX *)g_m_rot);
 }

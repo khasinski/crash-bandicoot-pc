@@ -54,21 +54,21 @@ s32 Gool_FindNearestObject(GoolObj *arg0, GoolQuery *arg1)
     s32 anim_type2;
     u32 target_flags;
     u32 test;
-    s32 sp10;
+    u32 sp10;
 
-    other = arg1->other;
+    other = RAM_AT(GoolObj, arg1->other);
     if (arg0 == other) {
         return 0;
     }
-    if (!((1 << (arg0->exec->header->category >> 8)) & arg1->mask)) {
+    if (!((1 << (RAM_AT(GoolCodeHeader, RAM_AT(GoolExecutable, arg0->exec)->header)->category >> 8)) & arg1->mask)) {
         return 0;
     }
-    dist = Math_ApxDist(arg0->trans, other->trans);
+    dist = Math_ApxDist((struct Vec3 *)arg0->trans, (struct Vec3 *)other->trans);
     if (dist < arg1->max_dist) {
         event = arg1->event;
         if (event != 0xFF) {
-            hdr = arg0->exec;
-            state = hdr->states[event >> 8];
+            hdr = RAM_AT(GoolExecutable, arg0->exec);
+            state = RAM_AT(u16, hdr->states)[event >> 8];
             if (state == 0xFF) {
                 if ((event == 0x300 && (event = arg0->anim_type, state_flags1 = arg0->status_c, (u32)(event - 3) >= 2 && event != 2 && !(state_flags1 & 2)))
                     || (arg1->event == 0xA00 && !(arg0->state_flags & 0x800))
@@ -81,7 +81,7 @@ s32 Gool_FindNearestObject(GoolObj *arg0, GoolQuery *arg1)
                 if (!(state & 0x8000)) {
                     state_flags2 = arg0->status_c;
                     anim_type2 = arg0->anim_type;
-                    target_flags = *(u32 *)((state << 4) + hdr->states_base);
+                    target_flags = *RAM_AT(u32, (state << 4) + hdr->states_base);
                     if ((u32)(anim_type2 - 3) < 2 || anim_type2 == 2) {
                         test = (state_flags2 | 0x1002) & target_flags;
                     } else {
@@ -95,8 +95,8 @@ s32 Gool_FindNearestObject(GoolObj *arg0, GoolQuery *arg1)
                     if (arg1->event == 0xF00) {
                         sp10 = 0x100;
                         arg0->interrupter = arg1->other;
-                        Gool_ObjectInterrupt(arg0, state, 1, &sp10);
-                        if (arg1->other->arg0_v == 0) {
+                        Gool_ObjectInterrupt((struct GoolStackObj *)arg0, state, 1, &sp10);
+                        if (RAM_AT(GoolObj, arg1->other)->arg0_v == 0) {
                             return 0;
                         }
                     }
@@ -106,7 +106,7 @@ s32 Gool_FindNearestObject(GoolObj *arg0, GoolQuery *arg1)
             state = 0xFE;
         }
         if (state != 0xFF) {
-            arg1->best = arg0;
+            arg1->best = Ram_Addr(arg0);
             arg1->max_dist = dist;
         }
     }

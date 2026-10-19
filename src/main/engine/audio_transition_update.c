@@ -18,11 +18,11 @@ void Midi_Update(s32 *reference) {
     if(gp_midi_loaded_eid!=key)goto change;
     goto finish;
    }
-   if(gp_midi_loaded_eid!=((s32 *)key)[1]) {
+   if(gp_midi_loaded_eid!=RAM_AT(s32, key)[1]) {
 change:
     if(gp_midi_default_rvol==0 && gp_midi_vab_id_2!=-1 && gp_midi_vab_id==0) {
      SsSepSetDecrescendo(gp_midi_vol,g_midi_channel_states[0].channel,(s32)(gp_midi_seq_gain<<16)>>23,30);
-     gp_midi_seq_num=30;gp_midi_vab_id=reference;gp_card_chan=4;return;
+     gp_midi_seq_num=30;gp_midi_vab_id=Ram_Addr(reference);gp_card_chan=4;return;
     }
    }
    state=gp_card_chan;

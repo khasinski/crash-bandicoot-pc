@@ -19,12 +19,19 @@ typedef struct PadState {
 #include "engine_externs.h"
 #undef CRASH_EXT_ENGINE_SHUTDOWN_0
 
+/* OpenEvent takes a long (*)() handler; RIncTickCount returns nothing. */
+static long core_rcnt2_handler(void)
+{
+    RIncTickCount();
+    return 0;
+}
+
 s32 Core_Init(void)
 {
     s32 i;
 
     for (i = 0; i < 0x400; i++) {
-        ((u8 *)0x1F800000)[i] = 0;
+        RAM_AT(u8, RAM_SCRATCH_BASE)[i] = 0;
     }
     SetVideoMode(0);
     InitGeom();
@@ -36,7 +43,7 @@ s32 Core_Init(void)
     Card_Init();
     EnterCriticalSection();
     StopRCnt(0xF2000002);
-    gp_rcnt2_event = OpenEvent(0xF2000002, 2, 0x1000, RIncTickCount);
+    gp_rcnt2_event = OpenEvent(0xF2000002, 2, 0x1000, core_rcnt2_handler);
     EnableEvent(gp_rcnt2_event);
     SetRCnt(0xF2000002, 0x1000, 0x1000);
     StartRCnt(0xF2000002);
@@ -150,16 +157,17 @@ void Pad_Update(void)
                 } else {
                     u32 pressed = slot->word04;
                     s32 player;
+                    DemoRecording *frame = RAM_AT(DemoRecording, gp_cur_pbak_frame);
 
-                    if (gp_cur_pbak_header == gp_cur_pbak_frame->inputs) {
-                        g_db_cur[0]->word84 = gp_cur_pbak_frame->seed;
+                    if (gp_cur_pbak_header == Ram_Addr(frame->inputs)) {
+                        RAM_AT(DemoBufferView, g_db_cur[0])->word84 = frame->seed;
                     }
-                    slot->word04 = gp_cur_pbak_header->buttons;
-                    gp_cur_pbak_header++;
-                    if ((pressed & 0x9F0) || gp_cur_pbak_header >= &gp_cur_pbak_frame->inputs[gp_cur_pbak_frame->count]) {
+                    slot->word04 = RAM_AT(DemoInput, gp_cur_pbak_header)->buttons;
+                    gp_cur_pbak_header += sizeof(DemoInput);
+                    if ((pressed & 0x9F0) || RAM_AT(DemoInput, gp_cur_pbak_header) >= &frame->inputs[frame->count]) {
                         arg[0] = 0;
                         if ((player = g_pad_debug_override.player) != 0) {
-                            Gool_ExecStateCode(0, player, 0xE00, 1, arg);
+                            Gool_ExecStateCode(NULL, RAM_AT(struct GoolObjView, player), 0xE00, 1, arg);
                             g_pad_debug_override.playback_mode = 3;
                         } else {
                             g_pad_debug_override.playback_mode = 0;

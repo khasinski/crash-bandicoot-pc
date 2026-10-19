@@ -2,13 +2,13 @@
 
 s32 GOOL_TraverseObjectTreePostorder(Node *root, Visitor visitor, void *context)
 {
-    Node *child = root->children;
+    Node *child = RAM_AT(Node, root->children);
     Node *next;
     if(child != NULL) {
         do {
-            next = child->next;
+            next = RAM_AT(Node, child->next);
             if(GOOL_TraverseObjectTreePostorder(child, visitor, context) == -25)
-                Gool_ObjectKill(root, 0);
+                Gool_ObjectKill((struct GoolObj *)root, 0);
             child = next;
         } while(child != NULL);
     }
@@ -31,12 +31,12 @@ s32 Gool_ObjectSearchTree(Node *root, Visitor visitor, void *context)
         }
     }
     if (root->kind == 2) {
-        child = root->word04;
+        child = RAM_AT(Node, root->word04);
     } else {
-        child = root->children;
+        child = RAM_AT(Node, root->children);
     }
     while (child != NULL && result == 0) {
-        next = child->next;
+        next = RAM_AT(Node, child->next);
         result = Gool_ObjectSearchTree(child, visitor, context);
         child = next;
     }

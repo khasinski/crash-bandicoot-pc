@@ -80,15 +80,15 @@ s32 Gfx_CalcObjectMatrices(u8 *arg0, void *arg1, GoolObj88CC *arg2, s32 arg3, s3
     if (arg4 != NULL) {
         *arg4 = 0;
     }
-    SetRotMatrix(g_m_wgeo_view);
-    SetTransMatrix(g_cams);
+    SetRotMatrix((MATRIX *)g_m_wgeo_view);
+    SetTransMatrix((MATRIX *)g_cams);
     sp10[0] = (arg2->vectors.trans[0] - (*g_cam_eye_x)) >> 8;
     sp10[1] = (arg2->vectors.trans[1] - (*g_cam_eye_y)) >> 8;
     sp10[2] = (arg2->vectors.trans[2] - (*g_cam_eye_z)) >> 8;
-    RotTrans(sp10, sp18.t, &sp88);
+    RotTrans((SVECTOR *)sp10, (VECTOR *)sp18.t, &sp88);
 
     if (!(g_cur_lid_ro[0] & 0x10000)) {
-        far_z = (*g_pads)->data->far_clip >> 8;
+        far_z = RAM_AT(ZoneHeader88CC, RAM_AT(ResourceEntry88CC, g_pads[0])->data)->far_clip >> 8;
         sp88 = far_z;
         if (far_z != 0 && sp18.t[2] > far_z) {
             return 0;
@@ -106,10 +106,10 @@ s32 Gfx_CalcObjectMatrices(u8 *arg0, void *arg1, GoolObj88CC *arg2, s32 arg3, s3
             }
             if (status_b < 0) {
                 Gte_RProjectBound(arg2->bound, arg3 ? (p2 + 0x2C) : (p1 + 0x2C), vectors, (u8 *)d - 0x48);
-                x0 = *(s32 *)0x1F800048;
-                y0 = *(s32 *)0x1F80004C;
-                x1 = *(s32 *)0x1F800050;
-                y1 = *(s32 *)0x1F800054;
+                x0 = *RAM_AT(s32, 0x1F800048);
+                y0 = *RAM_AT(s32, 0x1F80004C);
+                x1 = *RAM_AT(s32, 0x1F800050);
+                y1 = *RAM_AT(s32, 0x1F800054);
                 if ((x0 < -0x100 && x1 < -0x100)
                     || (x0 > 0x100 && x1 > 0x100)
                     || (y0 < -0x6C && y1 < -0x6C)
@@ -126,8 +126,8 @@ s32 Gfx_CalcObjectMatrices(u8 *arg0, void *arg1, GoolObj88CC *arg2, s32 arg3, s3
                 }
             }
         }
-        if (arg2 != (*gp_crash_obj) && !(arg2->status_b & 0x400)) {
-            header = (*g_pads)->data;
+        if (Ram_Addr(arg2) != gp_crash_obj[0] && !(arg2->status_b & 0x400)) {
+            header = RAM_AT(ZoneHeader88CC, RAM_AT(ResourceEntry88CC, g_pads[0])->data);
             switch (header->light_mode) {
             case 2:
                 dst = (u16 *)&arg2->light;
@@ -158,14 +158,14 @@ s32 Gfx_CalcObjectMatrices(u8 *arg0, void *arg1, GoolObj88CC *arg2, s32 arg3, s3
                 break;
             case 4:
                 light = &arg2->light;
-                if ((*g_shader_obj_color_scale) != NULL) {
-                    tx = (*g_shader_obj_color_scale)->vectors.trans[0];
-                    ty = (*g_shader_obj_color_scale)->vectors.trans[1];
-                    tz = (*g_shader_obj_color_scale)->vectors.trans[2];
+                if (g_shader_obj_color_scale[0] != 0) {
+                    tx = RAM_AT(GoolObj88CC, g_shader_obj_color_scale[0])->vectors.trans[0];
+                    ty = RAM_AT(GoolObj88CC, g_shader_obj_color_scale[0])->vectors.trans[1];
+                    tz = RAM_AT(GoolObj88CC, g_shader_obj_color_scale[0])->vectors.trans[2];
                 } else {
-                    tx = (*gp_crash_obj)->vectors.trans[0];
-                    ty = (*gp_crash_obj)->vectors.trans[1];
-                    tz = (*gp_crash_obj)->vectors.trans[2];
+                    tx = RAM_AT(GoolObj88CC, gp_crash_obj[0])->vectors.trans[0];
+                    ty = RAM_AT(GoolObj88CC, gp_crash_obj[0])->vectors.trans[1];
+                    tz = RAM_AT(GoolObj88CC, gp_crash_obj[0])->vectors.trans[2];
                 }
                 light->b[0] = 0;
                 light->b[1] = 0;
@@ -268,17 +268,11 @@ s32 Gfx_CalcObjectMatrices(u8 *arg0, void *arg1, GoolObj88CC *arg2, s32 arg3, s3
             }
         }
     }
-    {
-        s32 z = (s32)vectors & 1;
-        if (z >> 1) {
-            arg4 = NULL;
-        }
-    }
     if (arg3 != 0) {
         Gte_RCalcObjectRotMatrix(g_m_color, arg1, vectors, &arg2->light);
     } else {
         Gte_RCalcObjectMatrices(g_m_color, arg1, vectors, &arg2->light);
     }
-    SetTransMatrix(&sp18);
+    SetTransMatrix((MATRIX *)&sp18);
     return 1;
 }

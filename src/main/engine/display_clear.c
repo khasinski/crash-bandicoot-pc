@@ -12,7 +12,7 @@ typedef struct RenderSystem {
 #include "engine_externs.h"
 #undef CRASH_EXT_ENGINE_DISPLAY_CLEAR
 
-__inline__ void Gpu_ClearVRAM(void) {
+void Gpu_ClearVRAM(void) {
     Drawing drawing;
     Tile tile;
     SetDefDrawEnv(&drawing.env,0,0,1024,512);
@@ -40,7 +40,7 @@ void Gpu_FillDisplay(void) {
     tile.header.color[0] = 0;
     tile.header.color[1] = 0;
     tile.header.color[2] = 0;
-    tile.rect.x = g_context.active[1]->drawing.env.clip.x;
+    tile.rect.x = RAM_AT(RenderBuffer, g_context.active[1])->drawing.env.clip.x;
     tile.rect.y = 0;
     DrawPrim(&tile.header);
     DrawSync(0);
@@ -65,17 +65,17 @@ void Gpu_Init(void) {
         buffer->drawing.env.offset_y = 120;
         buffer->drawing.env.dither = 1;
         if (i == 0) {
-            g_context.active[2] = buffer;
-            g_context.active[0] = buffer;
+            g_context.active[2] = Ram_Addr(buffer);
+            g_context.active[0] = Ram_Addr(buffer);
         }
         if (i == 1) {
-            g_context.active[1] = buffer;
+            g_context.active[1] = Ram_Addr(buffer);
         }
         *(s32 *)&buffer->meta[0] = frame_counter;
         *(s32 *)&buffer->meta[8] = 0x22;
     }
-    PutDispEnv(&g_context.active[0]->display);
-    PutDrawEnv(&g_context.active[1]->drawing);
+    PutDispEnv(&RAM_AT(RenderBuffer, g_context.active[0])->display);
+    PutDrawEnv(&RAM_AT(RenderBuffer, g_context.active[1])->drawing);
     SetDispMask(1);
 }
 
@@ -107,7 +107,7 @@ s32 Gpu_SetupPrims(void) {
             size = 0x16000;
             break;
         }
-        buffer->word74 = (s32)LIBC_Malloc(size);
+        buffer->word74 = (s32)Ram_Addr(LIBC_Malloc(size));
         if (!buffer->word74) {
             BIOS_Abs(-15);
         }
@@ -123,7 +123,7 @@ s32 Gpu_Kill(void) {
     DrawSync(0);
     for (i = 0; i < g_context.count; i++) {
         buffer = &g_context.buffers[i];
-        LIBC_Free((void *)buffer->word74);
+        LIBC_Free(RAM_AT(void, buffer->word74));
     }
     switch (gp_pbak_mode) {
     case 0x19:

@@ -137,7 +137,7 @@ void Gool_TextObjectTransform(GoolObj *obj, GoolAnimSeq *anim_seq, u32 anim_fram
     s32 i;
     u32 font_offset;
     GoolFont *font;
-    void *tex;
+    u32 tex;
     u8 *p;
     s32 width;
 
@@ -160,9 +160,9 @@ void Gool_TextObjectTransform(GoolObj *obj, GoolAnimSeq *anim_seq, u32 anim_fram
             }
         }
         font_offset = (u32)obj->invincibility_state >> 8;
-        font = (GoolFont *)(obj->exec->anims + (font_offset ? font_offset : anim4->count));
+        font = (GoolFont *)(RAM_AT(u32, RAM_AT(GoolExecutable, obj->exec)->anims) + (font_offset ? font_offset : anim4->count));
         tex = Ns_Lookup(&font->eid);
-        sprintf(buf, str, *(obj->sp - 2), *(obj->sp - 3), *(obj->sp - 4), *(obj->sp - 5));
+        sprintf((char *)buf, (char *)str, RAM_AT(u32, obj->sp)[-2], RAM_AT(u32, obj->sp)[-3], RAM_AT(u32, obj->sp)[-4], RAM_AT(u32, obj->sp)[-5]);
         str = buf;
         p = str;
         while (*p != '\0') {

@@ -17,10 +17,10 @@ typedef struct NsFileMapBits {
 #include "engine_externs.h"
 #undef CRASH_EXT_ENGINE_CD_DIR
 
-static __inline__ s32 cd_read_sectors(s32 sector_count, s32 first_sector, void *destination, u8 *position) {
+static __inline__ s32 cd_read_sectors(s32 sector_count, s32 first_sector, void *destination, CdlLOC *position) {
     CdIntToPos(first_sector, position);
-    CdControl(2, position, NULL);
-    CdRead(sector_count, destination, 0x80);
+    CdControl(2, (u_char *)position, NULL);
+    CdRead(sector_count, (u_long *)destination, 0x80);
     return CdReadSync(0, NULL) == 0;
 }
 
@@ -32,7 +32,7 @@ static __inline__ void *cd_memcpy(void *dst, const void *src, s32 len) {
 s32 Cd_ReadFileSys(void) {
     u8 name[32];
     s32 subdirs[4];
-    u8 position[8];
+    CdlLOC position;
     s32 sector;
     s32 pt_sector;
     s32 size;
@@ -43,7 +43,7 @@ s32 Cd_ReadFileSys(void) {
     s32 level;
 
     buf = LIBC_Malloc(0x800);
-    if (cd_read_sectors(1, 0x10, buf, position) != 1) {
+    if (cd_read_sectors(1, 0x10, buf, &position) != 1) {
         goto fail;
     }
     if (BIOS_StrNCmp((char *)(buf + 1), gp_cd_name, 5) != 0) {
@@ -51,7 +51,7 @@ s32 Cd_ReadFileSys(void) {
     }
     BIOS_Printf(g_str_cd_dir_reading_file_system_n);
     __builtin_memcpy(&sector, buf + 0x8C, 4);
-    if (cd_read_sectors(1, sector, buf, position) != 1) {
+    if (cd_read_sectors(1, sector, buf, &position) != 1) {
         goto fail;
     }
     p = buf;
@@ -81,7 +81,7 @@ s32 Cd_ReadFileSys(void) {
     }
     for (j = 0; j < 4; j++) {
         if (subdirs[j] != -1) {
-            if (cd_read_sectors(1, subdirs[j], buf, position) != 1) {
+            if (cd_read_sectors(1, subdirs[j], buf, &position) != 1) {
                 goto fail;
             }
         }

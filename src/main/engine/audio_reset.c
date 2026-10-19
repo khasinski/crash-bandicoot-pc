@@ -1,17 +1,6 @@
 #include "common.h"
 #include "audio_channels.h"
 
-typedef struct SpuCommonAttributes {
-    u32 mask;
-    s16 volume_left, volume_right;
-    s16 mode_left, mode_right;
-    u8 reserved_0c[4];
-    u16 cd_left, cd_right;
-    s32 cd_mix, cd_reverb;
-    u16 external_left, external_right;
-    s32 external_mix, external_reverb;
-} SpuCommonAttributes;
-
 typedef struct VoiceEntry {
     s32 word_00;
     u32 b0 : 1;
@@ -45,7 +34,7 @@ typedef struct VoiceEntry {
 
 void Audio_Init(void) {
     s32 i;
-    SpuCommonAttributes attr;
+    SpuCommonAttr attr;
 
     for (i = 0; i < 24; i++) {
         g_voices[i].b3 = 0;
@@ -54,11 +43,11 @@ void Audio_Init(void) {
     SsSetTableSize(g_ss_seq_attr_table, 1, 2);
     SpuInitMalloc(0, gp_spu_malloc_rec);
     attr.mask = 3;
-    attr.volume_left = 0x3FFF;
-    attr.volume_right = 0x3FFF;
+    attr.mvol.left = 0x3FFF;
+    attr.mvol.right = 0x3FFF;
     SpuSetCommonAttr(&attr);
     SpuSetTransferMode(0);
-    g_audio_vol_scale.word_0c = NULL;
+    g_audio_vol_scale.word_0c = 0;
     g_audio_vol_scale.word_10 = 1;
     g_audio_vol_scale.word_11 = 0x80;
     g_audio_vol_scale.word_12 = 0x3FFF;

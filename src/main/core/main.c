@@ -24,17 +24,17 @@ typedef struct LevelDataView {
     u8 reserved_00[4];
     s32 level_id;
     u8 reserved_08[0xC];
-    s32 eid14;
+    u32 eid14;
     u8 reserved_18[8];
-    s32 eid20;
-    s32 eid24;
-    s32 eid28;
+    u32 eid20;
+    u32 eid24;
+    u32 eid28;
     u8 reserved_2c[0x5C];
-    s32 eid88;
+    u32 eid88;
     u8 reserved_8c[0x10];
-    s32 eid9C;
+    u32 eid9C;
     u8 reserved_a0[0x44];
-    s32 eidE4;
+    u32 eidE4;
 } LevelDataView;
 
 typedef struct NsState {
@@ -66,26 +66,26 @@ void Core_ObjectsCreate(void)
     case 0x39:
         break;
     case 0x19:
-        Ns_Open(&g_ns.level->eid24, 0, 1);
-        Ns_Open(&g_ns.level->eidE4, 0, 1);
+        Ns_Open(&RAM_AT(LevelDataView, g_ns.level)->eid24, 0, 1);
+        Ns_Open(&RAM_AT(LevelDataView, g_ns.level)->eidE4, 0, 1);
         break;
     case 0x2D:
-        Ns_Open(&g_ns.level->eid88, 0, 1);
-        Ns_Open(&g_ns.level->eid9C, 0, 1);
-        Ns_Open(&g_ns.level->eid20, 0, 1);
+        Ns_Open(&RAM_AT(LevelDataView, g_ns.level)->eid88, 0, 1);
+        Ns_Open(&RAM_AT(LevelDataView, g_ns.level)->eid9C, 0, 1);
+        Ns_Open(&RAM_AT(LevelDataView, g_ns.level)->eid20, 0, 1);
         break;
     default:
-        g_hud_fruit_obj = GOOL_CreateObject(&g_handles, 4, 0, 0, 0, 0);
-        g_hud_life_obj = GOOL_CreateObject(&g_handles, 4, 1, 0, 0, 0);
-        g_hud_pickup_obj = GOOL_CreateObject(&g_handles, 4, 5, 0, 0, 0);
-        Ns_Open(&g_ns.level->eid14, 0, 1);
-        Ns_Open(&g_ns.level->eid28, 0, 1);
-        Ns_Open(&g_ns.level->eid88, 0, 1);
+        g_hud_fruit_obj = GOOL_CreateObject((struct GoolObj *)g_handles, 4, 0, 0, 0, 0);
+        g_hud_life_obj = GOOL_CreateObject((struct GoolObj *)g_handles, 4, 1, 0, 0, 0);
+        g_hud_pickup_obj = GOOL_CreateObject((struct GoolObj *)g_handles, 4, 5, 0, 0, 0);
+        Ns_Open(&RAM_AT(LevelDataView, g_ns.level)->eid14, 0, 1);
+        Ns_Open(&RAM_AT(LevelDataView, g_ns.level)->eid28, 0, 1);
+        Ns_Open(&RAM_AT(LevelDataView, g_ns.level)->eid88, 0, 1);
         if (gp_pbak_mode != 0x2C) {
-            Ns_Open(&g_ns.level->eid9C, 0, 1);
+            Ns_Open(&RAM_AT(LevelDataView, g_ns.level)->eid9C, 0, 1);
         }
-        Ns_Open(&g_ns.level->eid20, 0, 1);
-        Ns_Open(&g_ns.level->eid24, 0, 1);
+        Ns_Open(&RAM_AT(LevelDataView, g_ns.level)->eid20, 0, 1);
+        Ns_Open(&RAM_AT(LevelDataView, g_ns.level)->eid24, 0, 1);
         break;
     }
     Level_InitMisc(1);
@@ -108,7 +108,6 @@ extern u32 gp_core_init_done;
  * level transitions, per-frame update and zone-specific drawing. */
 void CORE_Loop(s32 level)
 {
-    char debug_text[0xA8]; /* reserved in the retail frame, never accessed */
     s32 arg;
     s32 restore;
     s32 id;
@@ -121,11 +120,11 @@ void CORE_Loop(s32 level)
     do {
         /* Start toggles pause outside the title, map and intro levels. */
         if ((g_gool_pads & 0x800) && g_pause_state.playback_mode == 0
-            && (((id = g_ns.level->level_id) != 0x19 && id != 0x2D && id != 0x38
+            && (((id = RAM_AT(LevelDataView, g_ns.level)->level_id) != 0x19 && id != 0x2D && id != 0x38
                  && g_pause_state.pause_override != -1) || g_key_count[0] > 0)) {
             if ((gp_next_lid = 1 - gp_next_lid) != 0) {
                 if (g_pause_state.pause_object == 0) {
-                    g_pause_state.pause_object = GOOL_CreateObject(&g_pause_state, 4, 4, 0, 0, 0);
+                    g_pause_state.pause_object = GOOL_CreateObject((struct GoolObj *)&g_pause_state, 4, 4, 0, 0, 0);
                     if (g_pause_state.pause_object >= -0xFE) {
                         gp_next_lid = 0;
                         g_pause_state.pause_object = 0;
@@ -133,15 +132,15 @@ void CORE_Loop(s32 level)
                     }
                     gp_use_cd = 1;
                     gp_rcnt_event = engine_counter[0];
-                    gp_core_init_done = g_db_prev->stamp;
+                    gp_core_init_done = RAM_AT(DrawStampView, g_db_prev)->stamp;
                 }
             } else if (g_pause_state.pause_object != 0) {
                 arg = 0;
-                Gool_ExecStateCode(0, g_pause_state.pause_object, 0xC00, 1, &arg);
+                Gool_ExecStateCode(NULL, RAM_AT(struct GoolObjView, g_pause_state.pause_object), 0xC00, 1, &arg);
                 g_pause_state.pause_object = 0;
                 gp_use_cd = -1;
                 engine_counter[0] = gp_rcnt_event;
-                g_db_prev->stamp = gp_core_init_done;
+                RAM_AT(DrawStampView, g_db_prev)->stamp = gp_core_init_done;
             }
         } else {
 not_paused:
@@ -150,11 +149,11 @@ not_paused:
 
         /* 0x6396347F is the null resource ID. */
         if (gp_crash_obj != 0 && gp_next_level_ldat_eid != 0x6396347F) {
-            Pbak_Play(&gp_next_level_ldat_eid);
+            Pbak_Play((s32 *)&gp_next_level_ldat_eid);
         }
 
         /* Game over and continue states return to the map (level 0x19). */
-        if (gp_pbak_frame_idx == -1 && g_ns.level->level_id != 0x19
+        if (gp_pbak_frame_idx == -1 && RAM_AT(LevelDataView, g_ns.level)->level_id != 0x19
             && (g_game_substate == 0x200 || g_game_substate == 0x300 || g_game_substate == 0x400)) {
             gp_pbak_frame_idx = 0x19;
         }
@@ -187,7 +186,7 @@ not_paused:
                 gp_pbak_frame_idx = -2;
                 Level_SpawnObjects2();
                 gp_pbak_frame_idx = -1;
-                Level_Restart(g_checkpoint_save_state);
+                Level_Restart((struct LevelSave *)g_checkpoint_save_state);
             }
             gp_cur_zone = 0;
         }
@@ -195,11 +194,11 @@ not_paused:
         Ns_Update(-1);
         Level_SpawnObjects2();
         if (gp_next_lid == 0) {
-            if (((ZoneHeaderView *)g_pads->data)->flags & 0x600) {
+            if ((RAM_AT(ZoneHeaderView, RAM_AT(ResourceEntry, g_pads)->data))->flags & 0x600) {
                 Shader_ParamsUpdate(0);
             }
             if (gp_next_lid == 0) {
-                if (((ZoneHeaderView *)g_pads->data)->flags & 0x100) {
+                if ((RAM_AT(ZoneHeaderView, RAM_AT(ResourceEntry, g_pads)->data))->flags & 0x100) {
                     Shader_ParamsUpdateRipple(0);
                 }
                 if (gp_next_lid == 0) {
@@ -210,27 +209,27 @@ not_paused:
         Gfx_UpdateMatrices();
 
         if (g_cur_lid_ro[0] & 1) {
-            zone = (ZoneHeaderView *)g_pads->data;
+            zone = RAM_AT(ZoneHeaderView, RAM_AT(ResourceEntry, g_pads)->data);
             if (zone->word00 != 0 && gp_cur_lid == 0) {
                 flags = zone->flags;
                 if (flags & 0x400) {
-                    Gfx_TransformWorldsDark2(g_ot_cur->ordering_table);
+                    Gfx_TransformWorldsDark2((s32)Ram_Addr(RAM_AT(RenderBuffer, g_ot_cur)->ordering_table));
                 } else if ((flags & 0x210) == 0x210) {
-                    Gfx_TransformWorldsDark(g_ot_cur->ordering_table);
+                    Gfx_TransformWorldsDark((s32)Ram_Addr(RAM_AT(RenderBuffer, g_ot_cur)->ordering_table));
                 } else if (flags & 0x10) {
-                    Gfx_TransformWorldsFog(g_ot_cur->ordering_table);
+                    Gfx_TransformWorldsFog((s32)Ram_Addr(RAM_AT(RenderBuffer, g_ot_cur)->ordering_table));
                 } else if (flags & 0x100) {
-                    Gfx_TransformWorldsRipple(g_ot_cur->ordering_table);
+                    Gfx_TransformWorldsRipple((s32)Ram_Addr(RAM_AT(RenderBuffer, g_ot_cur)->ordering_table));
                 } else if (flags & 0x200) {
-                    Gfx_TransformWorldsLightning(g_ot_cur->ordering_table);
+                    Gfx_TransformWorldsLightning((s32)Ram_Addr(RAM_AT(RenderBuffer, g_ot_cur)->ordering_table));
                 } else {
-                    Gfx_TransformWorlds(g_ot_cur->ordering_table);
+                    Gfx_TransformWorlds((s32)Ram_Addr(RAM_AT(RenderBuffer, g_ot_cur)->ordering_table));
                 }
             }
         }
         Gool_UpdateObjects(gp_next_lid == 0);
-        if (g_ns.level->level_id == 0x19) {
-            Title_Update(g_ot_cur->ordering_table);
+        if (RAM_AT(LevelDataView, g_ns.level)->level_id == 0x19) {
+            Title_Update((struct GpuPacketTag *)RAM_AT(RenderBuffer, g_ot_cur)->ordering_table);
         }
         Gpu_Update();
     } while (gp_bonus_return == 0);

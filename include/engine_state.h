@@ -51,11 +51,12 @@ typedef struct EngineMode25State {
 } EngineMode25State;
 
 /* File I/O cleanup: descriptor address, creation flag, and path to remove
- * when an operation fails. The writer stores its path in the third word. */
+ * when an operation fails. The writer stores its path in the third word.
+ * Requests live on the stack, so they hold host pointers. */
 typedef struct EngineFileRequest {
-    RAM_REF(s32) resource;
-    RAM_REF(s32) pending;
-    RAM_REF(char) path;
+    s32 *resource;
+    s32 *pending;
+    char *path;
 } EngineFileRequest;
 typedef EngineFileRequest EngineEventRequest;
 

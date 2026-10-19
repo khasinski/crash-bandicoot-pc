@@ -3,7 +3,6 @@
 #include "engine_state.h"
 #include "resource.h"
 #include "gool.h"
-#include "object_links.h"
 
 typedef EngineFileRequest FileRequest;
 /* Both cached words are compared before dispatching the current card mode. */
@@ -31,15 +30,15 @@ void Card_Update(void)
     case 4: Card_Check(); break;
     }
     engine_flag_shadow[0] = Card_GetFlags();
-    g_card_prev_state = gp_card->word08;
+    g_card_prev_state = RAM_AT(EngineState, gp_card)->word08;
 }
 
 void Card_PollEvents(void)
 {
     s32 result;
 
-    if (gp_card->word18) {
-        gp_card->word18 = 0;
+    if (RAM_AT(EngineState, gp_card)->word18) {
+        RAM_AT(EngineState, gp_card)->word18 = 0;
         _card_info(0);
     }
     result = Card_PollSoftEvent();
@@ -75,7 +74,7 @@ reset_list:
 
 s32 Card_Check(void) {
     s32 result;
-    gp_card->word18 = 0;
+    RAM_AT(EngineState, gp_card)->word18 = 0;
     if (Card_TestRead(0) == 1) {
         Card_ClearFlags(10);
         Card_SetState(0);
@@ -99,24 +98,24 @@ s32 Card_Load(void)
 {
     s32 result, count;
 
-    if (gp_card->word18) {
-        gp_card->word18 = 0;
+    if (RAM_AT(EngineState, gp_card)->word18) {
+        RAM_AT(EngineState, gp_card)->word18 = 0;
         Card_ResetSoftEvent();
         _card_load(0);
     }
     result = Card_PollSoftEvent();
     switch (result) {
     case 0:
-        count = Card_CountFiles(gp_str_card_dev_bu00, ((EngineDirectoryState *)gp_card)->records);
-        Card_SortEntries(((EngineDirectoryState *)gp_card)->records, count);
-        if (count > 0 || ++((EngineDirectoryState *)gp_card)->empty_scan_count >= 11) {
+        count = Card_CountFiles(gp_str_card_dev_bu00, RAM_AT(EngineDirectoryState, gp_card)->records);
+        Card_SortEntries(RAM_AT(EngineDirectoryState, gp_card)->records, count);
+        if (count > 0 || ++RAM_AT(EngineDirectoryState, gp_card)->empty_scan_count >= 11) {
             Card_ClearFlags(2);
             Card_InitEmptyStrings();
             Card_SetState(5);
             Card_ResetRetryCount(32);
-            gp_card->word08 = 0;
-            ((EngineDirectoryState *)gp_card)->record_count = count;
-            ((EngineDirectoryState *)gp_card)->record_cursor = 0;
+            RAM_AT(EngineState, gp_card)->word08 = 0;
+            RAM_AT(EngineDirectoryState, gp_card)->record_count = count;
+            RAM_AT(EngineDirectoryState, gp_card)->record_cursor = 0;
             return 1;
         }
         goto retry;
@@ -148,7 +147,7 @@ s32 Card_ClearUnused(s32 count,s32 limit,void (*callback)(void *),void *arg) {
 
 void Card_OnReadImageError(s32 **resource) {
     if (Card_IncRetryCount()) {
-        gp_card->word08 = 0;
+        RAM_AT(EngineState, gp_card)->word08 = 0;
         Card_SetFlags(6);
         Card_SetState(0);
     }
@@ -198,9 +197,6 @@ typedef struct EngineDirectoryStateView {
     EngineDirectoryRecord records[15];
 } EngineDirectoryStateView;
 
-typedef struct WordView { s32 v; } WordView;
-typedef struct UWordView { u32 v; } UWordView;
-
 #define ENGINE_CARD_SCAN_RETRY(io, request) ({ \
     s32 retries = 0, failed; \
     do { \
@@ -208,7 +204,7 @@ typedef struct UWordView { u32 v; } UWordView;
         retries++; \
     } while (retries < 3); \
     if (retries >= 3) { \
-        Card_OnReadImageError((s32 **)(request)); \
+        Card_OnReadImageError(&(request)->resource); \
         failed = 1; \
     } else { \
         failed = 0; \
@@ -229,53 +225,53 @@ void Card_PartReadImages(void)
     s32 blocks;
     s32 i, j;
 
-    slot_idx = gp_card->word08;
+    slot_idx = RAM_AT(EngineState, gp_card)->word08;
     request.resource = &descriptor;
     descriptor = -1;
-    if (((EngineDirectoryStateView *)gp_card)->record_cursor >= ((EngineDirectoryStateView *)gp_card)->record_count) {
+    if (RAM_AT(EngineDirectoryStateView, gp_card)->record_cursor >= RAM_AT(EngineDirectoryStateView, gp_card)->record_count) {
         Card_ClearFlags(2);
         Card_SetState(0);
         return;
     }
-    cur_rec = ((EngineDirectoryStateView *)gp_card)->record_cursor;
+    cur_rec = RAM_AT(EngineDirectoryStateView, gp_card)->record_cursor;
     sprintf(path, gp_str_card_concat_fmt, gp_str_card_dev_bu00,
-        ((EngineDirectoryStateView *)gp_card)->records[cur_rec].bytes);
+        RAM_AT(EngineDirectoryStateView, gp_card)->records[cur_rec].bytes);
     if (ENGINE_CARD_SCAN_RETRY((descriptor = open(path, 1)) >= 0, &request))
         return;
     if (ENGINE_CARD_SCAN_RETRY(BIOS_Read(descriptor, &block, 128) == 128, &request))
         return;
-    if (Card_EntryNameIs949((char *)((EngineDirectoryStateView *)gp_card)->records[cur_rec].bytes)) {
-        ((EngineDirectoryStateView *)gp_card)->slots[slot_idx].word00 = 1;
+    if (Card_EntryNameIs949((char *)RAM_AT(EngineDirectoryStateView, gp_card)->records[cur_rec].bytes)) {
+        RAM_AT(EngineDirectoryStateView, gp_card)->slots[slot_idx].word00 = 1;
     } else {
-        ((EngineDirectoryStateView *)gp_card)->slots[slot_idx].word00 = 0;
+        RAM_AT(EngineDirectoryStateView, gp_card)->slots[slot_idx].word00 = 0;
     }
-    ((EngineDirectoryStateView *)gp_card)->slots[slot_idx].word04 = block.header.icons - 0x10;
-    if (((EngineDirectoryStateView *)gp_card)->slots[slot_idx].word04 < 1
-        || ((EngineDirectoryStateView *)gp_card)->slots[slot_idx].word04 > 3) {
-        ((EngineDirectoryStateView *)gp_card)->slots[slot_idx].word04 = 1;
+    RAM_AT(EngineDirectoryStateView, gp_card)->slots[slot_idx].word04 = block.header.icons - 0x10;
+    if (RAM_AT(EngineDirectoryStateView, gp_card)->slots[slot_idx].word04 < 1
+        || RAM_AT(EngineDirectoryStateView, gp_card)->slots[slot_idx].word04 > 3) {
+        RAM_AT(EngineDirectoryStateView, gp_card)->slots[slot_idx].word04 = 1;
         invalid = 1;
     }
     if (!invalid) {
-        ((EngineDirectoryStateView *)gp_card)->slots[slot_idx].title[0] = 0;
+        RAM_AT(EngineDirectoryStateView, gp_card)->slots[slot_idx].title[0] = 0;
         if ((u8)block.header.title[0] >= 0x80) {
             Card_ShiftJisToAscii((u8 *)&block);
         }
         block.header.title[31] = 0;
-        BIOS_StrCpy((char *)((EngineDirectoryStateView *)gp_card)->slots[slot_idx].title,
+        BIOS_StrCpy((char *)RAM_AT(EngineDirectoryStateView, gp_card)->slots[slot_idx].title,
             block.header.title);
     } else {
-        __builtin_memcpy(((EngineDirectoryStateView *)gp_card)->slots[slot_idx].title,
+        __builtin_memcpy(RAM_AT(EngineDirectoryStateView, gp_card)->slots[slot_idx].title,
             g_str_card_damaged_slot, 13);
     }
-    Card_StrToUpper((u8 *)((EngineDirectoryStateView *)gp_card)->slots[slot_idx].title);
+    Card_StrToUpper((u8 *)RAM_AT(EngineDirectoryStateView, gp_card)->slots[slot_idx].title);
     if (invalid) {
         blocks = 1;
     } else {
         blocks = block.header.blocks;
     }
-    ((EngineDirectoryStateView *)gp_card)->slots[slot_idx].record_index = cur_rec;
+    RAM_AT(EngineDirectoryStateView, gp_card)->slots[slot_idx].record_index = cur_rec;
     if (!invalid) {
-        for (i = 0; i < ((EngineDirectoryStateView *)gp_card)->slots[slot_idx].word04; i++) {
+        for (i = 0; i < RAM_AT(EngineDirectoryStateView, gp_card)->slots[slot_idx].word04; i++) {
             if (ENGINE_CARD_SCAN_RETRY(BIOS_Read(descriptor, images[i], 128) == 128, &request))
                 return;
         }
@@ -283,23 +279,23 @@ void Card_PartReadImages(void)
     for (i = 0; i < blocks; i++) {
         char part_str[80];
         sprintf(part_str, g_str_card_part_d_of_d, i + 1, blocks);
-        Gfx_FormatCardString(((WordView *)&g_card_icon)->v, (slot_idx + i) << 8,
-            i == 0 ? (char *)((EngineDirectoryStateView *)gp_card)->slots[slot_idx].title : part_str,
-            0x28, 1);
+        Gfx_FormatCardString(RAM_AT(u8, g_card_icon), (slot_idx + i) << 8,
+            (u8 *)(i == 0 ? RAM_AT(EngineDirectoryStateView, gp_card)->slots[slot_idx].title : part_str),
+            0x28);
     }
     if (!invalid) {
         for (i = 0; i < blocks; i++) {
             for (j = 0; j < 3; j++) {
-                s32 img_idx = j < ((EngineDirectoryStateView *)gp_card)->slots[slot_idx].word04 ? j : 0;
-                Gfx_BlitCardIcon(1, ((UWordView *)&g_card_icon_vram_xy)->v, ((slot_idx + i) * 3 + j) << 8,
-                    j == 0 ? block.header.palette : NULL,
+                s32 img_idx = j < RAM_AT(EngineDirectoryStateView, gp_card)->slots[slot_idx].word04 ? j : 0;
+                Gfx_BlitCardIcon(1, RAM_AT(u8, g_card_icon_vram_xy), ((slot_idx + i) * 3 + j) << 8,
+                    j == 0 ? (u8 *)block.header.palette : NULL,
                     images[img_idx]);
             }
         }
     }
     g_card_slot_valid_flags[slot_idx] = 0;
-    g_card_slot_valid_flags[slot_idx] = ((EngineDirectoryStateView *)gp_card)->slots[slot_idx].word04 << 1;
-    if (((EngineDirectoryStateView *)gp_card)->slots[slot_idx].word00 != 0) {
+    g_card_slot_valid_flags[slot_idx] = RAM_AT(EngineDirectoryStateView, gp_card)->slots[slot_idx].word04 << 1;
+    if (RAM_AT(EngineDirectoryStateView, gp_card)->slots[slot_idx].word00 != 0) {
         if (!invalid) {
             j = 0;
             do {
@@ -308,7 +304,7 @@ void Card_PartReadImages(void)
                 j++;
             } while (j < 30);
             if (j == 30) {
-                ((EngineDirectoryStateView *)gp_card)->slots[slot_idx].word00 = 0;
+                RAM_AT(EngineDirectoryStateView, gp_card)->slots[slot_idx].word00 = 0;
                 g_card_slot_valid_flags[slot_idx] |= 0x10;
             } else {
                 g_card_slot_valid_flags[slot_idx] |= 8;
@@ -323,13 +319,13 @@ void Card_PartReadImages(void)
     Card_Close(&descriptor);
     if (!invalid) {
         for (j = 1; j < blocks; j++) {
-            ((EngineDirectoryStateView *)gp_card)->slots[slot_idx + j] =
-                ((EngineDirectoryStateView *)gp_card)->slots[slot_idx];
+            RAM_AT(EngineDirectoryStateView, gp_card)->slots[slot_idx + j] =
+                RAM_AT(EngineDirectoryStateView, gp_card)->slots[slot_idx];
             g_card_slot_valid_flags[slot_idx + j] = g_card_slot_valid_flags[slot_idx];
         }
     }
-    ((EngineDirectoryStateView *)gp_card)->record_cursor++;
-    gp_card->word08 += blocks;
+    RAM_AT(EngineDirectoryStateView, gp_card)->record_cursor++;
+    RAM_AT(EngineState, gp_card)->word08 += blocks;
 }
 
 /* Convert a Shift-JIS memory-card block title in place to printable ASCII. */
@@ -432,11 +428,11 @@ void Card_AsciiToShiftJis(char *title, s32 len)
 
 static inline EngineDirectorySlot *engine_selected_file(void)
 {
-    s32 count = gp_card->word08;
-    s32 index = gp_card->word0C;
+    s32 count = RAM_AT(EngineState, gp_card)->word08;
+    s32 index = RAM_AT(EngineState, gp_card)->word0C;
 
     if (count > 0 && index < count)
-        return &((EngineDirectoryState *)gp_card)->slots[index];
+        return &RAM_AT(EngineDirectoryState, gp_card)->slots[index];
     return NULL;
 }
 
@@ -478,7 +474,7 @@ void Card_PartWrite(s32 mode)
     request.path = path;
     if (slot != NULL && slot->word00 == 0) {
         sprintf(path, gp_str_card_concat_fmt, gp_str_card_dev_bu00,
-            ((EngineDirectoryState *)gp_card)->records[slot->record_index].bytes);
+            RAM_AT(EngineDirectoryState, gp_card)->records[slot->record_index].bytes);
         if (mode == 6) {
             VSync(20);
             if (!ENGINE_CARD_WRITE_RETRY(({
@@ -495,14 +491,14 @@ void Card_PartWrite(s32 mode)
     }
     if (slot != NULL && slot->word00 != 0) {
         sprintf(path, gp_str_card_concat_fmt, gp_str_card_dev_bu00,
-            ((EngineDirectoryState *)gp_card)->records[slot->record_index].bytes);
+            RAM_AT(EngineDirectoryState, gp_card)->records[slot->record_index].bytes);
     } else {
-        counter = ((EngineDirectoryState *)gp_card)->record_count - 1;
+        counter = RAM_AT(EngineDirectoryState, gp_card)->record_count - 1;
         index = 0;
         if (counter >= 0) {
-            if (Card_EntryNameIs949((char *)((EngineDirectoryState *)gp_card)->records[counter].bytes)) {
+            if (Card_EntryNameIs949((char *)RAM_AT(EngineDirectoryState, gp_card)->records[counter].bytes)) {
                 EngineDirectoryRecord *record =
-                    &((EngineDirectoryState *)gp_card)->records[counter];
+                    &RAM_AT(EngineDirectoryState, gp_card)->records[counter];
                 index = (record->bytes[12] - '0') * 10 + record->bytes[13] - '/';
             }
         }
@@ -534,9 +530,9 @@ void Card_PartWrite(s32 mode)
     block.header.blocks = 1;
     sprintf(block.header.title, g_str_card_title_fmt, g_card_save_pct);
     Card_AsciiToShiftJis(block.header.title, 32);
-    Gfx_BlitCardIcon(2, g_card_icon_vram_xy, 0x2D00, block.header.palette, images[0]);
-    Gfx_BlitCardIcon(2, g_card_icon_vram_xy, 0x2D00, NULL, images[1]);
-    Gfx_BlitCardIcon(2, g_card_icon_vram_xy, 0x2E00, NULL, images[2]);
+    Gfx_BlitCardIcon(2, RAM_AT(u8, g_card_icon_vram_xy), 0x2D00, (u8 *)block.header.palette, images[0]);
+    Gfx_BlitCardIcon(2, RAM_AT(u8, g_card_icon_vram_xy), 0x2D00, NULL, images[1]);
+    Gfx_BlitCardIcon(2, RAM_AT(u8, g_card_icon_vram_xy), 0x2E00, NULL, images[2]);
     if (ENGINE_CARD_WRITE_RETRY(
             BIOS_Write(descriptor, &block, 128) == 128, &request, counter)) return;
     for (index = 0; index < 3; index++) {
@@ -647,7 +643,7 @@ s32 Card_PartReadGlobals(void)
         return 0;
     }
     sprintf(path, gp_str_card_concat_fmt, gp_str_card_dev_bu00,
-        ((EngineDirectoryState *)gp_card)->records[slot->record_index].bytes);
+        RAM_AT(EngineDirectoryState, gp_card)->records[slot->record_index].bytes);
     if (ENGINE_CARD_RETRY(
             (descriptor = open(path, 1)) >= 0, &request)) return 0;
     if (ENGINE_CARD_RETRY(
@@ -712,17 +708,17 @@ void Card_Noop3(void)
 
 s32 Card_ResetRetryCount(s32 arg0)
 {
-    gp_card->word14 = 0;
-    gp_card->word10 = arg0;
+    RAM_AT(EngineState, gp_card)->word14 = 0;
+    RAM_AT(EngineState, gp_card)->word10 = arg0;
     return 0;
 }
 
 s32 Card_IncRetryCount(void) {
     s32 temp_v0;
 
-    temp_v0 = gp_card->word14 + 1;
-    gp_card->word14 = temp_v0;
-    return temp_v0 >= gp_card->word10;
+    temp_v0 = RAM_AT(EngineState, gp_card)->word14 + 1;
+    RAM_AT(EngineState, gp_card)->word14 = temp_v0;
+    return temp_v0 >= RAM_AT(EngineState, gp_card)->word10;
 }
 
 s32 Card_PollSoftEvent(void) {
@@ -778,10 +774,22 @@ void Card_ResetHardEvent(void) {
     TestEvent(gp_edesc_h_newdev);
 }
 
-                      /* extern */
 
 s32 Card_EntryNameIs949(const char *arg0) {
     return BIOS_StrNCmp(g_str_card_bascus_94900, arg0, 0xC) == 0;
+}
+
+/* Store a directory entry in the PS1 0x28-byte DIRENTRY layout. The
+ * native next pointer has no game-memory meaning and is stored as 0. */
+static void card_store_direntry(EngineDirectoryRecord *record, const struct DIRENTRY *dir)
+{
+    u32 next = 0;
+
+    __builtin_memcpy(record->bytes, dir->name, 20);
+    __builtin_memcpy(record->bytes + 0x14, &dir->attr, 4);
+    __builtin_memcpy(record->bytes + 0x18, &dir->size, 4);
+    __builtin_memcpy(record->bytes + 0x1C, &next, 4);
+    __builtin_memcpy(record->bytes + 0x20, dir->system, 8);
 }
 
 /* Append the search suffix, enumerate records, and cap the reported count. */
@@ -789,16 +797,19 @@ s32 Card_CountFiles(const char *path, EngineDirectoryRecord *entries)
 {
     char pattern[128];
     s32 count;
-    EngineDirectoryRecord *found;
+    struct DIRENTRY dir;
+    struct DIRENTRY *found;
 
     BIOS_StrCpy(pattern, path);
     BIOS_StrCat(pattern, gp_str_card_wildcard);
     count = 0;
-    found = firstfile(pattern, entries);
-    while (entries == found) {
+    /* The BIOS fills each record in place; the native entry is converted. */
+    found = firstfile(pattern, &dir);
+    while (found == &dir) {
+        card_store_direntry(entries, &dir);
         count++;
         entries++;
-        found = nextfile(entries);
+        found = nextfile(&dir);
     }
     if (count >= 16) count = 15;
     return count;
@@ -828,9 +839,10 @@ void Card_SortEntries(EngineDirectoryRecord *entries, s32 count)
             match = BIOS_StrCmp(entry_name, (char *)&entries[j]);
             if (match > 0) {
             swap:
-                RMemcpy(&entries[i], &temp, 0x14);
-                RMemcpy(&entries[j], &entries[i], 0x14);
-                RMemcpy(&temp, &entries[j], 0x14);
+                /* RMemcpy(src, dst, 0x14 halfwords) in retail. */
+                __builtin_memcpy(&temp, &entries[i], sizeof(temp));
+                __builtin_memcpy(&entries[i], &entries[j], sizeof(temp));
+                __builtin_memcpy(&entries[j], &temp, sizeof(temp));
                 i--;
                 break;
             }
@@ -876,7 +888,7 @@ s32 Card_BeginLoadIfIdle(void)
     if (!(Card_GetFlags() & 13)) {
         EngineDirectoryState *state;
         Card_SetState(1);
-        state = (EngineDirectoryState *)gp_card;
+        state = RAM_AT(EngineDirectoryState, gp_card);
         state->prefix.word14 = 0;
         state->prefix.word10 = 64;
         state->empty_scan_count = 0;
@@ -890,8 +902,8 @@ s32 Card_ResetParts(s32 flags)
 {
     s32 index;
 
-    gp_card->word08 = 0;
-    gp_card->word14 = 0;
+    RAM_AT(EngineState, gp_card)->word08 = 0;
+    RAM_AT(EngineState, gp_card)->word14 = 0;
     for (index = 14; index >= 0; index--) g_card_slot_valid_flags[index] = 0;
     Card_SetFlags(flags);
     return 0;
@@ -901,22 +913,22 @@ void Card_InitEmptyStrings(void)
 {
     s32 channel;
     for (channel = 0; channel < 15; channel++) {
-        Gfx_FormatCardString(g_card_icon, channel << 8, gp_str_card_empty, 0x28, 1);
+        Gfx_FormatCardString(RAM_AT(u8, g_card_icon), channel << 8, gp_str_card_empty, 0x28);
     }
 }
 
 s32 Card_SetFlags(s32 arg0) {
     s32 temp_a0;
 
-    temp_a0 = arg0 | gp_card->word04;
-    gp_card->word04 = temp_a0;
+    temp_a0 = arg0 | RAM_AT(EngineState, gp_card)->word04;
+    RAM_AT(EngineState, gp_card)->word04 = temp_a0;
     g_card_icon_count = temp_a0;
     return 0;
 }
 
 s32 Card_ClearFlags(s32 arg0)
 {
-    gp_card->word04 = ~arg0 & gp_card->word04;
+    RAM_AT(EngineState, gp_card)->word04 = ~arg0 & RAM_AT(EngineState, gp_card)->word04;
     return 0;
 }
 
@@ -926,18 +938,18 @@ static inline s32 engine_set_mode(s32 mode)
 {
     s32 flags;
 
-    gp_card->word00 = mode;
+    RAM_AT(EngineState, gp_card)->word00 = mode;
     if (mode >= 0) {
-        if (mode < 2 || mode == 4) gp_card->word18 = 1;
-        if (gp_card->word00 == 0) {
-            gp_card->word04 &= ~1;
+        if (mode < 2 || mode == 4) RAM_AT(EngineState, gp_card)->word18 = 1;
+        if (RAM_AT(EngineState, gp_card)->word00 == 0) {
+            RAM_AT(EngineState, gp_card)->word04 &= ~1;
         } else {
             goto activate;
         }
     } else {
 activate:
-        flags = gp_card->word04 | 1;
-        gp_card->word04 = flags;
+        flags = RAM_AT(EngineState, gp_card)->word04 | 1;
+        RAM_AT(EngineState, gp_card)->word04 = flags;
         g_card_icon_count = flags;
     }
     return 0;
@@ -950,12 +962,12 @@ s32 Card_SetState(s32 mode)
 
 s32 Card_GetState(void)
 {
-    return gp_card->word00;
+    return RAM_AT(EngineState, gp_card)->word00;
 }
 
 s32 Card_GetFlags(void)
 {
-    return gp_card->word04;
+    return RAM_AT(EngineState, gp_card)->word04;
 }
 
 void Card_Init(void) {
@@ -970,9 +982,11 @@ gp_edesc_h_timeout=OpenEvent(0xF0000011,256,0x2000,NULL);
 gp_edesc_h_newdev=OpenEvent(0xF0000011,8192,0x2000,NULL);
 ExitCriticalSection();
 VSync(5);
-_card_auto(1);
+/* The decomp's BIOS stub names are shifted by one table slot: retail calls
+ * B(4Ah) InitCARD(1), then B(4Bh) StartCARD(). */
+InitCARD(1);
 VSync(5);
-InitCARD();
+StartCARD();
 VSync(5);
 _bu_init();
 VSync(5);
@@ -987,7 +1001,8 @@ EnableEvent(gp_edesc_h_newdev);
 }
 
 s32 Card_Kill(void) {
-    StartCARD();
+    /* B(4Ch), named StartCARD in the decomp's stub table. */
+    StopCARD();
     return 0;
 }
 
@@ -997,13 +1012,13 @@ void Card_ResetStateAndFlags(s32 flags)
 {
     s32 index, value;
 
-    gp_card->word08 = 0;
-    gp_card->word14 = 0;
+    RAM_AT(EngineState, gp_card)->word08 = 0;
+    RAM_AT(EngineState, gp_card)->word14 = 0;
     for (index = 14; index >= 0; index--) g_card_slot_valid_flags[index] = 0;
     Card_SetFlags(0);
     engine_set_mode(0);
-    value = flags | (gp_card->word04 & ~63);
-    gp_card->word04 = value;
+    value = flags | (RAM_AT(EngineState, gp_card)->word04 & ~63);
+    RAM_AT(EngineState, gp_card)->word04 = value;
     g_card_icon_count = value;
 }
 
@@ -1016,7 +1031,7 @@ typedef EngineByteRecord ByteRecord;
 s32 Card_Alloc(void)
 {
     EngineState *state = LIBC_Calloc(1, 0x6F4);
-    gp_card = state;
+    gp_card = Ram_Addr(state);
     if (gp_card_new_device != 0) {
         state->word04 |= 0x10;
         g_card_icon_count = state->word04;
@@ -1030,10 +1045,10 @@ s32 Card_Alloc(void)
 
 s32 Card_Free(void)
 {
-    gp_card_new_device = ((u32)gp_card->word04 >> 4) & 1;
-    if (gp_card != NULL) {
-        LIBC_Free(gp_card);
-        gp_card = NULL;
+    gp_card_new_device = ((u32)RAM_AT(EngineState, gp_card)->word04 >> 4) & 1;
+    if (gp_card != 0) {
+        LIBC_Free(RAM_AT(void, gp_card));
+        gp_card = 0;
     }
     return 0;
 }
@@ -1058,8 +1073,9 @@ s32 Card_TestRead(s32 port)
     TestEvent(gp_edesc_h_error);
     TestEvent(gp_edesc_h_timeout);
     TestEvent(gp_edesc_h_newdev);
-    _card_read();
-    StopCARD(port, 0, sector);
+    /* B(50h) _new_card, then B(4Fh) _card_read (decomp stubs shifted). */
+    _new_card();
+    _card_read(port, 0, sector);
     do {
         Math_Randb(999);
         status = engine_card_status();
@@ -1073,7 +1089,7 @@ s32 Card_TestRead(s32 port)
 
 s32 Card_ClearFlag20(void)
 {
-    gp_card->word04 &= ~0x20;
+    RAM_AT(EngineState, gp_card)->word04 &= ~0x20;
     return 0;
 }
 
@@ -1082,7 +1098,7 @@ s32 Card_ClearFlag20(void)
 
 s32 Card_StartWritePart(s32 value)
 {
-    EngineState *state = gp_card;
+    EngineState *state = RAM_AT(EngineState, gp_card);
 
     if (!(state->word04 & 13)) {
         state->word00 = 6;
@@ -1101,27 +1117,27 @@ s32 Card_StartWriteNamedPart(void)
 {
     s32 i;
 
-    if (gp_card->word04 & 13) {
-        engine_flag_shadow[0] = gp_card->word04 |= 2;
+    if (RAM_AT(EngineState, gp_card)->word04 & 13) {
+        engine_flag_shadow[0] = RAM_AT(EngineState, gp_card)->word04 |= 2;
         return 1;
     }
-    for (i = 0; i < gp_card->word08; i++) {
+    for (i = 0; i < RAM_AT(EngineState, gp_card)->word08; i++) {
         if (BIOS_StrCmp((char *)&g_card_filename,
-                (char *)((EngineDirectoryState *)gp_card)
-                    ->records[((EngineDirectoryState *)gp_card)->slots[i].record_index]
+                (char *)RAM_AT(EngineDirectoryState, gp_card)
+                    ->records[RAM_AT(EngineDirectoryState, gp_card)->slots[i].record_index]
                     .bytes) == 0) {
             break;
         }
     }
-    if (i != gp_card->word08) {
-        gp_card->word0C = i;
-        gp_card->word00 = 6;
-        engine_flag_shadow[0] = gp_card->word04 |= 1;
-        gp_card->word14 = 0;
-        gp_card->word10 = 32;
+    if (i != RAM_AT(EngineState, gp_card)->word08) {
+        RAM_AT(EngineState, gp_card)->word0C = i;
+        RAM_AT(EngineState, gp_card)->word00 = 6;
+        engine_flag_shadow[0] = RAM_AT(EngineState, gp_card)->word04 |= 1;
+        RAM_AT(EngineState, gp_card)->word14 = 0;
+        RAM_AT(EngineState, gp_card)->word10 = 32;
         return 0;
     } else {
-        engine_flag_shadow[0] = gp_card->word04 |= 2;
+        engine_flag_shadow[0] = RAM_AT(EngineState, gp_card)->word04 |= 2;
         return 1;
     }
 }
@@ -1135,7 +1151,7 @@ s32 Card_CheckNewDevice(void)
 {
     s32 event;
 
-    if (gp_card ? (gp_card->word04 & 16) : gp_card_new_device) {
+    if (gp_card ? (RAM_AT(EngineState, gp_card)->word04 & 16) : gp_card_new_device) {
         return 1;
     }
     if (BIOS_StrCmp((char *)&g_card_filename, (char *)&gp_str_card_invalid_tag) == 0) {
@@ -1220,7 +1236,7 @@ again:
 }
 s32 Card_StartReadPart(s32 value)
 {
-    EngineState *state = gp_card;
+    EngineState *state = RAM_AT(EngineState, gp_card);
 
     if (!(state->word04 & 13)) {
         state->word00 = 2;
@@ -1236,7 +1252,7 @@ s32 Card_StartReadPart(s32 value)
 }
 s32 Card_StartFormat(void)
 {
-    EngineState *state = gp_card;
+    EngineState *state = RAM_AT(EngineState, gp_card);
 
     if (state->word00 == 0) {
         state->word00 = 3;
@@ -1253,7 +1269,7 @@ s32 Card_StartFormat(void)
 s32 Card_RequestCheck(void) {
     s32 result;
     if (gp_card) {
-        Card_ResetStateAndFlags((gp_card->word04 & 0x10) | 4);
+        Card_ResetStateAndFlags((RAM_AT(EngineState, gp_card)->word04 & 0x10) | 4);
         result = 0;
     } else {
         result = 1;

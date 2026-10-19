@@ -117,28 +117,28 @@ void Cam_AdjustProgress(s32 delta, CamCandidate *cam)
     s32 progress;
 
     if (cam->flags & 2) {
-        if (cam->next_path != NULL
-            && ((progress = delta + g_cam_path_progress) >> 8) >= g_pad2_state->length) {
-            progress = (progress - (g_pad2_state->length << 8)) - 1;
+        if (cam->next_path != 0
+            && ((progress = delta + g_cam_path_progress) >> 8) >= RAM_AT(ZonePath, g_pad2_state)->length) {
+            progress = (progress - (RAM_AT(ZonePath, g_pad2_state)->length << 8)) - 1;
             if (!(cam->relation & 2)) {
                 progress = -progress;
             }
-            Level_Update(cam->next_path->zone, cam->next_path,
+            Level_Update(RAM_AT(ResourceEntry, RAM_AT(ZonePath, cam->next_path)->zone), RAM_AT(ZonePath, cam->next_path),
                           MIN(cam->progress, progress + cam->entrance), 0);
         } else {
-            Level_Update(level_position.zone, g_pad2_state, delta + g_cam_path_progress, 0);
+            Level_Update(RAM_AT(ResourceEntry, level_position.zone), RAM_AT(ZonePath, g_pad2_state), delta + g_cam_path_progress, 0);
         }
     } else {
-        if (cam->next_path != NULL && (progress = g_cam_path_progress) - delta < 0) {
+        if (cam->next_path != 0 && (progress = g_cam_path_progress) - delta < 0) {
             progress = delta - progress;
             if (!(cam->relation & 2)) {
                 progress = -progress;
             }
             progress += cam->entrance;
-            Level_Update(cam->next_path->zone, cam->next_path,
+            Level_Update(RAM_AT(ResourceEntry, RAM_AT(ZonePath, cam->next_path)->zone), RAM_AT(ZonePath, cam->next_path),
                           MAX(cam->progress, progress), 0);
         } else {
-            Level_Update(level_position.zone, g_pad2_state, g_cam_path_progress - delta, 0);
+            Level_Update(RAM_AT(ResourceEntry, level_position.zone), RAM_AT(ZonePath, g_pad2_state), g_cam_path_progress - delta, 0);
         }
     }
 }
@@ -152,7 +152,7 @@ s32 Cam_GetProgress(CamVec *trans, ZonePath *path, CamCandidate *cam, u8 relatio
     CamObject *player;
     s32 progress, pt, entrance, exit;
 
-    zone_rect = (CamVec *)((ZoneEntry *)path->zone)->items[1];
+    zone_rect = RAM_AT(CamVec, RAM_AT(ZoneEntry, path->zone)->items[1]);
     cam->found = 1;
     diff1.x = (trans->x >> 4) - ((path->points[0].x + zone_rect->x) << 4);
     diff1.y = (trans->y >> 4) - ((path->points[0].y + zone_rect->y) << 4);
@@ -163,14 +163,14 @@ s32 Cam_GetProgress(CamVec *trans, ZonePath *path, CamCandidate *cam, u8 relatio
     exit = 0;
     entrance = 0;
     pt = progress >> 8;
-    if (path == g_pad2_state) {
-        cam->next_path = NULL;
+    if (Ram_Addr(path) == g_pad2_state) {
+        cam->next_path = 0;
     } else {
         if (path->direction_x != 0 && diff1.y < -0x3200
-            && (((ZoneHeader *)((ZoneEntry *)level_position.zone)->items[0])->flags & 0x40000)) {
+            && ((RAM_AT(ZoneHeader, RAM_AT(ZoneEntry, level_position.zone)->items[0]))->flags & 0x40000)) {
             return 0;
         }
-        cam->next_path = path;
+        cam->next_path = Ram_Addr(path);
     }
     if (has_relation) {
         if (relation & 1) {
@@ -181,21 +181,21 @@ s32 Cam_GetProgress(CamVec *trans, ZonePath *path, CamCandidate *cam, u8 relatio
         }
     }
     if (pt < entrance) {
-        if (entrance != 0 || path != g_pad2_state) {
+        if (entrance != 0 || Ram_Addr(path) != g_pad2_state) {
             return 0;
         }
         progress = 0;
         pt = 0;
         cam->found = 0;
     } else if (pt >= path->length - exit) {
-        if (exit != 0 || path != g_pad2_state) {
+        if (exit != 0 || Ram_Addr(path) != g_pad2_state) {
             return 0;
         }
         progress = (path->length << 8) - 1;
         pt = path->length - 1;
         cam->found = 0;
     }
-    player = (CamObject *)gp_crash_obj;
+    player = RAM_AT(CamObject, gp_crash_obj);
     diff2.x = ((player->trans.x + cam->pan_x) >> 8) - zone_rect->x - path->points[pt].x;
     diff2.y = ((player->trans.y + cam->pan_y) >> 8) - zone_rect->y - path->points[pt].y;
     diff2.z = ((player->trans.z + cam->zoom) >> 8) - zone_rect->z - path->points[pt].z;
@@ -204,7 +204,7 @@ s32 Cam_GetProgress(CamVec *trans, ZonePath *path, CamCandidate *cam, u8 relatio
             || __builtin_abs(diff2.z) >= 0xC81)) {
         return 0;
     }
-    cam->path = path;
+    cam->path = Ram_Addr(path);
     cam->progress = progress;
     cam->distance = SquareRoot0(diff2.x * diff2.x + diff2.y * diff2.y + diff2.z * diff2.z);
     return 1;
@@ -221,7 +221,7 @@ s32 Cam_GetProgress2(CamVec *trans, ZonePath *path, CamCandidate *cam, s32 relat
 
     entrance = 0;
     exit = 0;
-    rect = zone_rect = (CamVec *)((ZoneEntry *)path->zone)->items[1];
+    rect = zone_rect = RAM_AT(CamVec, RAM_AT(ZoneEntry, path->zone)->items[1]);
     progress = -1;
     cam->found = 1;
     zoom_offset = -cam->zoom << 4;
@@ -273,10 +273,10 @@ s32 Cam_GetProgress2(CamVec *trans, ZonePath *path, CamCandidate *cam, s32 relat
             min_abs_dot = abs_dot;
         }
     }
-    if (path == g_pad2_state) {
-        cam->next_path = NULL;
+    if (Ram_Addr(path) == g_pad2_state) {
+        cam->next_path = 0;
     } else {
-        cam->next_path = path;
+        cam->next_path = Ram_Addr(path);
     }
     if (has_relation) {
         if (relation & 1) {
@@ -287,24 +287,24 @@ s32 Cam_GetProgress2(CamVec *trans, ZonePath *path, CamCandidate *cam, s32 relat
         }
     }
     if ((progress >> 8) < entrance) {
-        if (entrance != 0 || path != g_pad2_state) {
+        if (entrance != 0 || Ram_Addr(path) != g_pad2_state) {
             return 0;
         }
         progress = 0;
         cam->found = 0;
     } else if ((progress >> 8) >= path->length - exit) {
-        if (exit == 0 && path == g_pad2_state) {
+        if (exit == 0 && Ram_Addr(path) == g_pad2_state) {
             progress = (path->length << 8) - 1;
             cam->found = 0;
         } else {
             return 0;
         }
     }
-    player = (CamObject *)gp_crash_obj;
+    player = RAM_AT(CamObject, gp_crash_obj);
     diff2.x = ((player->trans.x + cam->pan_x) >> 8) - zone_rect->x - path->points[progress >> 8].x;
     diff2.y = ((player->trans.y + cam->pan_y) >> 8) - zone_rect->y - path->points[progress >> 8].y;
     diff2.z = ((player->trans.z + cam->zoom) >> 8) - zone_rect->z - path->points[progress >> 8].z;
-    cam->path = path;
+    cam->path = Ram_Addr(path);
     cam->progress = progress;
     cam->distance = SquareRoot0(diff2.x * diff2.x + diff2.y * diff2.y + diff2.z * diff2.z);
     return 1;
@@ -315,16 +315,16 @@ static __inline__ ZonePath *cam_neighbor_path(s32 i)
 {
     ZoneEntry *zone;
 
-    zone = Ns_Lookup(&((ZoneHeader *)level_position.zone->data)
-                              ->neighbors[level_position.path->neighbors[i].zone]);
-    return zone->items[level_position.path->neighbors[i].path
-                       + ((ZoneHeader *)zone->items[0])->path_index];
+    zone = RAM_AT(ZoneEntry, Ns_Lookup(&RAM_AT(ZoneHeader, RAM_AT(ResourceEntry, level_position.zone)->data)
+                              ->neighbors[RAM_AT(ZonePath, level_position.path)->neighbors[i].zone]));
+    return RAM_AT(ZonePath, zone->items[RAM_AT(ZonePath, level_position.path)->neighbors[i].path
+                       + RAM_AT(ZoneHeader, zone->items[0])->path_index]);
 }
 
 /* Steer the camera: update the offsets from the pad and the zone flags, then
  * find the progress on the current or a linked path that best follows obj
  * and move towards it. */
-void Cam_Follow(CamObject *obj, s32 flags)
+void Cam_Follow(CamObject *obj, s32 arg1)
 {
     CamCandidate cams[4];
     CamVec trans;
@@ -343,12 +343,12 @@ void Cam_Follow(CamObject *obj, s32 flags)
     y = obj->trans.y;
     /* Bit 0: in the first half (or first 50 units) of the path; bit 1: in
      * the second half (or last 50 units). */
-    if ((level_position.progress >> 8) < level_position.path->length / 2
+    if ((level_position.progress >> 8) < RAM_AT(ZonePath, level_position.path)->length / 2
         || (level_position.progress >> 8) < 50) {
         flags = 1;
     }
-    if ((level_position.progress >> 8) >= level_position.path->length / 2
-        || level_position.path->length - (level_position.progress >> 8) < 50) {
+    if ((level_position.progress >> 8) >= RAM_AT(ZonePath, level_position.path)->length / 2
+        || RAM_AT(ZonePath, level_position.path)->length - (level_position.progress >> 8) < 50) {
         flags |= 2;
     }
     new_zoom = 0;
@@ -356,7 +356,7 @@ void Cam_Follow(CamObject *obj, s32 flags)
     snap_zoom = 1;
     snap_pan = 1;
 
-    header_flags = ((ZoneHeader *)level_position.zone->data)->flags;
+    header_flags = RAM_AT(ZoneHeader, RAM_AT(ResourceEntry, level_position.zone)->data)->flags;
     if ((header_flags & 0x80) || gp_cam_follow_dist_max < 0x32000) {
         if (header_flags & 0x8000) {
             gp_cam_follow_vel_x = 1;
@@ -374,7 +374,7 @@ void Cam_Follow(CamObject *obj, s32 flags)
         gp_cam_follow_vel_y = 1;
     }
     if (gp_cam_follow_vel_x) {
-        if (g_ns_page_pool->level_id == 3) {
+        if (RAM_AT(CamLevelView, g_ns_page_pool)->level_id == 3) {
             gp_cam_speed += 0x3200;
             if (gp_cam_speed > 0x4B000) {
                 gp_cam_speed = 0x4B000;
@@ -391,17 +391,17 @@ void Cam_Follow(CamObject *obj, s32 flags)
             gp_cam_speed = -0x12C00;
         }
     }
-    if (((ZoneHeader *)level_position.zone->data)->flags & 0x4000) {
-        if (level_position.path->direction_x) {
+    if (RAM_AT(ZoneHeader, RAM_AT(ResourceEntry, level_position.zone)->data)->flags & 0x4000) {
+        if (RAM_AT(ZonePath, level_position.path)->direction_x) {
             if (gp_cam_follow_vel_y) {
                 gp_cam_follow_vel_z = (gp_cam_follow_vel_z + 0x6400
-                              > (level_position.path->direction_x > 0 ? 0x4B000 : 0))
-                    ? (level_position.path->direction_x > 0 ? 0x4B000 : 0)
+                              > (RAM_AT(ZonePath, level_position.path)->direction_x > 0 ? 0x4B000 : 0))
+                    ? (RAM_AT(ZonePath, level_position.path)->direction_x > 0 ? 0x4B000 : 0)
                     : gp_cam_follow_vel_z + 0x6400;
             } else {
                 gp_cam_follow_vel_z = (gp_cam_follow_vel_z - 0x6400
-                              < (level_position.path->direction_x < 0 ? -0x4B000 : 0))
-                    ? (level_position.path->direction_x < 0 ? -0x4B000 : 0)
+                              < (RAM_AT(ZonePath, level_position.path)->direction_x < 0 ? -0x4B000 : 0))
+                    ? (RAM_AT(ZonePath, level_position.path)->direction_x < 0 ? -0x4B000 : 0)
                     : gp_cam_follow_vel_z - 0x6400;
             }
         }
@@ -411,8 +411,8 @@ void Cam_Follow(CamObject *obj, s32 flags)
 
     /* A linked path running up/down sets the pan, one running in depth the
      * zoom; the current path overrides both and is approached gradually. */
-    for (i = 0; i < level_position.path->neighbor_count; i++) {
-        if (level_position.path->neighbors[i].relation & flags) {
+    for (i = 0; i < RAM_AT(ZonePath, level_position.path)->neighbor_count; i++) {
+        if (RAM_AT(ZonePath, level_position.path)->neighbors[i].relation & flags) {
             neighbor = cam_neighbor_path(i);
             if (neighbor->direction_y) {
                 new_pan = neighbor->cam_zoom << 8;
@@ -422,16 +422,16 @@ void Cam_Follow(CamObject *obj, s32 flags)
             }
         }
     }
-    if (level_position.path->direction_y) {
+    if (RAM_AT(ZonePath, level_position.path)->direction_y) {
         snap_pan = 0;
-        new_pan = level_position.path->cam_zoom << 8;
+        new_pan = RAM_AT(ZonePath, level_position.path)->cam_zoom << 8;
     }
-    if (level_position.path->direction_z) {
+    if (RAM_AT(ZonePath, level_position.path)->direction_z) {
         snap_zoom = 0;
-        new_zoom = level_position.path->cam_zoom << 8;
+        new_zoom = RAM_AT(ZonePath, level_position.path)->cam_zoom << 8;
     }
     if (new_zoom && (level_position.progress >> 8) >= 11
-        && (level_position.progress >> 8) < level_position.path->length - 10) {
+        && (level_position.progress >> 8) < RAM_AT(ZonePath, level_position.path)->length - 10) {
         if (snap_zoom) {
             gp_cam_follow_dist_max = new_zoom;
         } else {
@@ -448,7 +448,7 @@ void Cam_Follow(CamObject *obj, s32 flags)
     }
 
     /* Candidate on the current path. */
-    direction = level_position.path->direction_z;
+    direction = RAM_AT(ZonePath, level_position.path)->direction_z;
     cams[count].pan_x = gp_cam_follow_vel_z;
     cams[count].pan_y = gp_cam_follow_dist_min;
     cams[count].zoom = total_zoom;
@@ -456,12 +456,12 @@ void Cam_Follow(CamObject *obj, s32 flags)
         trans.x = obj->trans.x;
         trans.y = obj->trans.y;
         trans.z = obj->trans.z;
-        found = Cam_GetProgress2(&trans, level_position.path, &cams[count], 0, 0);
+        found = Cam_GetProgress2(&trans, RAM_AT(ZonePath, level_position.path), &cams[count], 0, 0);
     } else {
         trans.x = obj->trans.x + gp_cam_follow_vel_z;
         trans.y = obj->trans.y + gp_cam_follow_dist_min;
         trans.z = total_zoom + obj->trans.z;
-        found = Cam_GetProgress(&trans, level_position.path, &cams[count], 0, 0);
+        found = Cam_GetProgress(&trans, RAM_AT(ZonePath, level_position.path), &cams[count], 0, 0);
     }
     if (found) {
         cams[count].delta = ABS(level_position.progress - cams[count].progress);
@@ -474,17 +474,17 @@ void Cam_Follow(CamObject *obj, s32 flags)
     }
 
     /* Candidates on the linked paths, measured through the shared end. */
-    for (i = 0; i < level_position.path->neighbor_count; i++) {
-        if ((level_position.path->neighbors[i].goal & 4) && (*(u32 *)g_level_zone_flags) - g_cam_goal_stop_flag > 15) {
+    for (i = 0; i < RAM_AT(ZonePath, level_position.path)->neighbor_count; i++) {
+        if ((RAM_AT(ZonePath, level_position.path)->neighbors[i].goal & 4) && (*(u32 *)g_level_zone_flags) - g_cam_goal_stop_flag > 15) {
             continue;
         }
-        if (!(level_position.path->neighbors[i].relation & flags)) {
+        if (!(RAM_AT(ZonePath, level_position.path)->neighbors[i].relation & flags)) {
             continue;
         }
         path = cam_neighbor_path(i);
-        if (ABS(path->direction_x) == ABS(level_position.path->direction_x)
-            && ABS(path->direction_y) == ABS(level_position.path->direction_y)
-            && ABS(path->direction_z) == ABS(level_position.path->direction_z)) {
+        if (ABS(path->direction_x) == ABS(RAM_AT(ZonePath, level_position.path)->direction_x)
+            && ABS(path->direction_y) == ABS(RAM_AT(ZonePath, level_position.path)->direction_y)
+            && ABS(path->direction_z) == ABS(RAM_AT(ZonePath, level_position.path)->direction_z)) {
             not_same = 0;
         } else {
             not_same = 1;
@@ -498,24 +498,24 @@ void Cam_Follow(CamObject *obj, s32 flags)
             trans.y = y;
             trans.z = obj->trans.z;
             found = Cam_GetProgress2(&trans, path, &cams[count],
-                                  level_position.path->neighbors[i].goal, not_same);
+                                  RAM_AT(ZonePath, level_position.path)->neighbors[i].goal, not_same);
         } else {
             trans.x = obj->trans.x + gp_cam_follow_vel_z;
             trans.y = y + gp_cam_follow_dist_min;
             trans.z = total_zoom + obj->trans.z;
             found = Cam_GetProgress(&trans, path, &cams[count],
-                                  level_position.path->neighbors[i].goal, not_same);
+                                  RAM_AT(ZonePath, level_position.path)->neighbors[i].goal, not_same);
         }
         if (found) {
-            if (level_position.path->neighbors[i].relation & 1) {
+            if (RAM_AT(ZonePath, level_position.path)->neighbors[i].relation & 1) {
                 exit = 0;
                 distance = level_position.progress;
             } else {
-                exit = (level_position.path->length << 8) - 1;
+                exit = (RAM_AT(ZonePath, level_position.path)->length << 8) - 1;
                 distance = exit - level_position.progress;
             }
             cams[count].exit = exit;
-            if (level_position.path->neighbors[i].goal & 1) {
+            if (RAM_AT(ZonePath, level_position.path)->neighbors[i].goal & 1) {
                 cams[count].entrance = 0;
                 cams[count].delta = distance + 0x100 + cams[count].progress;
                 cams[count].relation = 2;
@@ -524,7 +524,7 @@ void Cam_Follow(CamObject *obj, s32 flags)
                 cams[count].delta = distance + (((path->length << 8) - 1) - cams[count].progress) + 0x100;
                 cams[count].relation = 1;
             }
-            cams[count].flags = level_position.path->neighbors[i].relation;
+            cams[count].flags = RAM_AT(ZonePath, level_position.path)->neighbors[i].relation;
             count++;
         }
     }
@@ -536,7 +536,7 @@ void Cam_Follow(CamObject *obj, s32 flags)
      * then the nearest. */
     nearest = &cams[0];
     for (i = 0; i < count; i++) {
-        if (cams[i].path->cam_mode == 1) {
+        if (RAM_AT(ZonePath, cams[i].path)->cam_mode == 1) {
             nearest = &cams[i];
             break;
         }
@@ -549,9 +549,9 @@ void Cam_Follow(CamObject *obj, s32 flags)
     if (nearest->delta == 0) {
         return;
     }
-    if (nearest->delta * level_position.path->node_distance <= 30000) {
+    if (nearest->delta * RAM_AT(ZonePath, level_position.path)->node_distance <= 30000) {
         /* Close enough: jump there. */
-        Level_Update(nearest->path->zone, nearest->path, nearest->progress, 0);
+        Level_Update(RAM_AT(ResourceEntry, RAM_AT(ZonePath, nearest->path)->zone), RAM_AT(ZonePath, nearest->path), nearest->progress, 0);
         gp_cam_follow_state = nearest->delta;
     } else {
         if (nearest->delta <= 0x200) {
@@ -573,14 +573,13 @@ void Cam_Follow(CamObject *obj, s32 flags)
  * where retail has it. */
 s32 Cam_Update(void)
 {
-    u8 unused[0x48];        /* frame space with no remaining use */
     ZoneEntry *zone, *neighbor;
     ZonePath *path, *next_path;
     ZonePath *target;
     s32 target_progress, side, j;
     s32 progress, next_progress, angle, state, skip, index, i;
 
-    if (gp_crash_obj == NULL) {
+    if (gp_crash_obj == 0) {
         return 0;
     }
     if (cam_globals.display_flags & 0x10000) {
@@ -590,11 +589,11 @@ s32 Cam_Update(void)
     if (!(cam_globals.display_flags & 2)) {
         return 0;
     }
-    switch (g_pad2_state->cam_mode) {
+    switch (RAM_AT(ZonePath, g_pad2_state)->cam_mode) {
     case 5:
     case 6:
         cam_globals.game_state = 0x100;
-        Cam_Follow((CamObject *)gp_crash_obj, 0);
+        Cam_Follow(RAM_AT(CamObject, gp_crash_obj), 0);
         return 1;
     case 0:
         cam_globals.game_state = 0x100;
@@ -602,57 +601,57 @@ s32 Cam_Update(void)
     case 1:
     case 3:
         skip = 0;
-        if ((g_gool_pads & 0xF0) && !(((ZoneHeader *)g_pads->data)->flags & 0x81000)) {
+        if ((g_gool_pads & 0xF0) && !(RAM_AT(ZoneHeader, RAM_AT(ResourceEntry, g_pads)->data)->flags & 0x81000)) {
             skip = 1;
         }
         do {
-            if (!(((ZoneHeader *)level_position.zone->data)->flags & 0x1000)) {
+            if (!(RAM_AT(ZoneHeader, RAM_AT(ResourceEntry, level_position.zone)->data)->flags & 0x1000)) {
                 cam_globals.game_state = 0;
             }
-            if ((g_cam_path_progress >> 8) + 1 < g_pad2_state->length && !skip) {
+            if ((g_cam_path_progress >> 8) + 1 < RAM_AT(ZonePath, g_pad2_state)->length && !skip) {
                 goto advance;
             }
-            if (g_pad2_state->neighbor_count == 0) {
+            if (RAM_AT(ZonePath, g_pad2_state)->neighbor_count == 0) {
                 return 1;
             }
-            zone = Ns_Lookup(&((ZoneHeader *)g_pads->data)
-                                      ->neighbors[g_pad2_state->neighbors[0].zone]);
-            target = zone->items[g_pad2_state->neighbors[0].path
-                               + ((ZoneHeader *)zone->items[0])->path_index];
-            if (g_pad2_state->neighbors[0].goal & 1) {
+            zone = RAM_AT(ZoneEntry, Ns_Lookup(&RAM_AT(ZoneHeader, RAM_AT(ResourceEntry, g_pads)->data)
+                                      ->neighbors[RAM_AT(ZonePath, g_pad2_state)->neighbors[0].zone]));
+            target = RAM_AT(ZonePath, zone->items[RAM_AT(ZonePath, g_pad2_state)->neighbors[0].path
+                               + RAM_AT(ZoneHeader, zone->items[0])->path_index]);
+            if (RAM_AT(ZonePath, g_pad2_state)->neighbors[0].goal & 1) {
                 target_progress = 0;
             } else {
                 target_progress = (target->length - 1) << 8;
             }
             Level_Update((ResourceEntry *)zone, target, target_progress, 0);
-            if (!(((ZoneHeader *)g_pads->data)->flags & 0x1000)) {
-                Level_SaveState(gp_crash_obj, &g_checkpoint_save_state, 1);
+            if (!(RAM_AT(ZoneHeader, RAM_AT(ResourceEntry, g_pads)->data)->flags & 0x1000)) {
+                Level_SaveState(RAM_AT(struct SaveObj, gp_crash_obj), (struct LevelSave *)g_checkpoint_save_state, 1);
             }
             if (!skip) {
                 return 1;
             }
-        } while (g_pad2_state->cam_mode == 1 || g_pad2_state->cam_mode == 3);
+        } while (RAM_AT(ZonePath, g_pad2_state)->cam_mode == 1 || RAM_AT(ZonePath, g_pad2_state)->cam_mode == 3);
         return 1;
     advance:
-        Level_Update(g_pads, g_pad2_state, g_cam_path_progress + 0x100, 0);
+        Level_Update(RAM_AT(ResourceEntry, g_pads), RAM_AT(ZonePath, g_pad2_state), g_cam_path_progress + 0x100, 0);
         return 1;
     case 8:
         side = cam_globals.island_state & 3;
         index = -1;
-        for (j = 0; j < g_pad2_state->neighbor_count; j++) {
-            if ((g_pad2_state->neighbors[j].relation & 3) == (side ^ 3)) {
+        for (j = 0; j < RAM_AT(ZonePath, g_pad2_state)->neighbor_count; j++) {
+            if ((RAM_AT(ZonePath, g_pad2_state)->neighbors[j].relation & 3) == (side ^ 3)) {
                 index = j;
                 break;
             }
         }
         if (side & 1) {
-            if ((g_cam_path_progress >> 8) + 1 >= g_pad2_state->length) {
+            if ((g_cam_path_progress >> 8) + 1 >= RAM_AT(ZonePath, g_pad2_state)->length) {
                 if (index != -1) {
-                    zone = Ns_Lookup(&((ZoneHeader *)g_pads->data)
-                                              ->neighbors[g_pad2_state->neighbors[index].zone]);
-                    target = zone->items[g_pad2_state->neighbors[index].path
-                                         + ((ZoneHeader *)zone->items[0])->path_index];
-                    if (g_pad2_state->neighbors[index].goal & 1) {
+                    zone = RAM_AT(ZoneEntry, Ns_Lookup(&RAM_AT(ZoneHeader, RAM_AT(ResourceEntry, g_pads)->data)
+                                              ->neighbors[RAM_AT(ZonePath, g_pad2_state)->neighbors[index].zone]));
+                    target = RAM_AT(ZonePath, zone->items[RAM_AT(ZonePath, g_pad2_state)->neighbors[index].path
+                                         + RAM_AT(ZoneHeader, zone->items[0])->path_index]);
+                    if (RAM_AT(ZonePath, g_pad2_state)->neighbors[index].goal & 1) {
                         target_progress = 0;
                     } else {
                         target_progress = (target->length - 1) << 8;
@@ -660,16 +659,16 @@ s32 Cam_Update(void)
                     Level_Update((ResourceEntry *)zone, target, target_progress, 0);
                 }
             } else {
-                Level_Update(g_pads, g_pad2_state, g_cam_path_progress + 0x100, 0);
+                Level_Update(RAM_AT(ResourceEntry, g_pads), RAM_AT(ZonePath, g_pad2_state), g_cam_path_progress + 0x100, 0);
             }
         } else {
             if ((g_cam_path_progress >> 8) - 1 < 0) {
                 if (index != -1) {
-                    zone = Ns_Lookup(&((ZoneHeader *)g_pads->data)
-                                              ->neighbors[g_pad2_state->neighbors[index].zone]);
-                    target = zone->items[g_pad2_state->neighbors[index].path
-                                         + ((ZoneHeader *)zone->items[0])->path_index];
-                    if (g_pad2_state->neighbors[index].goal & 1) {
+                    zone = RAM_AT(ZoneEntry, Ns_Lookup(&RAM_AT(ZoneHeader, RAM_AT(ResourceEntry, g_pads)->data)
+                                              ->neighbors[RAM_AT(ZonePath, g_pad2_state)->neighbors[index].zone]));
+                    target = RAM_AT(ZonePath, zone->items[RAM_AT(ZonePath, g_pad2_state)->neighbors[index].path
+                                         + RAM_AT(ZoneHeader, zone->items[0])->path_index]);
+                    if (RAM_AT(ZonePath, g_pad2_state)->neighbors[index].goal & 1) {
                         target_progress = 0;
                     } else {
                         target_progress = (target->length - 1) << 8;
@@ -677,10 +676,10 @@ s32 Cam_Update(void)
                     Level_Update((ResourceEntry *)zone, target, target_progress, 0);
                 }
             } else {
-                Level_Update(g_pads, g_pad2_state, g_cam_path_progress - 0x100, 0);
+                Level_Update(RAM_AT(ResourceEntry, g_pads), RAM_AT(ZonePath, g_pad2_state), g_cam_path_progress - 0x100, 0);
             }
         }
-        if (g_pad2_state->cam_mode != 8) {
+        if (RAM_AT(ZonePath, g_pad2_state)->cam_mode != 8) {
             cam_globals.island_state = 1;
         }
         return 1;
@@ -707,7 +706,7 @@ s32 Cam_Update(void)
             }
             break;
         }
-        next_path = g_pad2_state;
+        next_path = RAM_AT(ZonePath, g_pad2_state);
         next_progress = g_cam_path_progress;
         do {
             ZoneHeader *header;
@@ -751,10 +750,10 @@ s32 Cam_Update(void)
                         }
                     }
                 }
-                header = (ZoneHeader *)next_path->zone->data;
-                neighbor = Ns_Lookup(&header->neighbors[next_path->neighbors[index].zone]);
+                header = RAM_AT(ZoneHeader, RAM_AT(ResourceEntry, next_path->zone)->data);
+                neighbor = RAM_AT(ZoneEntry, Ns_Lookup(&header->neighbors[next_path->neighbors[index].zone]));
                 goal = next_path->neighbors[index].goal;
-                next_path = neighbor->items[next_path->neighbors[index].path + ((ZoneHeader *)neighbor->items[0])->path_index];
+                next_path = RAM_AT(ZonePath, neighbor->items[next_path->neighbors[index].path + RAM_AT(ZoneHeader, neighbor->items[0])->path_index]);
                 if (!(goal & 1)) {
                     next_progress = (next_path->length - 1) << 8;
                 } else {
@@ -774,12 +773,12 @@ s32 Cam_Update(void)
                 progress = next_progress;
                 break;
             }
-        } while (next_path != g_pad2_state || (next_progress >> 8) != (g_cam_path_progress >> 8));
+        } while (Ram_Addr(next_path) != g_pad2_state || (next_progress >> 8) != (g_cam_path_progress >> 8));
         if (cam_globals.island_state == -1) {
             cam_globals.island_state = state;
         }
-        if (path != NULL && (path != g_pad2_state || progress != g_cam_path_progress)) {
-            Level_Update(path->zone, path, progress, 0);
+        if (path != NULL && (Ram_Addr(path) != g_pad2_state || progress != g_cam_path_progress)) {
+            Level_Update(RAM_AT(ResourceEntry, path->zone), path, progress, 0);
         }
         return 1;
     default:
@@ -802,11 +801,11 @@ s32 Cam_Death(s32 *arg0)
     s32 dx, dy, dz, dist_xz, angle;
     s32 x, y, z;
 
-    obj = cam_globals.death_obj;
-    frame = (CamSvtxFrame *)Ns_Lookup(&obj->anim[1])->items[obj->anim_frame >> 8];
-    tgeo = Ns_Lookup(&((u32 *)Ns_Lookup(&obj->anim[1])->items[obj->anim_frame >> 8])[1]);
+    obj = RAM_AT(CamObject, cam_globals.death_obj);
+    frame = RAM_AT(CamSvtxFrame, RAM_AT(ZoneEntry, Ns_Lookup(&RAM_AT(u32, obj->anim)[1]))->items[obj->anim_frame >> 8]);
+    tgeo = RAM_AT(ZoneEntry, Ns_Lookup(&RAM_AT(u32, RAM_AT(ZoneEntry, Ns_Lookup(&RAM_AT(u32, obj->anim)[1]))->items[obj->anim_frame >> 8])[1]));
     vert = &frame->verts[cam_globals.death_vert >> 8];
-    header = (CamTgeoHeader *)tgeo->items[0];
+    header = RAM_AT(CamTgeoHeader, tgeo->items[0]);
     v2.x = (frame->x - 0x80 + vert->x) << 10;
     v2.y = (frame->y - 0x80 + vert->y) << 10;
     v2.z = (frame->z - 0x80 + vert->z) << 10;
@@ -814,7 +813,7 @@ s32 Cam_Death(s32 *arg0)
     v3.y = (obj->scale.y * header->scale_y) >> 12;
     v3.z = (obj->scale.z * header->scale_z) >> 12;
     p = &v1;
-    Gool_Transform(&v2, &obj->trans, &obj->rot, &v3, p);
+    Gool_Transform((struct Vec3 *)&v2, (struct Vec3 *)&obj->trans, (struct Vec3 *)&obj->rot, (struct Vec3 *)&v3, (struct Vec3 *)p);
     dx = (g_cam_trans_x - p->x) >> 8;
     dz = (g_cam_trans_z - p->z) >> 8;
     dy = (g_cam_trans_y - p->y) >> 8;
@@ -836,7 +835,7 @@ s32 Cam_Death(s32 *arg0)
     } else {
         gp_cam_death_rot_z = cam_globals.death_pan_speed / 2;
     }
-    g_cam_rot_x = Gool_ObjectRotate(g_cam_rot_x, -ratan2(dy, dist_xz), gp_cam_death_rot_z, 0);
+    g_cam_rot_x = Gool_ObjectRotate(g_cam_rot_x, -ratan2(dy, dist_xz), gp_cam_death_rot_z, NULL);
     cam_pos = (CamVec *)&g_cam_trans_x;
     if (cam_globals.display_flags & 0x40000) {
         gp_cam_death_pan_x += gp_cam_death_rot_x;
@@ -856,6 +855,6 @@ s32 Cam_Death(s32 *arg0)
     v6.x = 0;
     v6.y = gp_cam_death_pan_y + gp_cam_death_pan_x;
     v6.z = 0;
-    Gool_Transform(&v4, &v5, &v6, NULL, cam_pos);
+    Gool_Transform((struct Vec3 *)&v4, (struct Vec3 *)&v5, (struct Vec3 *)&v6, NULL, (struct Vec3 *)cam_pos);
     return -0xFF;
 }

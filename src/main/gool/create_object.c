@@ -109,40 +109,15 @@ typedef struct NsdTable {
 #include "gool_externs.h"
 #undef CRASH_EXT_GOOL_CREATE_OBJECT_0
 
-#define NODE_CHILDREN(n) ((n)->kind == 2 ? (GoolObj *)(n)->word_04 : (n)->children)
-#define NODE_CHILDREN_PTR(n) ((n)->kind == 2 ? (GoolObj **)&(n)->word_04 : &(n)->children)
+struct Node;
 
-static __inline__ s32 Gool_RemoveLevelSpawn(GoolObj *node, GoolObj *new_parent)
-{
-    GoolObj *parent = node->parent;
-    GoolObj *prev;
+/* Child list head: a kind-2 root keeps it in word_04. Values are PS1 addresses. */
+#define NODE_CHILDREN(n) ((n)->kind == 2 ? (u32)(n)->word_04 : (n)->children)
+#define NODE_CHILDREN_PTR(n) ((n)->kind == 2 ? (u32 *)&(n)->word_04 : &(n)->children)
 
-    if (parent != NULL) {
-        prev = NODE_CHILDREN(parent);
-        if (prev == node) {
-            *NODE_CHILDREN_PTR(parent) = node->next;
-        } else if (prev != NULL) {
-            while (prev->next != node) {
-                if (prev == NULL) {
-                    return -0x18;
-                }
-                prev = prev->next;
-                if (prev == NULL) {
-                    return -0x18;
-                }
-            }
-            prev->next = node->next;
-        } else {
-            return -0x18;
-        }
-    }
-    node->parent = new_parent;
-    node->next = NODE_CHILDREN(new_parent);
-    *NODE_CHILDREN_PTR(new_parent) = node;
-}
+typedef s32 (*Visitor)(struct Node *, void *);
 
-typedef s32 (*Visitor)(GoolObj *, void *);
-
+/* Returns the visitor's first nonzero result (here an object's PS1 address). */
 static __inline__ s32 Gool_FindObject_inline(GoolObj *root, Visitor visitor, void *context)
 {
     GoolObj *child;
@@ -153,22 +128,24 @@ static __inline__ s32 Gool_FindObject_inline(GoolObj *root, Visitor visitor, voi
         return 0;
     }
     if (root->kind != 2) {
-        result = visitor(root, context);
+        result = visitor((struct Node *)root, context);
         if (result != 0) {
             return result;
         }
     }
-    if (root->kind == 2) {
-        child = (GoolObj *)root->word_04;
-    } else {
-        child = root->children;
-    }
+    child = RAM_AT(GoolObj, NODE_CHILDREN(root));
     while (child != NULL && result == 0) {
-        next = child->next;
-        result = Gool_ObjectSearchTree(child, visitor, context);
+        next = RAM_AT(GoolObj, child->next);
+        result = Gool_ObjectSearchTree((struct Node *)child, visitor, context);
         child = next;
     }
     return result;
+}
+
+/* Visitor form of GOOL_TestObjectStateFlags; context points to the flags. */
+static s32 Gool_TestStateFlagsVisitor(struct Node *node, void *context)
+{
+    return (s32)Ram_Addr(GOOL_TestObjectStateFlags((struct GoolRuntimeObject *)node, *(u32 *)context));
 }
 
 typedef struct ZoneEntity {
@@ -221,85 +198,89 @@ typedef struct ZoneEntryView {
      ((e)->type == 0 || ((e)->id != 0 && (e)->id < 5) || \
       (((e)->type == 0x2C || (e)->type == 0x30) && (e)->subtype == 0)))
 
-void * Gool_ObjectSpawn(ZoneEntryView *zone, s32 idx) {
-    GoolObj *prev_box;
+/* Returns the new object's PS1 address or an error code. */
+s32 Gool_ObjectSpawn(ZoneEntryView *zone, s32 idx) {
+    s32 prev_box;
     ZoneEntity *entity;
     GoolObj *obj;
-    GoolObj *victim;
+    s32 victim;
     s32 res;
     s32 tmp;
+    u32 flags;
 
     if (zone != NULL) {
-        prev_box = NULL;
+        prev_box = 0;
         switch (zone->kind) {
         case 7:
             {
-                ZoneHeaderView *header = (ZoneHeaderView *)zone->items[0];
-                entity = (ZoneEntity *)zone->items[idx + header->path_index + header->path_count];
+                ZoneHeaderView *header = RAM_AT(ZoneHeaderView, zone->items[0]);
+                entity = RAM_AT(ZoneEntity, zone->items[idx + header->path_index + header->path_count]);
             }
             break;
         case 17:
-            entity = (ZoneEntity *)zone->items[idx + 2];
+            entity = RAM_AT(ZoneEntity, zone->items[idx + 2]);
             break;
         }
-        if (IS_PLAYER_ENTITY(entity) && gp_crash_obj != NULL) {
-            return (GoolObj *)-0xE;
+        if (IS_PLAYER_ENTITY(entity) && gp_crash_obj != 0) {
+            return -0xE;
         }
         if (entity->type == 0x22) {
-            if (g_mdat_title_str_ptr[0] != NULL &&
-                Math_Absdiff(entity->x, g_mdat_title_str_ptr[0]->x) < 10 &&
-                Math_Absdiff(entity->z, g_mdat_title_str_ptr[0]->z) < 10 &&
-                Math_Absdiff(entity->y, g_mdat_title_str_ptr[0]->y + 100) < 10) {
+            ZoneEntity *prev_entity = RAM_AT(ZoneEntity, g_mdat_title_str_ptr[0]);
+            if (prev_entity != NULL &&
+                Math_Absdiff(entity->x, prev_entity->x) < 10 &&
+                Math_Absdiff(entity->z, prev_entity->z) < 10 &&
+                Math_Absdiff(entity->y, prev_entity->y + 100) < 10) {
                 prev_box = g_doctor_cortex_obj[0];
             } else {
                 g_spu_reverb_addr[0] = 0x19000;
-                prev_box = NULL;
-                g_doctor_cortex_obj[0] = NULL;
+                prev_box = 0;
+                g_doctor_cortex_obj[0] = 0;
             }
-            g_mdat_title_str_ptr[0] = entity;
+            g_mdat_title_str_ptr[0] = Ram_Addr(entity);
         }
         if ((g_spawns[entity->id] & 1) || (g_spawns[entity->id] & 2)) {
             if (entity->type == 0x22) {
                 g_spu_reverb_addr[0] += 0x19000;
             }
-            return (GoolObj *)-0xE;
+            return -0xE;
         }
         if (IS_PLAYER_ENTITY(entity)) {
-            obj = g_player[0];
-            gp_crash_obj = obj;
+            obj = RAM_AT(GoolObj, g_player[0]);
+            gp_crash_obj = g_player[0];
             idx = 6;
         } else {
         retry:
-            obj = NODE_CHILDREN(&g_gool_obj_list_7);
+            obj = RAM_AT(GoolObj, NODE_CHILDREN(&g_gool_obj_list_7));
             idx = 3;
             if (obj == NULL) {
-                victim = (GoolObj *)Gool_FindObject_inline(&g_gool_obj_list_3, (Visitor)GOOL_TestObjectStateFlags, (void *)0x80000);
-                if (victim != NULL) {
-                    Gool_ObjectTerminate(victim, NULL);
+                flags = 0x80000;
+                victim = Gool_FindObject_inline(&g_gool_obj_list_3, Gool_TestStateFlagsVisitor, &flags);
+                if (victim != 0) {
+                    Gool_ObjectTerminate(RAM_AT(struct Node, victim), NULL);
                     goto retry;
                 }
-                return (GoolObj *)-0x16;
+                return -0x16;
             }
         }
-        Gool_RemoveLevelSpawn(obj, (GoolObj *)&((ObjectRoot *)g_free_objects)[idx]);
+        Gool_RemoveLevelSpawn((struct Node *)obj, (struct Node *)(GoolObj *)&((ObjectRoot *)g_free_objects)[idx]);
         obj->word_04 = entity->group;
         res = GOOL_InitObject(obj, entity->type, entity->subtype, 0, NULL);
         if (res >= -0xFE) {
-            Gool_RemoveLevelSpawn(obj, &g_gool_obj_list_7);
-            return (GoolObj *)res;
+            Gool_RemoveLevelSpawn((struct Node *)obj, (struct Node *)&g_gool_obj_list_7);
+            return res;
         }
         g_spawns[entity->id] |= 1;
         obj->pid_flags = entity->id << 8;
         if (zone != NULL && zone->kind == 17) {
-            zone = (ZoneEntryView *)g_pads[0];
+            zone = RAM_AT(ZoneEntryView, g_pads[0]);
         }
-        obj->zone = (ResourceEntry *)zone;
+        obj->zone = Ram_Addr(zone);
         if (IS_PLAYER_ENTITY(entity)) {
-            obj->defaults = ((ZoneHeaderView *)zone->items[0])->player_defaults;
+            obj->defaults = RAM_AT(ZoneHeaderView, zone->items[0])->player_defaults;
         } else {
-            obj->defaults = ((ZoneHeaderView *)zone->items[0])->obj_defaults;
+            obj->defaults = RAM_AT(ZoneHeaderView, zone->items[0])->obj_defaults;
         }
-        obj->entity = entity;
+        obj->entity = Ram_Addr(entity);
         obj->path_length = entity->path_length << 8;
         if (!(entity->flags & 1)) {
             obj->vectors.rot[0] = entity->rot_x;
@@ -310,24 +291,24 @@ void * Gool_ObjectSpawn(ZoneEntryView *zone, s32 idx) {
         obj->rot_vel_y = entity->rot_y << 8;
         obj->rot_vel_z = entity->rot_z << 8;
         Gool_ObjectOrientOnPath(obj, 0, obj->vectors.trans);
-        if (obj == gp_crash_obj && gp_pbak_frame_idx == -1) {
-            Level_SaveState(obj, g_checkpoint_save_state, 1);
+        if (Ram_Addr(obj) == gp_crash_obj && gp_pbak_frame_idx == -1) {
+            Level_SaveState((struct SaveObj *)obj, (struct LevelSave *)g_checkpoint_save_state, 1);
         }
-        if (obj->exec->header->word_04 == 0x300) {
-            Gool_RemoveLevelSpawn(obj, &g_gool_obj_list_4);
+        if (RAM_AT(GoolCodeHeader, RAM_AT(GoolExecutable, obj->exec)->header)->word_04 == 0x300) {
+            Gool_RemoveLevelSpawn((struct Node *)obj, (struct Node *)&g_gool_obj_list_4);
         }
-        if (obj->exec->header->word_00 == 0x22) {
-            if (prev_box != NULL) {
-                obj->vel_x = (s32)prev_box;
+        if (RAM_AT(GoolCodeHeader, RAM_AT(GoolExecutable, obj->exec)->header)->word_00 == 0x22) {
+            if (prev_box != 0) {
+                obj->vel_x = prev_box;
                 obj->vel_y = 0;
-                prev_box->vel_y = (s32)obj;
+                RAM_AT(GoolObj, prev_box)->vel_y = Ram_Addr(obj);
             } else {
                 obj->vel_x = 0;
                 obj->vel_y = 0;
             }
             obj->vectors.trans[1] += 0x19000 - g_spu_reverb_addr[0];
-            g_doctor_cortex_obj[0] = obj;
-            if (!(((ZoneHeaderView *)zone->items[0])->flags2DC & 4)) {
+            g_doctor_cortex_obj[0] = Ram_Addr(obj);
+            if (!(RAM_AT(ZoneHeaderView, zone->items[0])->flags2DC & 4)) {
                 tmp = ((obj->vectors.trans[2] >> 4) ^ obj->vectors.trans[0]) & 7;
                 obj->arg3 = tmp;
                 if (tmp != 0) {
@@ -335,57 +316,60 @@ void * Gool_ObjectSpawn(ZoneEntryView *zone, s32 idx) {
                 }
             }
         }
-        return obj;
+        return Ram_Addr(obj);
     }
-    return (GoolObj *)-0xE;
+    return -0xE;
 }
 
-void * GOOL_CreateObject(GoolObj *parent, s32 exec_id, s32 subtype, s32 arg_count, s32 *args, s32 flag) {
+/* Returns the new object's PS1 address or an error code. */
+s32 GOOL_CreateObject(GoolObj *parent, s32 exec_id, s32 subtype, s32 arg_count, s32 *args, s32 flag) {
     GoolObj *obj;
-    GoolObj *victim;
+    s32 victim;
     s32 res;
+    u32 flags;
 
     if (!exec_id && !subtype) {
-        obj = g_player[0];
-        gp_crash_obj = obj;
+        obj = RAM_AT(GoolObj, g_player[0]);
+        gp_crash_obj = g_player[0];
     } else {
     retry:
-        obj = NODE_CHILDREN(&g_gool_obj_list_7);
+        obj = RAM_AT(GoolObj, NODE_CHILDREN(&g_gool_obj_list_7));
         if (obj == NULL && flag != 0) {
-            victim = (GoolObj *)Gool_FindObject_inline(&g_gool_obj_list_3, (Visitor)GOOL_TestObjectStateFlags, (void *)0x80000);
-            if (victim != NULL) {
-                Gool_ObjectTerminate(victim, NULL);
+            flags = 0x80000;
+            victim = Gool_FindObject_inline(&g_gool_obj_list_3, Gool_TestStateFlagsVisitor, &flags);
+            if (victim != 0) {
+                Gool_ObjectTerminate(RAM_AT(struct Node, victim), NULL);
                 goto retry;
             }
         }
     }
     if (obj == NULL) {
-        return (GoolObj *)-0x16;
+        return -0x16;
     }
-    Gool_RemoveLevelSpawn(obj, parent);
+    Gool_RemoveLevelSpawn((struct Node *)obj, (struct Node *)parent);
     obj->word_04 = 3;
     res = GOOL_InitObject(obj, exec_id, subtype, arg_count, args);
-    if (obj->zone != NULL) {
-        obj->defaults = ((ZoneHeaderView *)obj->zone->data)->obj_defaults;
-    } else if (obj == gp_crash_obj) {
-        obj->defaults = ((ZoneHeaderView *)g_pads[0]->data)->player_defaults;
+    if (obj->zone != 0) {
+        obj->defaults = RAM_AT(ZoneHeaderView, RAM_AT(ResourceEntry, obj->zone)->data)->obj_defaults;
+    } else if (Ram_Addr(obj) == gp_crash_obj) {
+        obj->defaults = RAM_AT(ZoneHeaderView, RAM_AT(ResourceEntry, g_pads[0])->data)->player_defaults;
     } else {
-        obj->defaults = ((ZoneHeaderView *)g_pads[0]->data)->obj_defaults;
+        obj->defaults = RAM_AT(ZoneHeaderView, RAM_AT(ResourceEntry, g_pads[0])->data)->obj_defaults;
     }
     if (res >= -0xFE) {
-        return (GoolObj *)res;
+        return res;
     }
-    return obj;
+    return Ram_Addr(obj);
 }
 
 s32 GOOL_InitObject(GoolObj *obj, s32 exec_id, s32 subtype, s32 arg_count, s32 *args) {
     GoolObj *parent;
-    s32 *entry_ptr;
+    u32 *entry_ptr;
     GoolExecutable *exec;
     u16 state;
 
     obj->pid_flags = 0;
-    obj->entity = NULL;
+    obj->entity = 0;
     obj->path_progress = 0;
     obj->path_length = 0;
     obj->kind = 1;
@@ -411,12 +395,12 @@ s32 GOOL_InitObject(GoolObj *obj, s32 exec_id, s32 subtype, s32 arg_count, s32 *
     obj->head_turn = 0;
     obj->node_id = 0xFFFF;
     obj->voice_id = -2;
-    parent = obj->parent;
+    parent = RAM_AT(GoolObj, obj->parent);
     if (parent->kind == 1) {
         obj->zone = parent->zone;
-        obj->vectors = obj->parent->vectors;
+        obj->vectors = parent->vectors;
     } else {
-        obj->zone = NULL;
+        obj->zone = 0;
         obj->vectors.rot[0] = 0;
         obj->vectors.rot[1] = 0;
         obj->vectors.rot[2] = 0;
@@ -428,7 +412,7 @@ s32 GOOL_InitObject(GoolObj *obj, s32 exec_id, s32 subtype, s32 arg_count, s32 *
     case 4:
     case 5:
     case 29:
-        obj->zone = NULL;
+        obj->zone = 0;
         break;
     case 0:
         obj->cam_rot_x = 0;
@@ -437,26 +421,26 @@ s32 GOOL_InitObject(GoolObj *obj, s32 exec_id, s32 subtype, s32 arg_count, s32 *
     if (obj->word_04 != 3) {
         return -0xE;
     }
-    entry_ptr = &g_ns_page_pool[0]->items[exec_id];
+    entry_ptr = (u32 *)&RAM_AT(NsdTable, g_ns_page_pool[0])->items[exec_id];
     if (*entry_ptr != 0x6396347F && exec_id < 0x40) {
         obj->exec = Ns_Open(entry_ptr, 1, 0);
         if ((s32)obj->exec >= -0xFE) {
             return -0xE;
         }
-        obj->self = obj;
+        obj->self = Ram_Addr(obj);
         obj->collider = 0;
         obj->creator = 0;
         obj->interrupter = 0;
         obj->player = g_player[0];
         obj->subtype = subtype;
-        obj->anim_seq = NULL;
+        obj->anim_seq = 0;
         obj->result_v = 0;
-        exec = obj->exec;
-        state = exec->states[exec->header->word_10 + obj->subtype];
+        exec = RAM_AT(GoolExecutable, obj->exec);
+        state = RAM_AT(u16, exec->states)[RAM_AT(GoolCodeHeader, exec->header)->word_10 + obj->subtype];
         if (state == 0xFF) {
             return -0x1B;
         }
-        if (GOOL_ChangeObjectState(obj, state, (s32 *)arg_count, (s32)args) < -0xFE) {
+        if (GOOL_ChangeObjectState(obj, state, arg_count, args) < -0xFE) {
             return -0xFF;
         }
     }
@@ -466,39 +450,40 @@ s32 GOOL_InitObject(GoolObj *obj, s32 exec_id, s32 subtype, s32 arg_count, s32 *
 s32 Gool_ObjectKill(GoolObj *obj, s32 flag) {
     GoolObj *child;
     GoolObj *next;
-    GoolObj *head;
+    u32 head;
+    GoolObj *player;
 
     if (obj == NULL) {
         return -0xFF;
     }
-    if (obj == gp_crash_obj && ((GoolCodeHeader *)g_ns_page_pool[0])->word_04 != 0x19) {
+    if (Ram_Addr(obj) == gp_crash_obj && RAM_AT(GoolCodeHeader, g_ns_page_pool[0])->word_04 != 0x19) {
         return -0xFF;
     }
     if (flag != 0) {
-        Gool_ExecStateCode(NULL, obj, 0x1A00, 0, NULL);
+        Gool_ExecStateCode(NULL, (struct GoolObjView *)obj, 0x1A00, 0, NULL);
     }
-    child = obj->children;
+    child = RAM_AT(GoolObj, obj->children);
     if (child != NULL) {
         do {
-            next = child->next;
+            next = RAM_AT(GoolObj, child->next);
             Gool_ObjectKill(child, flag);
             child = next;
         } while (child != NULL);
     }
-    Audio_VoiceFree(obj);
+    Audio_VoiceFree((struct GoolObjectAudio *)obj);
     g_spawns[obj->pid_flags >> 8] &= ~1;
     obj->kind = 0;
-    if (obj == gp_crash_obj) {
+    if (Ram_Addr(obj) == gp_crash_obj) {
         head = NODE_CHILDREN(&g_gool_obj_list_7);
-        Gool_RemoveLevelSpawn(obj, &g_gool_obj_list_7);
+        Gool_RemoveLevelSpawn((struct Node *)obj, (struct Node *)&g_gool_obj_list_7);
         *NODE_CHILDREN_PTR(&g_gool_obj_list_7) = head;
-        g_player[0]->parent = NULL;
-        g_player[0]->children = NULL;
-        g_player[0]->next = NULL;
-        ((struct { RAM_REF(GoolObj) x; } *)&gp_crash_obj)->x = NULL;
+        player = RAM_AT(GoolObj, g_player[0]);
+        player->parent = 0;
+        player->children = 0;
+        player->next = 0;
+        gp_crash_obj = 0;
     } else {
-        Gool_RemoveLevelSpawn(obj, &g_gool_obj_list_7);
+        Gool_RemoveLevelSpawn((struct Node *)obj, (struct Node *)&g_gool_obj_list_7);
     }
     return -0xFF;
 }
-

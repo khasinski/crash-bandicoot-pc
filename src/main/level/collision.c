@@ -30,12 +30,14 @@ typedef struct LevelStateView {
     s32 level_id;
 } LevelStateView;
 
+typedef struct SubExecHeader {
+    s32 type;
+    s32 category;
+} SubExecHeader;
+
 typedef struct SubExec {
     u8 reserved_00[0x10];
-    struct {
-        s32 type;
-        s32 category;
-    } *header;
+    RAM_REF(SubExecHeader) header;
 } SubExec;
 
 typedef struct SubObj {
@@ -133,66 +135,10 @@ static __inline__ s32 Level_TestBoundIntersection_inline(ZqBound *a, ZqBound *b)
     return 0;
 }
 
-static __inline__ s32 Level_TestBoundInBound(ZqBound *a, ZqBound *b)
-{
-    if (a->p1.x >= b->p1.x && a->p1.y >= b->p1.y && a->p1.z >= b->p1.z
-        && a->p2.x < b->p2.x && a->p2.y < b->p2.y && a->p2.z < b->p2.z) {
-        return 1;
-    }
-    return 0;
-}
-
-static __inline__ void Solid_PlotWallB(s32 x1, s32 y1, s32 x2, s32 y2, s32 set)
-{
-    s32 *p;
-    u32 mask;
-
-    x2 += 16;
-    mask = -1;
-    if (x2 < 32) {
-        if (x2 <= 0) {
-            return;
-        }
-        mask = -1 << (32 - x2);
-    }
-    x1 += 15;
-    if (x1 >= 32) {
-        return;
-    }
-    if (x1 >= 0) {
-        mask &= ~((s32)0x80000000 >> x1);
-    }
-    if (mask == 0) {
-        return;
-    }
-    y1 += 16;
-    y2 += 16;
-    if (y1 < 0) {
-        y1 = 0;
-    }
-    if (y2 > 32) {
-        y2 = 32;
-    }
-    if (y1 >= 32) {
-        return;
-    }
-    p = &gp_grid_rows[y1];
-    if (set) {
-        for (; y1 < y2; y1++, p++) {
-            *p |= mask;
-        }
-    } else {
-        mask = ~mask;
-        for (; y1 < y2; y1++, p++) {
-            *p &= mask;
-        }
-    }
-}
-
 #define ABS(x) ((x) >= 0 ? (x) : -(x))
 
-__inline__ void Solid_StopAtFloor(SubObj *obj, ZqVec *v1, ZqVec *v2, SubWorkspace *ws, s32 div_val, s32 *out);
-__inline__ void Solid_StopAtCeilZone(SubObj *obj, ZqVec *v1, ZqVec *v2, SubWorkspace *ws);
+void Solid_StopAtFloor(SubObj *obj, ZqVec *v1, ZqVec *v2, SubWorkspace *ws, s32 div_val, s32 *out);
+void Solid_StopAtCeilZone(SubObj *obj, ZqVec *v1, ZqVec *v2, SubWorkspace *ws);
 
 s32 Solid_TransSmoothStopAtSolid(SubObj *obj, ZqVec *in_vel, SubWorkspace *ws)
 {
@@ -207,7 +153,7 @@ s32 Solid_TransSmoothStopAtSolid(SubObj *obj, ZqVec *in_vel, SubWorkspace *ws)
         gp_wall_cache = 0;
         return 0;
     }
-    level = g_ns_page_pool[0]->level_id;
+    level = RAM_AT(LevelStateView, g_ns_page_pool[0])->level_id;
     gp_wall_bitmap = (level == 0x11 || level == 0x1E) ? 0x27AC4 : 0xF424;
     pos.x = trans->x;
     pos.y = trans->y;
@@ -239,12 +185,15 @@ s32 Solid_TransSmoothStopAtSolid(SubObj *obj, ZqVec *in_vel, SubWorkspace *ws)
     trans->x = pos.x;
     trans->y = pos.y;
     trans->z = pos.z;
+    /* The return value is whatever retail leaves in v0; no caller uses it. */
     if (obj->status_a & 0x400) {
         arg = 0x6400;
         if (!(obj->status_a & 1) || obj->event != 0x900) {
-            Gool_ExecStateCode(NULL, obj, obj->event, 1, &arg);
+            return Gool_ExecStateCode(NULL, (struct GoolObjView *)obj, obj->event, 1, &arg);
         }
+        return 0x900;
     }
+    return 0;
 }
 
 void Solid_TransPullStopAtSolid(SubObj *obj, SubWorkspace *ws, s32 *pos, s32 *vel)
@@ -340,7 +289,7 @@ s32 ProcessNode(SubObj *obj, u32 node)
         break;
     }
     if (type == 4) {
-        level = g_ns_page_pool[0]->level_id;
+        level = RAM_AT(LevelStateView, g_ns_page_pool[0])->level_id;
         if (level == 3 || level == 7) {
             obj->event = 0x2100;
             obj->status_a |= 0x400;
@@ -357,9 +306,8 @@ s32 ProcessNode(SubObj *obj, u32 node)
     return 0;
 }
 
-__inline__ void Solid_StopAtFloor(SubObj *obj, ZqVec *v1, ZqVec *v2, SubWorkspace *ws, s32 div_val, s32 *out)
+void Solid_StopAtFloor(SubObj *obj, ZqVec *v1, ZqVec *v2, SubWorkspace *ws, s32 div_val, s32 *out)
 {
-    ZqBound unused;
     s32 max_y, dy;
     ZqBound *bound;
 
@@ -407,14 +355,14 @@ s32 Solid_StopAtHighestObjectBelow(SubObj *obj, ZqVec *v1, ZqVec *v2, SubWorkspa
     ws->word_104c += 0x10;
     for (i = 0, box = g_obj_bounds.boxes; i < g_obj_bounds.count; i++, box++) {
         cand_y = box->bound.p2.y;
-        cand_obj = box->obj;
+        cand_obj = RAM_AT(SubObj, box->obj);
         if ((cand_y <= max_y || (cand_obj->status_b & 0x400000))
             && cand_y > res
             && Level_TestBoundIntersection_inline(bound, &box->bound)) {
             hit_box = box;
             if (cand_obj->status_b & 0x20000) {
                 if (!(((obj->flags120 & 0x10) || obj->anim_state == 5)
-                      && cand_obj->word_20->header->category == 0x300
+                      && RAM_AT(SubExecHeader, RAM_AT(SubExec, cand_obj->word_20)->header)->category == 0x300
                       && (!(cand_obj->status_c & 0x1012) || (cand_obj->flags120 & 0x10020)))) {
                     res = hit_box->bound.p2.y + 1;
                 }
@@ -424,7 +372,7 @@ s32 Solid_StopAtHighestObjectBelow(SubObj *obj, ZqVec *v1, ZqVec *v2, SubWorkspa
         }
     }
     if (hit_obj != NULL) {
-        Gool_Collide(obj, bound, hit_obj, &hit_box->bound);
+        Gool_Collide((struct CollideObj *)obj, (s32 *)bound, (struct CollideObj *)hit_obj, (s32 *)&hit_box->bound);
     }
     return res;
 }
@@ -432,7 +380,6 @@ s32 Solid_StopAtHighestObjectBelow(SubObj *obj, ZqVec *v1, ZqVec *v2, SubWorkspa
 s32 Solid_StopAtFloorZone(SubObj *obj, ZqVec *v1, ZqVec *v2, SubWorkspace *ws, s32 *out_y)
 {
     s32 out[3];
-    ZqBound unused;
     s32 offset_y, flags, y2, y1, y3, res;
     ZqBound *bound;
 
@@ -468,8 +415,8 @@ s32 Solid_StopAtFloorZone(SubObj *obj, ZqVec *v1, ZqVec *v2, SubWorkspace *ws, s
         y2 = y3;
         ws->word_1048 = y2;
         flags &= ~0x40000;
-        if (obj->collider != NULL) {
-            if (obj->collider->status_b & 0x400000) {
+        if (obj->collider != 0) {
+            if (RAM_AT(SubObj, obj->collider)->status_b & 0x400000) {
                 offset_y = 0x19000;
             }
             if ((u32)(obj->arg1_v - obj->ground_time) >= 4) {
@@ -538,7 +485,7 @@ s32 Solid_StopAtCeil(SubObj *obj, ZqVec *v, SubWorkspace *ws)
     hit_obj = NULL;
     bound = &ws->bound2;
     for (i = 0, box = g_obj_bounds.boxes; i < g_obj_bounds.count; i++, box++) {
-        cand_obj = box->obj;
+        cand_obj = RAM_AT(SubObj, box->obj);
         if ((cand_obj->status_b & 0x8000000)
             && Level_TestBoundIntersection_inline(bound, &box->bound)) {
             hit_obj = cand_obj;
@@ -554,26 +501,26 @@ s32 Solid_StopAtCeil(SubObj *obj, ZqVec *v, SubWorkspace *ws)
     bound->p1.z = v->z - 0x2580;
     bound->p2.z = v->z + 0x2580;
     res2 = Solid_RFindCeilY(obj, ws, &ws->bound1, bound, 2, 1, -0x3B9AC9FF);
-    if (((ZoneHeader *)((ZoneEntry *)obj->entry)->items[0])->flags & 0x20000) {
+    if ((RAM_AT(ZoneHeader, RAM_AT(ZoneEntry, obj->entry)->items[0]))->flags & 0x20000) {
         vec.x = v->x;
         vec.y = bound->p2.y;
         vec.z = v->z;
-        if ((s32)Zone_FindNeighbor((ZoneEntry *)level_position.zone, &vec) >= -0xFE) {
-            if ((((ZqZoneRect *)((ZoneEntry *)obj->entry)->items[1])->y << 8) < vec.y) {
-                res2 = ((ZqZoneRect *)((ZoneEntry *)obj->entry)->items[1])->y << 8;
+        if (Zone_FindNeighbor(RAM_AT(ZoneEntry, level_position.zone), &vec) >= -0xFE) {
+            if (((RAM_AT(ZqZoneRect, RAM_AT(ZoneEntry, obj->entry)->items[1]))->y << 8) < vec.y) {
+                res2 = (RAM_AT(ZqZoneRect, RAM_AT(ZoneEntry, obj->entry)->items[1]))->y << 8;
             }
         }
     }
     if (res1 != -0x3B9AC9FF && (res2 == -0x3B9AC9FF || res1 < res2)) {
         hit_obj->status_a |= 0x80;
         arg = 0x6400;
-        Gool_ExecStateCode(obj, hit_obj, 0x1700, 1, &arg);
+        Gool_ExecStateCode((struct GoolObjView *)obj, (struct GoolObjView *)hit_obj, 0x1700, 1, &arg);
         return res1;
     }
     return res2;
 }
 
-__inline__ void Solid_StopAtCeilZone(SubObj *obj, ZqVec *v1, ZqVec *v2, SubWorkspace *ws)
+void Solid_StopAtCeilZone(SubObj *obj, ZqVec *v1, ZqVec *v2, SubWorkspace *ws)
 {
     s32 res;
 
@@ -597,24 +544,24 @@ __inline__ void Solid_StopAtCeilZone(SubObj *obj, ZqVec *v1, ZqVec *v2, SubWorks
 s32 Solid_StopAtZone(SubObj *obj, ZqVec *v)
 {
     s32 arg1, arg2, arg3;
-    ZoneEntry *zone;
+    s32 zone;
     ZqZoneRect *rect;
     s32 *header;
     s32 flag, level;
 
-    zone = Zone_FindNeighbor((ZoneEntry *)level_position.zone, v);
-    if ((s32)zone >= -0xFE) {
-        rect = (ZqZoneRect *)((ZoneEntry *)obj->entry)->items[1];
+    zone = Zone_FindNeighbor(RAM_AT(ZoneEntry, level_position.zone), v);
+    if (zone >= -0xFE) {
+        rect = RAM_AT(ZqZoneRect, RAM_AT(ZoneEntry, obj->entry)->items[1]);
         if (v->y < ((rect->y << 8) - obj->bound.p1.y)) {
             flag = 1;
-            if (g_ns_page_pool[0]->level_id == 0x17) {
+            if (RAM_AT(LevelStateView, g_ns_page_pool[0])->level_id == 0x17) {
                 arg1 = 0;
-                Gool_ExecStateCode(NULL, obj, 0x2100, 1, &arg1);
+                Gool_ExecStateCode(NULL, (struct GoolObjView *)obj, 0x2100, 1, &arg1);
             }
-            if ((((ZoneHeader *)((ZoneEntry *)obj->entry)->items[0])->flags & 2)
+            if (((RAM_AT(ZoneHeader, RAM_AT(ZoneEntry, obj->entry)->items[0]))->flags & 2)
                 && obj->anim_state != 2) {
                 arg2 = 0x6400;
-                Gool_ExecStateCode(NULL, obj, 0x900, 1, &arg2);
+                Gool_ExecStateCode(NULL, (struct GoolObjView *)obj, 0x900, 1, &arg2);
                 flag = 0;
             }
             if (flag) {
@@ -626,14 +573,14 @@ s32 Solid_StopAtZone(SubObj *obj, ZqVec *v)
             }
         }
     } else {
-        obj->entry = (ResourceEntry *)zone;
+        obj->entry = zone;
     }
-    if (obj->entry != NULL) {
-        header = (s32 *)((ZoneEntry *)obj->entry)->items[0];
+    if (obj->entry != 0) {
+        header = RAM_AT(s32, RAM_AT(ZoneEntry, obj->entry)->items[0]);
         if ((header[0xBF] & 4) && obj->trans.y < header[0xC0]
-            && ((level = g_ns_page_pool[0]->level_id) == 0xF || level == 0x18)) {
+            && ((level = RAM_AT(LevelStateView, g_ns_page_pool[0])->level_id) == 0xF || level == 0x18)) {
             arg3 = 0x27100;
-            Gool_ExecStateCode(NULL, obj, 0x2100, 1, &arg3);
+            Gool_ExecStateCode(NULL, (struct GoolObjView *)obj, 0x2100, 1, &arg3);
         }
     }
     return -0xFF;

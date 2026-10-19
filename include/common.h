@@ -16,5 +16,6 @@ typedef uint64_t u64;
 #include "globals.h"
 #include "functions.h"
 #include "gpu.h"
+#include "platform.h"
 
 #endif

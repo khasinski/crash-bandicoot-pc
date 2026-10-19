@@ -12,11 +12,11 @@ void Gpu_ResetPrims(RenderBuffer *buffer)
 
 void Gpu_GetPrimsTail(s32 amount)
 {
-    amount += g_ot_cur->word78;
-    g_ot_cur->word78 = amount;
+    amount += RAM_AT(RenderBuffer, g_ot_cur)->word78;
+    RAM_AT(RenderBuffer, g_ot_cur)->word78 = amount;
 }
 
 s32 *Gpu_GetCurPrimsTail(void)
 {
-    return &g_ot_cur->word78;
+    return &RAM_AT(RenderBuffer, g_ot_cur)->word78;
 }

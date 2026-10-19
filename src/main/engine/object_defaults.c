@@ -12,10 +12,10 @@ typedef GoolDefaultsObject Object;
 void Gool_ObjectColorByZone(Object *object,s32 mode) {
     Entry *entry;
     Defaults *defaults;
-    entry=object->entry;
-    if(entry==0) entry=level_position.zone;
-    if(object==gp_crash_obj) defaults=(Defaults *)(entry->data+0x348);
-    else defaults=(Defaults *)(entry->data+0x318);
+    entry=RAM_AT(Entry, object->entry);
+    if(entry==NULL) entry=RAM_AT(Entry, level_position.zone);
+    if(Ram_Addr(object)==gp_crash_obj) defaults=RAM_AT(Defaults, entry->data+0x348);
+    else defaults=RAM_AT(Defaults, entry->data+0x318);
     switch(mode) {
     case 0: object->defaults=*defaults;return;
     case 1:

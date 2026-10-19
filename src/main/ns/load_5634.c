@@ -45,7 +45,7 @@ s32 Ns_PageClose(s32 id, s32 count)
     return slot->references + 1;
 }
 
-__inline__ ResourceSlot *Ns_EntryPageStruct(s32 addr)
+ResourceSlot *Ns_EntryPageStruct(s32 addr)
 {
     s32 i;
     ResourceSlot *slot;

@@ -128,14 +128,14 @@ static __inline__ void Gool_ObjectColorByZone(GoolObj *object, s32 mode) {
     ResourceEntry *entry;
     GoolDefaults *defaults;
 
-    entry = object->zone;
+    entry = RAM_AT(ResourceEntry, object->zone);
     if (entry == NULL) {
-        entry = g_pads[0];
+        entry = RAM_AT(ResourceEntry, g_pads[0]);
     }
-    if (object == gp_crash_obj) {
-        defaults = (GoolDefaults *)(entry->data + 0x348);
+    if (Ram_Addr(object) == gp_crash_obj) {
+        defaults = RAM_AT(GoolDefaults, entry->data + 0x348);
     } else {
-        defaults = (GoolDefaults *)(entry->data + 0x318);
+        defaults = RAM_AT(GoolDefaults, entry->data + 0x318);
     }
     switch (mode) {
     case 0:
@@ -178,9 +178,9 @@ s32 Gool_ObjectColors(GoolObj *obj) {
             obj->invincibility_state = 0;
             Gool_ObjectColorByZone(obj, 1);
         } else if (obj->invincibility_state == 4) {
-            if (obj->collider != NULL && obj->collider->exec->header->word_04 == 0x300) {
+            if (obj->collider != 0 && RAM_AT(GoolCodeHeader, RAM_AT(GoolExecutable, RAM_AT(GoolObj, obj->collider)->exec)->header)->word_04 == 0x300) {
                 sp18 = 0;
-                Gool_ExecStateCode(obj, obj->collider, 0xA00, 1, &sp18);
+                Gool_ExecStateCode((struct GoolObjView *)obj, RAM_AT(struct GoolObjView, obj->collider), 0xA00, 1, &sp18);
             }
         }
         /* fallthrough */
@@ -202,12 +202,12 @@ s32 Gool_ObjectColors(GoolObj *obj) {
     case 1:
         break;
     default:
-        if (obj == gp_crash_obj && (obj->status_b & 0x4000000)) {
+        if (Ram_Addr(obj) == gp_crash_obj && (obj->status_b & 0x4000000)) {
             typedef struct ZoneColorView {
                 u8 reserved_00[0x372];
                 GoolColor color372;
             } ZoneColorView;
-            *(GoolColor *)&obj->defaults.intensity_r = ((ZoneColorView *)obj->zone->data)->color372;
+            *(GoolColor *)&obj->defaults.intensity_r = RAM_AT(ZoneColorView, RAM_AT(ResourceEntry, obj->zone)->data)->color372;
         }
         break;
     }
@@ -241,17 +241,18 @@ void Gool_ObjectControlDir(GoolObj *obj) {
     s32 trans[3];
     GoolBound player_bound;
     GoolBoundEntry *entry;
-    void **res;
+    u32 *res;
     s32 *model;
     s32 angle;
+    GoolObj *crash;
 
     entry = &g_obj_bounds.bounds[g_obj_bounds.count++];
-    entry->obj = obj;
+    entry->obj = Ram_Addr(obj);
     if (obj->status_a & 0x8000) {
         Gool_ObjectLocalBound(obj, obj->vectors.scale);
         obj->status_a &= ~0x8000;
     }
-    if (*(u8 *)obj->anim_seq != 1) {
+    if (*RAM_AT(u8, obj->anim_seq) != 1) {
         entry->bound.x1 = obj->vectors.trans[0] + obj->bound[0];
         entry->bound.y1 = obj->vectors.trans[1] + obj->bound[1];
         entry->bound.z1 = obj->vectors.trans[2] + obj->bound[2];
@@ -259,15 +260,15 @@ void Gool_ObjectControlDir(GoolObj *obj) {
         entry->bound.y2 = obj->vectors.trans[1] + obj->bound[4];
         entry->bound.z2 = obj->vectors.trans[2] + obj->bound[5];
     } else {
-        res = (void **)Ns_Lookup((u32 *)obj->anim_seq + 1);
-        model = (s32 *)res[((u32)obj->anim_frame >> 8) + 4];
+        res = RAM_AT(u32, Ns_Lookup(RAM_AT(u32, obj->anim_seq) + 1));
+        model = RAM_AT(s32, res[((u32)obj->anim_frame >> 8) + 4]);
         angle = obj->vectors.rot[1] & 0xFFF;
         if (angle == 0 && obj->vectors.scale[0] == 0x1000) {
             trans[0] = obj->vectors.trans[0] + model[11];
             trans[1] = obj->vectors.trans[1] + model[12];
             trans[2] = obj->vectors.trans[2] + model[13];
         } else {
-            Gool_Transform(model + 11, obj->vectors.trans, obj->vectors.rot, obj->vectors.scale, trans);
+            Gool_Transform((struct Vec3 *)(model + 11), (struct Vec3 *)obj->vectors.trans, (struct Vec3 *)obj->vectors.rot, (struct Vec3 *)obj->vectors.scale, (struct Vec3 *)trans);
         }
         if (angle < 0x200 || angle > 0xE00) {
             entry->bound.x1 = trans[0] + obj->bound[0];
@@ -299,17 +300,18 @@ void Gool_ObjectControlDir(GoolObj *obj) {
             entry->bound.z2 = trans[2] + obj->bound[3];
         }
     }
-    if (gp_crash_obj->arg1 == obj->arg1) {
-        player_bound.x1 = gp_crash_obj->vectors.trans[0] + gp_crash_obj->bound[0];
-        player_bound.y1 = gp_crash_obj->vectors.trans[1] + gp_crash_obj->bound[1];
-        player_bound.z1 = gp_crash_obj->vectors.trans[2] + gp_crash_obj->bound[2];
-        player_bound.x2 = gp_crash_obj->vectors.trans[0] + gp_crash_obj->bound[3];
-        player_bound.y2 = gp_crash_obj->vectors.trans[1] + gp_crash_obj->bound[4];
-        player_bound.z2 = gp_crash_obj->vectors.trans[2] + gp_crash_obj->bound[5];
-        if (Level_TestBoundIntersection(&player_bound, &entry->bound) != 0) {
-            Gool_Collide(obj, &entry->bound, gp_crash_obj, &player_bound);
+    crash = RAM_AT(GoolObj, gp_crash_obj);
+    if (crash->arg1 == obj->arg1) {
+        player_bound.x1 = crash->vectors.trans[0] + crash->bound[0];
+        player_bound.y1 = crash->vectors.trans[1] + crash->bound[1];
+        player_bound.z1 = crash->vectors.trans[2] + crash->bound[2];
+        player_bound.x2 = crash->vectors.trans[0] + crash->bound[3];
+        player_bound.y2 = crash->vectors.trans[1] + crash->bound[4];
+        player_bound.z2 = crash->vectors.trans[2] + crash->bound[5];
+        if (Level_TestBoundIntersection((struct ZqBound *)&player_bound, (struct ZqBound *)&entry->bound) != 0) {
+            Gool_Collide((struct CollideObj *)obj, (s32 *)&entry->bound, (struct CollideObj *)crash, (s32 *)&player_bound);
         } else {
-            obj->collider = NULL;
+            obj->collider = 0;
         }
     }
 }
@@ -337,7 +339,8 @@ typedef struct GoolTimeState {
 #undef CRASH_EXT_GOOL_PHYSICS_3
 
 #define ABS(x) ((x) < 0 ? -(x) : (x))
-#define SCALE_DT(x) (((s32)((g_db_cur[0]->word_84 < 0x67U ? g_db_cur[0]->word_84 : 0x66) * (x))) / 1024)
+#define FRAME_TICKS (RAM_AT(GoolTimeState, g_db_cur[0])->word_84 < 0x67U ? RAM_AT(GoolTimeState, g_db_cur[0])->word_84 : 0x66)
+#define SCALE_DT(x) (((s32)(FRAME_TICKS * (x))) / 1024)
 #define CLAMP(x, min, max) ((x) >= (max) ? (max) : ((x) < (min) ? (min) : (x)))
 
 void Gool_ObjectPhysics(GoolObj *obj) {
@@ -418,16 +421,16 @@ void Gool_ObjectPhysics(GoolObj *obj) {
     }
     obj->status_a &= 0xFFCAA07E;
     if (obj->status_b & 1) {
-        obj->vectors.rot[1] = Gool_ObjectRotate(obj->vectors.rot[1], obj->target_rot_y, obj->target_rot_x, obj);
+        obj->vectors.rot[1] = Gool_ObjectRotate(obj->vectors.rot[1], obj->target_rot_y, obj->target_rot_x, (struct GoolObjView *)obj);
     }
     if (obj->status_b & 0x80000) {
-        obj->vectors.rot[1] = Gool_ObjectRotate2(obj->vectors.rot[1], obj->target_rot_y, obj->target_rot_x, obj);
+        obj->vectors.rot[1] = Gool_ObjectRotate2(obj->vectors.rot[1], obj->target_rot_y, obj->target_rot_x, (struct GoolObjView *)obj);
     }
     if (obj->status_b & 0x2000) {
         obj->vectors.rot[0] = Gool_ObjectRotate(obj->vectors.rot[0], obj->target_rot_z, obj->ang_vel_x, NULL);
     }
-    if (obj->exec->header->word_00 != 5) {
-        obj->collider = NULL;
+    if (RAM_AT(GoolCodeHeader, RAM_AT(GoolExecutable, obj->exec)->header)->word_00 != 5) {
+        obj->collider = 0;
     }
     if (obj->status_b & 0x40) {
         vel.x = SCALE_DT(obj->vel_x);
@@ -436,7 +439,7 @@ void Gool_ObjectPhysics(GoolObj *obj) {
         saved_trans = *(GoolVec3 *)obj->vectors.trans;
         if (obj->status_b & 8) {
             obj->event = 0xFF;
-            Solid_TransSmoothStopAtSolid(obj, (s32 *)&vel, g_solid_wall_plot_buf);
+            Solid_TransSmoothStopAtSolid((struct SubObj *)obj, (struct ZqVec *)&vel, (struct SubWorkspace *)g_solid_wall_plot_buf);
         } else {
             obj->vectors.trans[0] += vel.x;
             obj->vectors.trans[1] += vel.y;
@@ -467,13 +470,13 @@ void Gool_ObjectPhysics(GoolObj *obj) {
         }
     }
     if (obj->status_b & 0x20) {
-        obj->vel_y -= (g_db_cur[0]->word_84 < 0x67U ? g_db_cur[0]->word_84 : 0x66) * 4000;
+        obj->vel_y -= FRAME_TICKS * 4000;
         if (obj->vel_y < -0x2EE000) {
             obj->vel_y = -0x2EE000;
         }
     }
-    if ((obj->status_b & 0x10) && gp_crash_obj->arg1 != obj->arg1 &&
-        Math_OutOfRange(obj, obj->vectors.trans, gp_crash_obj->vectors.trans, 0x7D000, 0xAF000, 0x7D000) == 0) {
+    if ((obj->status_b & 0x10) && RAM_AT(GoolObj, gp_crash_obj)->arg1 != obj->arg1 &&
+        Math_OutOfRange((struct ObjectFlagsView *)obj, (struct Vec3 *)obj->vectors.trans, (struct Vec3 *)RAM_AT(GoolObj, gp_crash_obj)->vectors.trans, 0x7D000, 0xAF000, 0x7D000) == 0) {
         Gool_ObjectControlDir(obj);
     }
 }

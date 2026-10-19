@@ -9,6 +9,6 @@
 
 void Gfx_UpdateMatrices2(u32 *ot)
 {
-    if (*gp_level_entry)
+    if (*RAM_AT(u16, gp_level_entry))
         Gfx_UpdateCamMatrices(ot);
 }

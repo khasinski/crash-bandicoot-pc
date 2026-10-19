@@ -1,4 +1,4 @@
-#include "gpu.h"
+#include "common.h"
 #include "render.h"
 
 typedef struct GpuPolyF4 {
@@ -18,29 +18,31 @@ typedef struct FadeTable {
 #undef CRASH_EXT_RENDER_TILE_FADE
 
 void Gpu_DrawRect(s32 x, s32 y, s32 w, s32 h, u8 r, u8 g, u8 b) {
-    GpuTile *tile = (GpuTile *)g_db_cur[2]->word78;
+    RenderBuffer *buf = RAM_AT(RenderBuffer, g_db_cur[2]);
+    GpuTile *tile = RAM_AT(GpuTile, buf->word78);
 
-    g_db_cur[2]->word78 = (s32)(tile + 1);
+    buf->word78 = Ram_Addr(tile + 1);
     SetBlockFill(&tile->header);
     tile->rect.w = w;
     tile->rect.h = h;
     tile->header.color[0] = r;
     tile->header.color[1] = g;
     tile->header.color[2] = b;
-    tile->rect.x = x + g_db_cur[2]->drawing.env.clip.x;
-    tile->rect.y = y + g_db_cur[2]->drawing.env.clip.y;
-    AddPrim(g_db_cur[2]->ordering_table, tile);
+    tile->rect.x = x + buf->drawing.env.clip.x;
+    tile->rect.y = y + buf->drawing.env.clip.y;
+    AddPrim(buf->ordering_table, tile);
 }
 
 void Gpu_DrawOverlay(u32 fade) {
     void *mode_packet;
     GpuPolyF4 *poly;
     FadeTable table;
+    RenderBuffer *buf = RAM_AT(RenderBuffer, g_db_cur[2]);
 
-    mode_packet = (void *)g_db_cur[2]->word78;
-    g_db_cur[2]->word78 = (s32)mode_packet + 0xC;
-    poly = (GpuPolyF4 *)g_db_cur[2]->word78;
-    g_db_cur[2]->word78 = (s32)(poly + 1);
+    mode_packet = RAM_AT(void, buf->word78);
+    buf->word78 = buf->word78 + 0xC;
+    poly = RAM_AT(GpuPolyF4, buf->word78);
+    buf->word78 = Ram_Addr(poly + 1);
     table = g_tile_fade_alpha_table;
     if (fade != 0) {
         fade = table.bytes[fade >> 4];
@@ -57,8 +59,8 @@ void Gpu_DrawOverlay(u32 fade) {
         poly->header.color[2] = fade;
         SetPolyF4(poly);
         SetSemiTrans(poly, 1);
-        AddPrim(&g_db_cur[2]->ordering_table[0x7FF], poly);
+        AddPrim(&buf->ordering_table[0x7FF], poly);
         SetDrawMode(mode_packet, 1, 0, GetTPage(0, 2, 0, 0), 0);
-        AddPrim(&g_db_cur[2]->ordering_table[0x7FF], mode_packet);
+        AddPrim(&buf->ordering_table[0x7FF], mode_packet);
     }
 }

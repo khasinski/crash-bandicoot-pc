@@ -1,6 +1,7 @@
 #ifndef CRASH_RENDER_H
 #define CRASH_RENDER_H
 
+#include "common.h"
 #include "gpu.h"
 
 /* Layout established by buffer swap (0x04, 0x18) and cursor/table access.

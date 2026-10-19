@@ -8,6 +8,8 @@ typedef struct MidiHeaderItem {
     s32 refs[7];
 } MidiHeaderItem;
 
+#define HEADER(entry) RAM_AT(MidiHeaderItem, (entry)->header)
+
 typedef struct MidiResourceEntry {
     u32 word00;
     s32 id;
@@ -17,9 +19,6 @@ typedef struct MidiResourceEntry {
     RAM_REF(void) vh;
     RAM_REF(void) sep;
 } MidiResourceEntry;
-
-typedef void noreturn_fn(s32);
-volatile noreturn_fn BIOS_Abs;
 
 s32 Midi_OpenAndPlay(s32 *arg0) {
     s32 sp10;
@@ -35,14 +34,14 @@ s32 Midi_OpenAndPlay(s32 *arg0) {
         if (gp_midi_loaded_eid != 0x6396347F) {
             SsSepClose(gp_midi_vol);
             sp10 = gp_midi_loaded_eid;
-            Ns_Close(&sp10, 1);
+            Ns_Close((u32 *)&sp10, 1);
         }
         if (*arg0 != 0x6396347F) {
-            entry = Ns_Open(arg0, 1, 1);
+            entry = RAM_AT(MidiResourceEntry, Ns_Open((u32 *)arg0, 1, 1));
             gp_midi_loaded_eid = entry->id;
             for (i = 0; i < 7; i++) {
-                if (entry->header->refs[i] != 0x6396347F) {
-                    Ns_Open(&entry->header->refs[i], 0, 1);
+                if (HEADER(entry)->refs[i] != 0x6396347F) {
+                    Ns_Open((u32 *)&HEADER(entry)->refs[i], 0, 1);
                 }
             }
         } else {
@@ -51,20 +50,20 @@ s32 Midi_OpenAndPlay(s32 *arg0) {
         }
     }
     gp_card_chan = 2;
-    entry = Ns_Open(arg0, 1, 0);
+    entry = RAM_AT(MidiResourceEntry, Ns_Open((u32 *)arg0, 1, 0));
     gp_midi_vab_id = 0;
     for (i = 0; i < 7; i++) {
-        if (entry->header->refs[i] != 0x6396347F) {
-            if (Ns_Close(&entry->header->refs[i], 0) == 0) {
+        if (HEADER(entry)->refs[i] != 0x6396347F) {
+            if (Ns_Close((u32 *)&HEADER(entry)->refs[i], 0) == 0) {
                 return 0;
             }
         }
     }
     gp_card_chan = 3;
-    gp_midi_open_seq_cnt = entry->header->count;
+    gp_midi_open_seq_cnt = HEADER(entry)->count;
     if (gp_midi_vab_id_2 == -1) {
-        Ns_Open(&entry->header->bank_ref, 1, 1);
-        gp_midi_vab_id_2 = SsVabFakeHead(entry->vh, -1, (g_ns_audio_bank_idx[0] << 16) | 0x2000);
+        Ns_Open((u32 *)&HEADER(entry)->bank_ref, 1, 1);
+        gp_midi_vab_id_2 = SsVabFakeHead(RAM_AT(u_char, entry->vh), -1, (g_ns_audio_bank_idx[0] << 16) | 0x2000);
         if (gp_midi_vab_id_2 == -1) {
             BIOS_Abs(-1);
         }
@@ -74,7 +73,7 @@ s32 Midi_OpenAndPlay(s32 *arg0) {
         }
         SsStart();
     }
-    gp_midi_vol = SsSepOpen(entry->sep, gp_midi_vab_id_2, gp_midi_open_seq_cnt);
+    gp_midi_vol = SsSepOpen(RAM_AT(unsigned long, entry->sep), gp_midi_vab_id_2, gp_midi_open_seq_cnt);
     if (gp_midi_vol == -1) {
         BIOS_Abs(-1);
     }

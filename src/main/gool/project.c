@@ -1,7 +1,5 @@
 #include "common.h"
 #include "ns.h"
-
-#include "common.h"
 #include "vector.h"
 
 typedef struct Matrix {
@@ -54,7 +52,7 @@ void Gool_Transform(Vec3 *arg0, Vec3 *arg1, Vec3 *arg2, Vec3 *arg3, Vec3 *arg4)
     m2.m[2][0] = 0;
     m2.m[2][1] = s2;
     m2.m[2][2] = c2;
-    MulMatrix(&m1, &m2);
+    MulMatrix((MATRIX *)&m1, (MATRIX *)&m2);
 
     s3 = Math_Sin(-((arg2->z - arg2->y) & 0xFFF));
     c3 = Math_Cos(-((arg2->z - arg2->y) & 0xFFF));
@@ -67,16 +65,16 @@ void Gool_Transform(Vec3 *arg0, Vec3 *arg1, Vec3 *arg2, Vec3 *arg3, Vec3 *arg4)
     m2.m[2][0] = -s3;
     m2.m[2][1] = 0;
     m2.m[2][2] = c3;
-    MulMatrix(&m1, &m2);
+    MulMatrix((MATRIX *)&m1, (MATRIX *)&m2);
 
     if (arg3 != NULL) {
-        ScaleMatrix(&m1, arg3);
+        ScaleMatrix((MATRIX *)&m1, (VECTOR *)arg3);
     }
 
     v_in.x = arg0->x / 16;
     v_in.y = arg0->y / 16;
     v_in.z = arg0->z / 16;
-    Gfx_Transform(&v_in, &m1, &v_out);
+    Gfx_Transform((Vec3 *)&v_in, &m1, (Vec3 *)&v_out);
 
     v_out.x <<= 4;
     v_out.y <<= 4;
@@ -97,11 +95,11 @@ s32 Gool_Transform2(Vec3 *arg0, Vec3 *arg1, s32 arg2)
     v.y = arg0->y;
     v.z = arg0->z;
     if (arg2 != 0) {
-        SetRotMatrix(g_m_wgeo_view);
+        SetRotMatrix((MATRIX *)g_m_wgeo_view);
     } else {
-        SetRotMatrix(g_m_view);
+        SetRotMatrix((MATRIX *)g_m_view);
     }
-    SetTransMatrix(g_cams);
+    SetTransMatrix((MATRIX *)g_cams);
     if (arg2 != 0) {
         sv.x = (v.x - g_cam_eye_x[0]) >> 8;
         sv.y = (v.y - g_cam_eye_y[0]) >> 8;
@@ -111,7 +109,7 @@ s32 Gool_Transform2(Vec3 *arg0, Vec3 *arg1, s32 arg2)
         sv.y = (v.y - g_cam_trans_y) >> 8;
         sv.z = (v.z - g_cam_trans_z) >> 8;
     }
-    RotTrans(&sv, arg1, &flag);
+    RotTrans((SVECTOR *)&sv, (VECTOR *)arg1, &flag);
     arg1->x <<= 8;
     arg1->y = -(arg1->y << 8);
     arg1->z <<= 8;
@@ -132,12 +130,12 @@ s32 Gool_Project(Vec3 *arg0, Vec3 *arg1)
     v.x = arg0->x;
     v.y = arg0->y;
     v.z = arg0->z;
-    SetRotMatrix(g_m_view);
-    SetTransMatrix(g_cams);
+    SetRotMatrix((MATRIX *)g_m_view);
+    SetTransMatrix((MATRIX *)g_cams);
     sv.x = (v.x - g_cam_trans_x) >> 8;
     sv.y = (v.y - g_cam_trans_y) >> 8;
     sv.z = (v.z - g_cam_trans_z) >> 8;
-    RotTransPers(&sv, (s16 *)&sxy, &p, &flag);
+    RotTransPers((SVECTOR *)&sv, &sxy, &p, &flag);
     arg1->x = (s16)sxy << 8;
     arg1->y = -(sxy >> 16) << 8;
     ReadSZfifo3(&otz1, &otz2, &otz3);
@@ -165,10 +163,10 @@ s32 Gool_Collide(CollideObj *arg0, s32 *arg1, CollideObj *arg2, s32 *arg3)
     CollideObj *other;
     s32 dist;
 
-    other = arg0->other;
+    other = RAM_AT(CollideObj, arg0->other);
     if (other != NULL && other != arg2) {
         if (arg2->flags120 & 0x800) {
-            arg2->other = arg0;
+            arg2->other = Ram_Addr(arg0);
             return -0x1C;
         }
         dist = Math_ApxDist(&arg0->pos, &other->pos);
@@ -176,8 +174,8 @@ s32 Gool_Collide(CollideObj *arg0, s32 *arg1, CollideObj *arg2, s32 *arg3)
             return -0x1C;
         }
     }
-    arg0->other = arg2;
-    arg2->other = arg0;
+    arg0->other = Ram_Addr(arg2);
+    arg2->other = Ram_Addr(arg0);
     if (arg0->radius != 0) {
         box1[0] = arg1[0] + arg0->radius;
         box1[1] = arg1[1];
@@ -185,7 +183,7 @@ s32 Gool_Collide(CollideObj *arg0, s32 *arg1, CollideObj *arg2, s32 *arg3)
         box1[3] = arg1[3] - arg0->radius;
         box1[4] = arg1[4];
         box1[5] = arg1[5] - arg0->radius;
-        if (Level_TestBoundIntersection(box1, arg3) != 0) {
+        if (Level_TestBoundIntersection((struct ZqBound *)box1, (struct ZqBound *)arg3) != 0) {
             arg0->flagsC8 |= 0x1000;
         }
     }
@@ -196,7 +194,7 @@ s32 Gool_Collide(CollideObj *arg0, s32 *arg1, CollideObj *arg2, s32 *arg3)
         box2[3] = arg3[3] - arg2->radius;
         box2[4] = arg3[4];
         box2[5] = arg3[5] - arg2->radius;
-        if (Level_TestBoundIntersection(box2, arg1) != 0) {
+        if (Level_TestBoundIntersection((struct ZqBound *)box2, (struct ZqBound *)arg1) != 0) {
             arg2->flagsC8 |= 0x1000;
         }
     }

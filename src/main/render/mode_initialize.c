@@ -1,3 +1,5 @@
+#include "common.h"
+#include <libgte.h>
 #include "render.h"
 
 /* Preserve unknown projection modes; reset the GTE matrix and camera words. */
@@ -8,7 +10,7 @@ void Gfx_InitMatrices(void)
     RenderProjectionState *projection;
     s16 *matrix;
     g_gfx_init_zero_2=0;g_gfx_init_zero_1=0;g_gfx_init_zero_0=0;
-    mode=g_ns_page_pool->word114;
+    mode=RAM_AT(RenderContextView, g_ns_page_pool)->word114;
     switch(mode) {
     case 30: distance=960;break;
     case 37: distance=800;break;
@@ -30,7 +32,7 @@ preserve_distance:
     g_m_default_light_11=512;g_m_default_light_21=512;g_m_default_light_02=512;
     g_m_default_light_12=512;g_m_default_light_22=512;
     SetBackColor(0,0,0);
-    SetColorMatrix(matrix);
+    SetColorMatrix((MATRIX *)matrix);
     Gfx_ResetCam(((RenderCameraPrefix *)((u8 *)projection
         - CRASH_OFFSETOF(RenderCameraPrefix, projection)))->transform);
     ((RenderCameraPrefix *)((u8 *)projection

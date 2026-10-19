@@ -126,70 +126,6 @@ static __inline__ s32 Level_TestBoundIntersection_inline(ZqBound *a, ZqBound *b)
     return 0;
 }
 
-static __inline__ s32 Level_TestBoundInBound(ZqBound *a, ZqBound *b)
-{
-    if (a->p1.x >= b->p1.x && a->p1.y >= b->p1.y && a->p1.z >= b->p1.z
-        && a->p2.x < b->p2.x && a->p2.y < b->p2.y && a->p2.z < b->p2.z) {
-        return 1;
-    }
-    return 0;
-}
-
-static __inline__ void Solid_PlotWallB(s32 x1, s32 y1, s32 x2, s32 y2, s32 set)
-{
-    s32 *p;
-    u32 mask;
-
-    x2 += 16;
-    mask = -1;
-    if (x2 < 32) {
-        if (x2 <= 0) {
-            return;
-        }
-        mask = -1 << (32 - x2);
-    }
-    x1 += 15;
-    if (x1 >= 32) {
-        return;
-    }
-    if (x1 >= 0) {
-        mask &= ~((s32)0x80000000 >> x1);
-    }
-    if (mask == 0) {
-        return;
-    }
-    y1 += 16;
-    y2 += 16;
-    if (y1 < 0) {
-        y1 = 0;
-    }
-    if (y2 > 32) {
-        y2 = 32;
-    }
-    if (y1 >= 32) {
-        return;
-    }
-    p = &gp_grid_rows[y1];
-    if (set) {
-        for (; y1 < y2; y1++, p++) {
-            *p |= mask;
-        }
-    } else {
-        mask = ~mask;
-        for (; y1 < y2; y1++, p++) {
-            *p &= mask;
-        }
-    }
-}
-
-static __inline__ s32 Solid_TestWallCell(s32 x, s32 y)
-{
-    if ((u32)x < 32 && (u32)y < 32 && (gp_grid_rows[y] & (0x80000000U >> x)) == 0) {
-        return 1;
-    }
-    return 0;
-}
-
 s32 Solid_ReplotWalls(s32 set, s32 mode, ZqVec *v, SubObj *obj)
 {
     ZqBound bound;
@@ -268,7 +204,7 @@ s32 Solid_StopAtWalls(ZqVec *v, s32 gx, s32 gz, s32 *out_x, s32 *out_z, SubObj *
 
 start:
     p = g_solid_grid_search_order;
-    if (Solid_TestWallCell(gx, gz) || (((ZoneHeader *)((ZoneEntry *)level_position.zone)->items[0])->flags & 0x100000)) {
+    if (Solid_TestWallCell(gx, gz) || ((RAM_AT(ZoneHeader, RAM_AT(ZoneEntry, level_position.zone)->items[0]))->flags & 0x100000)) {
         *out_x = gx;
         *out_z = gz;
         return depth + 2;
@@ -326,15 +262,15 @@ start:
         }
     }
     if ((gx != 16 || gz != 16)
-        && (obj->collider == NULL || *obj->collider->word_20->header != 0x22)) {
+        && (obj->collider == 0 || *RAM_AT(s32, RAM_AT(SubExec, RAM_AT(SubObj, obj->collider)->word_20)->header) != 0x22)) {
         for (i = 0; i < 32; i++) {
-            if (gp_grid_rows[i] != -1) {
+            if (RAM_AT(s32, gp_grid_rows)[i] != -1) {
                 goto retry;
             }
         }
     }
     if (depth < 0x100
-        && (obj->collider == NULL || *obj->collider->word_20->header != 0x22)) {
+        && (obj->collider == 0 || *RAM_AT(s32, RAM_AT(SubExec, RAM_AT(SubObj, obj->collider)->word_20)->header) != 0x22)) {
         if (Solid_ReplotWalls(0, 0, v, obj)) {
             Solid_ReplotWalls(1, 1, v, obj);
             Solid_PlotObjWalls(v, obj, &g_solid_wall_plot_buf, 0);

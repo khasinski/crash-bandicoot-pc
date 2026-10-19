@@ -13,9 +13,8 @@ typedef struct Node {
 typedef s32 (*Visitor)(Node *, void *);
 typedef s32 (*Traversal)(Node *, Visitor, void *);
 
-s32 Gool_ObjectHandleTraverseTreePostorder();
 void Gool_ForEachObjectHandle(Traversal traversal, Visitor visitor, void *context);
-s32 Gool_ObjectTerminate();
+s32 Gool_ObjectTerminate(Node *obj, void *context);
 
 extern RAM_REF(Node) g_level_pause_menu_obj;
 #endif

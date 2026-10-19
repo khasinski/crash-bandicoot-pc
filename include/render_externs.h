@@ -79,9 +79,10 @@ extern RAM_REF(SortList9DCC) gp_level_entry;
 #ifdef CRASH_EXT_RENDER_WORLD_SETUP
 extern s32 g_cam_trans_x;
 extern s16 g_m_light;
-extern struct {
+typedef struct WorldSetupLevel {
     s32 word_0;
     s32 level_id;
-} *g_ns_page_pool;
+} WorldSetupLevel;
+extern RAM_REF(WorldSetupLevel) g_ns_page_pool;
 extern s32 g_island_cam_state;
 #endif

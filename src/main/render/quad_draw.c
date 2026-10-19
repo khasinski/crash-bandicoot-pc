@@ -76,8 +76,8 @@ void Gfx_TransformFragment(u32 *arg0, s32 arg1, u32 arg2, Rect9398 *arg3, u32 *a
         return;
     }
 
-    p = g_ot_cur->prim_ptr;
-    g_ot_cur->prim_ptr = (PolyFT4_9398 *)p + 1;
+    p = RAM_AT(void, RAM_AT(PrimBuf9398, g_ot_cur)->prim_ptr);
+    RAM_AT(PrimBuf9398, g_ot_cur)->prim_ptr = Ram_Addr((PolyFT4_9398 *)p + 1);
     w0 = p0[0];
     poly = (PolyFT4_9398 *)p;
     poly->color_code = w0;
@@ -103,7 +103,7 @@ void Gfx_TransformFragment(u32 *arg0, s32 arg1, u32 arg2, Rect9398 *arg3, u32 *a
         ot_entry = &arg4[0x7FF];
     }
     poly->tag = *ot_entry | 0x09000000;
-    *ot_entry = (u32)poly & 0xFFFFFF;
+    *ot_entry = Ram_Addr(poly) & 0xFFFFFF;
 
     v = arg3->x1 | (arg3->y0 << 16);
     gte_stsxy0(poly->xy0);
@@ -194,8 +194,8 @@ void Gfx_TransformFontChar(LightCols9398 *arg0, u32 *arg1, s32 arg2, u32 arg3, R
         return;
     }
 
-    p = g_ot_cur->prim_ptr;
-    g_ot_cur->prim_ptr = (PolyGT4_9398 *)p + 1;
+    p = RAM_AT(void, RAM_AT(PrimBuf9398, g_ot_cur)->prim_ptr);
+    RAM_AT(PrimBuf9398, g_ot_cur)->prim_ptr = Ram_Addr((PolyGT4_9398 *)p + 1);
     w0 = arg1[0];
     poly = (PolyGT4_9398 *)p;
     if (arg6 != 0) {
@@ -239,7 +239,7 @@ void Gfx_TransformFontChar(LightCols9398 *arg0, u32 *arg1, s32 arg2, u32 arg3, R
         ot_entry = &arg5[0x7FF];
     }
     poly->tag = *ot_entry | 0x0C000000;
-    *ot_entry = (u32)poly & 0xFFFFFF;
+    *ot_entry = Ram_Addr(poly) & 0xFFFFFF;
 
     v = arg4->x1 | (arg4->y0 << 16);
     gte_stsxy0(poly->xy0);

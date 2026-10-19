@@ -1,6 +1,7 @@
 #ifndef CRASH_RAM_H
 #define CRASH_RAM_H
 
+#include <stddef.h>
 #include <stdint.h>
 
 /*
@@ -54,6 +55,32 @@ static inline uint32_t Ram_Addr(const void *ptr)
 
 /* Typed view of a PS1 address. */
 #define RAM_AT(type, addr) ((type *)Ram_Ptr((uint32_t)(addr)))
+
+/*
+ * Host locals whose PS1 address the game passes on (the PS1 kept them on its
+ * stack) are carved from a stack in the spare RAM above the PS1's 2 MiB. Its
+ * first word holds the current top (0 before first use). Allocations nest:
+ * free them in reverse order.
+ */
+#define RAM_STACK_BASE (RAM_PS1_BASE + 0x200000u)
+#define RAM_STACK_SIZE 0x10000u
+
+static inline uint32_t Ram_StackAlloc(uint32_t size)
+{
+    uint32_t *top = (uint32_t *)Ram_Ptr(RAM_STACK_BASE);
+    if (*top == 0)
+        *top = RAM_STACK_BASE + RAM_STACK_SIZE;
+    size = (size + 7u) & ~7u;
+    if (*top - size < RAM_STACK_BASE + 8u)
+        Ram_BadAddress(*top - size);
+    *top -= size;
+    return *top;
+}
+
+static inline void Ram_StackFree(uint32_t size)
+{
+    *(uint32_t *)Ram_Ptr(RAM_STACK_BASE) += (size + 7u) & ~7u;
+}
 
 /* Code addresses in game memory: the native function at a PS1 address, and
  * the PS1 address of a native game function (src/main/ram_code.inc). */

@@ -1,8 +1,5 @@
 #include "common.h"
 
-                                 /* extern */
-                      /* extern */
-                                /* extern */
 #define CRASH_EXT_ENGINE_SETTINGS_RESET
 #include "engine_externs.h"
 #undef CRASH_EXT_ENGINE_SETTINGS_RESET

@@ -1,14 +1,6 @@
 #include "common.h"
 #include "audio_channels.h"
 
-                               /* extern */
-                          /* extern */
-                /* extern */
-                          /* extern */
-                          /* extern */
-                /* extern */
-                               /* extern */
-
 /* Export the real small-common channel identifier. */
 extern s16 gp_midi_vab_id_2;
 
@@ -51,4 +43,6 @@ s32 Midi_Control(AudioChannel *record, s32 action, s32 arg) {
             break;
         }
     }
+    /* The original returns whatever v0 held; no caller uses it. */
+    return 0;
 }

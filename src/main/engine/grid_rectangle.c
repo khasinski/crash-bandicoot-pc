@@ -11,13 +11,13 @@ void Solid_PlotWall(s32 x, s32 y) {
         return;
     }
     if (x < 0) {
-        p = &gp_solid_scratch_grid[(y + 32) << 1];
+        p = &RAM_AT(u32, gp_solid_scratch_grid)[(y + 32) << 1];
         if (*p & (1 << (x + 32))) {
             return;
         }
         *p |= 1 << (x + 32);
     } else {
-        p = &gp_solid_scratch_grid[((y + 32) << 1) + 1];
+        p = &RAM_AT(u32, gp_solid_scratch_grid)[((y + 32) << 1) + 1];
         if (*p & (1 << x)) {
             return;
         }
@@ -30,15 +30,15 @@ void Solid_PlotWall(s32 x, s32 y) {
         i = 0;
         end = 32 - y;
     }
-    p = (u32 *)&gp_grid_rows[y >= 0 ? y : 0];
+    p = RAM_AT(u32, gp_grid_rows) + (y >= 0 ? y : 0);
     if (x < 0) {
         x = -x;
         for (; i < end; i++, p++) {
-            *p |= gp_solid_scratch_workspace[i] << x;
+            *p |= RAM_AT(u32, gp_solid_scratch_workspace)[i] << x;
         }
     } else {
         for (; i < end; i++, p++) {
-            *p |= gp_solid_scratch_workspace[i] >> x;
+            *p |= RAM_AT(u32, gp_solid_scratch_workspace)[i] >> x;
         }
     }
 }
@@ -75,7 +75,7 @@ block_3:
                     var_a3 = 0x20;
                 }
                 if (var_a1 < 0x20) {
-                    var_v1 = gp_grid_rows + var_a1;
+                    var_v1 = RAM_AT(s32, gp_grid_rows) + var_a1;
                     if (arg4 != 0) {
                         if (var_a1 < var_a3) {
                             do {

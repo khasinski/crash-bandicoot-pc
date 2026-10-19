@@ -12,7 +12,7 @@ static __inline__ s32 ns_alpha_num_index(u8 ch)
     return -0xE;
 }
 
-__inline__ s32 Ns_Atoi(u32 type, u8 *text) {
+s32 Ns_Atoi(u32 type, u8 *text) {
     s32 end_address;
     s32 packed;
     s32 alphabet_index;

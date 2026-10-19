@@ -55,7 +55,7 @@ static void set_length_code(void *packet, uint32_t length, uint8_t code)
     bytes[7] = code;
 }
 
-uint32_t get_tw(GpuRect *rect)
+uint32_t Ps1Gpu_GetTw(GpuRect *rect)
 {
     uint32_t mask_x, mask_y, off_x, off_y;
     if (rect == NULL)
@@ -142,7 +142,7 @@ void Ps1Gpu_SetDrawMode(void *packet, int32_t dfe, int32_t dtd, int32_t tpage, G
     uint32_t *words = packet;
     words[0] = (words[0] & TAG_END) | (2u << 24);
     words[1] = 0xE1000000u | (dtd ? 0x200 : 0) | (dfe ? 0x400 : 0) | (tpage & 0x9FF);
-    words[2] = get_tw(tw);
+    words[2] = Ps1Gpu_GetTw(tw);
 }
 
 void Ps1Gpu_DrawPrim(void *packet)
@@ -182,7 +182,7 @@ static int draw_env_words(const GpuDrawEnv *env, uint32_t *words)
     words[n++] = 0xE5000000u | ((env->offset_y & 0x7FF) << 11) | (env->offset_x & 0x7FF);
     words[n++] = 0xE1000000u | (env->dither ? 0x200 : 0) | (env->draw_to_display ? 0x400 : 0)
                  | (env->texture_page & 0x9FF);
-    words[n++] = get_tw(&tw);
+    words[n++] = Ps1Gpu_GetTw(&tw);
     if (env->clear_background) {
         words[n++] = 0x02000000u | ((uint32_t)env->b << 16) | ((uint32_t)env->g << 8) | env->r;
         words[n++] = ((uint32_t)(uint16_t)env->clip.y << 16) | (uint16_t)env->clip.x;

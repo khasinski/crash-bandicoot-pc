@@ -1,20 +1,8 @@
 #include "common.h"
 
-static __inline__ s32 Gool_SignShift(s32 value, s32 bits)
-{
-    s32 shift = 0x20 - bits;
-    return (s32)((u32)value << shift) >> shift;
-}
-
 typedef struct GoolExecView {
     u8 reserved_00[0x10];
-    struct {
-        s32 word_00;
-        s32 word_04;
-        s32 word_08;
-        s32 word_0c;
-        s32 word_10;
-    } *header;
+    RAM_REF(void) header;
     RAM_REF(u8) code;
     RAM_REF(s32) data;
     RAM_REF(u16) states;
@@ -55,71 +43,75 @@ typedef struct GoolTimeState {
 #undef CRASH_EXT_GOOL_VM_OPERANDS_0
 
 #define ABS(x) ((x) < 0 ? -(x) : (x))
-#define SCALE_DT(x) (((s32)((x) * (g_db_cur[0]->word_84 < 0x67U ? g_db_cur[0]->word_84 : 0x66))) / 1024)
+#define SCALE_DT(x) (((s32)((x) * (RAM_AT(GoolTimeState, g_db_cur[0])->word_84 < 0x67U ? RAM_AT(GoolTimeState, g_db_cur[0])->word_84 : 0x66))) / 1024)
 
-static __inline__ s32 *GoolRegPtr(GoolObjView *obj, u32 reg, s32 mode)
+/* PS1 address of a register operand: the stack (popped when mode is 0,
+ * pushed otherwise) or an object field from offset 0x60. */
+static __inline__ u32 GoolRegAddr(GoolObjView *obj, u32 reg, s32 mode)
 {
+    u32 sp;
+
     if (reg == 0x1F) {
         if (mode == 0) {
-            return --obj->sp;
+            obj->sp -= 4;
+            return obj->sp;
         } else {
-            return obj->sp++;
+            sp = obj->sp;
+            obj->sp += 4;
+            return sp;
         }
     } else {
-        return (s32 *)&obj->links[reg];
+        return Ram_Addr(obj) + (reg << 2) + 0x60;
     }
 }
 
-s32 *Gool_TranslateOutGop(GoolObjView *obj, u32 gop, s32 mode)
+/* PS1 address of a GOOL output operand. 0 and 1 are sentinels. */
+u32 Gool_TranslateOutGop(GoolObjView *obj, u32 gop, s32 mode)
 {
-    GoolObjView *link;
-    u32 offset;
-    GoolExecView *ptr;
-    u32 idx;
+    u32 link;
+    u32 ptr;
 
     if (gop & 0x800) {
         if (gop & 0x400) {
             if (gop & 0x200) {
-                return GoolRegPtr(obj, gop & 0x1FF, mode);
+                return GoolRegAddr(obj, gop & 0x1FF, mode);
             } else {
                 link = obj->links[(gop >> 6) & 7];
-                if (link != NULL) {
-                    offset = ((gop & 0x3F) << 2) + 0x60;
-                    return (s32 *)(offset + (u32)link);
+                if (link != 0) {
+                    return link + ((gop & 0x3F) << 2) + 0x60;
                 }
-                return NULL;
+                return 0;
             }
         } else if (gop & 0x200) {
             if (gop & 0x100) {
                 if (gop & 0x80) {
                     if (gop == 0xBE0) {
-                        return NULL;
+                        return 0;
                     } else if (gop == 0xBF0) {
-                        return (s32 *)1;
-                    } else if (0) {
-                        printf("");
+                        return 1;
                     }
+                    /* The original falls through with 0xBF0 left in v0. */
+                    return 0xBF0;
                 } else {
-                    return &obj->fp[Gool_SignShift(gop, 7)];
+                    return obj->fp + Gool_SignShift(gop, 7) * 4;
                 }
             } else {
-                ptr = (GoolExecView *)&gp_obj_zone_colors[gp_gool_out_vec_toggle = !gp_gool_out_vec_toggle];
-                *(s32 *)ptr = Gool_SignShift(gop, 8) << 4;
-                return (s32 *)ptr;
+                ptr = gp_obj_zone_colors + ((gp_gool_out_vec_toggle = !gp_gool_out_vec_toggle) << 2);
+                *RAM_AT(s32, ptr) = Gool_SignShift(gop, 8) * 0x10;
+                return ptr;
             }
         } else {
-            ptr = (GoolExecView *)&gp_obj_zone_colors[gp_gool_out_vec_toggle = !gp_gool_out_vec_toggle];
-            *(s32 *)ptr = Gool_SignShift(gop, 9) << 8;
-            return (s32 *)ptr;
+            ptr = gp_obj_zone_colors + ((gp_gool_out_vec_toggle = !gp_gool_out_vec_toggle) << 2);
+            *RAM_AT(s32, ptr) = Gool_SignShift(gop, 9) * 0x100;
+            return ptr;
         }
     } else {
-        idx = gop & 0x3FF;
         if (gop & 0x400) {
             ptr = obj->external;
         } else {
             ptr = obj->exec;
         }
-        return (s32 *)((idx <<= 2) + (u32)(ptr = (GoolExecView *)ptr->data));
+        return RAM_AT(GoolExecView, ptr)->data + ((gop & 0x3FF) << 2);
     }
 }
 

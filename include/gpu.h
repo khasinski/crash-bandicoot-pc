@@ -63,7 +63,7 @@ typedef struct GpuTile {
 _Static_assert(sizeof(GpuDrawing) == 0x5C, "PS1 DRAWENV size");
 _Static_assert(sizeof(GpuDisplayEnv) == sizeof(DISPENV), "PS1 DISPENV layout");
 
-uint32_t get_tw(GpuRect *rect);
+uint32_t Ps1Gpu_GetTw(GpuRect *rect);
 
 /* PS1-format implementations of the game's libgpu calls. */
 GpuDrawEnv *Ps1Gpu_SetDefDrawEnv(GpuDrawEnv *env, int32_t x, int32_t y, int32_t w, int32_t h);

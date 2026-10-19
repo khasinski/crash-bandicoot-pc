@@ -130,13 +130,13 @@ void Gfx_LoadWorlds(u8 *arg0, u32 *arg1, GoolObj *arg2) {
     ResourceEntry *res;
     void *data;
 
-    res = Ns_Lookup(arg0 + 4);
-    data = res->data;
-    if (Gfx_CalcObjectMatrices(arg0, data, arg2, 1, NULL) != 0) {
+    res = RAM_AT(ResourceEntry, Ns_Lookup((u32 *)(arg0 + 4)));
+    data = RAM_AT(void, res->data);
+    if (Gfx_CalcObjectMatrices(arg0, data, (struct GoolObj88CC *)arg2, 1, NULL) != 0) {
         Gte_RTransformSvtx(
             arg0,
             arg1,
-            res->word_14,
+            RAM_AT(void, res->word_14),
             data,
             arg2->vectors.scale[0],
             arg2->cam_zoom + (0x800 - g_view_proj[0] / 2),
@@ -152,9 +152,9 @@ void Gfx_TransformCvtx(u8 *arg0, u32 *arg1, GoolObj *arg2) {
     void *data;
     s32 visible;
 
-    res = Ns_Lookup(arg0 + 4);
+    res = RAM_AT(ResourceEntry, Ns_Lookup((u32 *)(arg0 + 4)));
     sp28 = 0;
-    data = res->data;
+    data = RAM_AT(void, res->data);
     if (arg2->status_b & 0x200) {
         visible = Gte_RCalcSpriteRotMatrix(
             &arg2->vectors,
@@ -163,16 +163,16 @@ void Gfx_TransformCvtx(u8 *arg0, u32 *arg1, GoolObj *arg2) {
             0,
             &(*(CamTransformState *)g_m_view).mat844,
             g_view_proj[0],
-            g_pads[0]->data->depth_offset >> 8,
+            RAM_AT(ZoneFogHeader, RAM_AT(ZoneEntry8964, g_pads[0])->data)->depth_offset >> 8,
             ((arg2->status_b >> 18) ^ 1) & 1);
     } else {
-        visible = Gfx_CalcObjectMatrices(arg0, data, arg2, 0, &sp28);
+        visible = Gfx_CalcObjectMatrices(arg0, data, (struct GoolObj88CC *)arg2, 0, &sp28);
     }
     if (visible != 0) {
         Gte_RTransformCvtx(
             arg0,
             arg1,
-            res->word_14,
+            RAM_AT(void, res->word_14),
             data,
             arg2->vectors.scale[0],
             arg2->cam_zoom + (0x800 - g_view_proj[0] / 2),

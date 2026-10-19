@@ -41,7 +41,7 @@ typedef struct GoolExecutable {
     RAM_REF(u32) data;
     RAM_REF(void) word_1c;
     RAM_REF(GoolState) states;
-    u8 * const anims;
+    RAM_REF(u8) anims;
 } GoolExecutable;
 
 typedef struct GoolDefaults {
@@ -190,73 +190,102 @@ typedef struct PadStateView {
 #include "gool_externs.h"
 #undef CRASH_EXT_GOOL_INTERPRET
 
-typedef s32 (*Visitor)(GoolObj *, void *);
+typedef s32 (*Visitor)(struct Node *, void *);
 
 #define ABS(x) ((x) < 0 ? -(x) : (x))
-#define SCALE_DT(x) (((s32)((x) * (g_db_cur[0]->word_84 < 0x67U ? g_db_cur[0]->word_84 : 0x66))) / 1024)
+#define SCALE_DT(x) (((s32)((x) * (RAM_AT(PadStateView, g_db_cur[0])->word_84 < 0x67U ? RAM_AT(PadStateView, g_db_cur[0])->word_84 : 0x66))) / 1024)
 
-#define NODE_CHILDREN(n) ((n)->kind == 2 ? (GoolObj *)(n)->word_04 : (n)->children)
-#define NODE_CHILDREN_PTR(n) ((n)->kind == 2 ? (GoolObj **)&(n)->word_04 : &(n)->children)
+/* Child list head of a tree node (word_04 for a list root of kind 2). */
+#define NODE_CHILDREN(n) ((n)->kind == 2 ? (u32)(n)->word_04 : (n)->children)
+#define NODE_CHILDREN_PTR(n) ((n)->kind == 2 ? (u32 *)&(n)->word_04 : &(n)->children)
+
+/* Object link i (self, parent, ..., interrupter). */
+#define OBJ_LINK(obj, i) RAM_AT(GoolObj, (&(obj)->self)[i])
+
+static __inline__ void GOOL_PUSH(GoolObj *obj, s32 value)
+{
+    *RAM_AT(s32, obj->sp) = value;
+    obj->sp += 4;
+}
+
+static __inline__ s32 GOOL_POP(GoolObj *obj)
+{
+    obj->sp -= 4;
+    return *RAM_AT(s32, obj->sp);
+}
+
+/* Operand translation yields PS1 addresses, as GOOL code sees them. */
+static __inline__ u32 TRANS_GOP_IN_ADDR(GoolObj *obj, s32 gop)
+{
+    if ((gop & 0xE00) == 0xE00) {
+        if (gop == 0xE1F) {
+            obj->sp -= 4;
+            return obj->sp;
+        }
+        return Ram_Addr(obj) + ((gop & 0x1FF) << 2) + 0x60;
+    }
+    return GOOL_TranslateGop((struct GoolObjView *)obj, gop);
+}
+
+static __inline__ u32 TRANS_GOP_OUT_ADDR(GoolObj *obj, s32 gop)
+{
+    u32 sp;
+
+    if ((gop & 0xE00) == 0xE00) {
+        if (gop == 0xE1F) {
+            sp = obj->sp;
+            obj->sp += 4;
+            return sp;
+        }
+        return Ram_Addr(obj) + ((gop & 0x1FF) << 2) + 0x60;
+    }
+    return GOOL_TranslateGop((struct GoolObjView *)obj, gop);
+}
 
 static __inline__ s32 *TRANS_GOP_IN(GoolObj *obj, s32 gop)
 {
-    u32 offset;
-    if ((gop & 0xE00) == 0xE00) {
-        if (gop == 0xE1F) {
-            return --obj->sp;
-        }
-        offset = ((gop & 0x1FF) << 2) + 0x60;
-        return (s32 *)((u32)obj + offset);
-    }
-    return GOOL_TranslateGop(obj, gop);
+    return RAM_AT(s32, TRANS_GOP_IN_ADDR(obj, gop));
 }
 
 static __inline__ s32 *TRANS_GOP_OUT(GoolObj *obj, s32 gop)
 {
-    u32 offset;
-    if ((gop & 0xE00) == 0xE00) {
-        if (gop == 0xE1F) {
-            return obj->sp++;
-        }
-        offset = ((gop & 0x1FF) << 2) + 0x60;
-        return (s32 *)((u32)obj + offset);
-    }
-    return GOOL_TranslateGop(obj, gop);
+    return RAM_AT(s32, TRANS_GOP_OUT_ADDR(obj, gop));
 }
 
 static __inline__ s32 *TRANS_REG_IN(GoolObj *obj, s32 reg)
 {
-    u32 offset;
     if (reg == 0x1F) {
-        return --obj->sp;
+        obj->sp -= 4;
+        return RAM_AT(s32, obj->sp);
     }
-    offset = (reg << 2) + 0x60;
-    return (s32 *)((u32)obj + offset);
+    return (s32 *)((u8 *)obj + (reg << 2) + 0x60);
 }
 
 static __inline__ s32 *TRANS_REG_OUT(GoolObj *obj, s32 reg)
 {
-    u32 offset;
+    u32 sp;
+
     if (reg == 0x1F) {
-        return obj->sp++;
+        sp = obj->sp;
+        obj->sp += 4;
+        return RAM_AT(s32, sp);
     }
-    offset = (reg << 2) + 0x60;
-    return (s32 *)((u32)obj + offset);
+    return (s32 *)((u8 *)obj + (reg << 2) + 0x60);
 }
 
 static __inline__ s32 GOOL_CreateObjectStackFrame_inline(GoolObj *object, s32 arg_words, s32 flags)
 {
-    s32 *sp;
-    s32 *old_fp;
-    s32 *new_sp;
-    s32 *new_fp;
+    u32 base;
+    u32 sp;
+    u32 old_fp;
 
+    base = Ram_Addr(object);
     sp = object->sp;
     old_fp = object->fp;
     object->fp = sp;
-    *object->sp++ = flags;
-    *object->sp++ = (s32)object->pc;
-    *object->sp++ = ((u32)(new_sp = sp - arg_words - 24) - (u32)object) | (((u32)(new_fp = old_fp - 24) - (u32)object) << 16);
+    GOOL_PUSH(object, flags);
+    GOOL_PUSH(object, object->pc);
+    GOOL_PUSH(object, ((sp - (arg_words + 24) * 4) - base) | (((old_fp - 24 * 4) - base) << 16));
     return -0xFF;
 }
 
@@ -264,29 +293,25 @@ static __inline__ s32 Gool_ObjectPopFrame(GoolObj *object, s32 *flags, u32 cur_f
 {
     u32 packed;
     u32 frame_offset;
-    u32 stack_offset;
-    u32 restored_frame;
-    s32 *frame;
-    s32 *stack;
+    u32 frame;
+    u32 base;
 
+    base = Ram_Addr(object);
     frame = object->fp;
-    object->sp = frame + 2;
-    packed = frame[2];
+    object->sp = frame + 8;
+    packed = RAM_AT(u32, frame)[2];
     frame_offset = packed >> 16;
     if (frame_offset == 0) {
         return -0x19;
     }
-    object->sp = frame + 1;
-    object->pc = (u32 *)frame[1];
+    object->sp = frame + 4;
+    object->pc = RAM_AT(u32, frame)[1];
     if (flags != NULL) {
-        stack = object->sp - 1;
-        object->sp = stack;
-        ((struct { s32 v; } *)flags)->v = (cur_flags & 0xFFFF0000) | *(u16 *)stack;
+        object->sp -= 4;
+        *flags = (cur_flags & 0xFFFF0000) | *RAM_AT(u16, object->sp);
     }
-    stack_offset = (packed & 0xFFFF) + 0x60;
-    object->sp = (s32 *)(stack_offset + (u32)object);
-    restored_frame = frame_offset + 0x60;
-    object->fp = (s32 *)(restored_frame + (u32)object);
+    object->sp = (packed & 0xFFFF) + 0x60 + base;
+    object->fp = frame_offset + 0x60 + base;
     return -0xFF;
 }
 
@@ -300,77 +325,34 @@ static __inline__ s32 Gool_FindObject_inline(GoolObj *root, Visitor visitor, voi
         return 0;
     }
     if (root->kind != 2) {
-        result = visitor(root, context);
+        result = visitor((struct Node *)root, context);
         if (result != 0) {
             return result;
         }
     }
     if (root->kind == 2) {
-        child = (GoolObj *)root->word_04;
+        child = RAM_AT(GoolObj, root->word_04);
     } else {
-        child = root->children;
+        child = RAM_AT(GoolObj, root->children);
     }
     while (child != NULL && result == 0) {
-        next = child->next;
-        result = Gool_ObjectSearchTree(child, visitor, context);
+        next = RAM_AT(GoolObj, child->next);
+        result = Gool_ObjectSearchTree((struct Node *)child, visitor, context);
         child = next;
     }
     return result;
 }
 
-static __inline__ s32 Gool_RemoveLevelSpawn(GoolObj *object, GoolObj *new_parent)
+/* Visitor adapters: the context is a pointer to the pid, and the found
+ * object is returned as its PS1 address. */
+static s32 Gool_VisitHasPidFlags(struct Node *node, void *context)
 {
-    GoolObj *parent;
-    GoolObj *prev;
-
-    parent = object->parent;
-    if (parent != NULL) {
-        prev = NODE_CHILDREN(parent);
-        if (prev == object) {
-            *NODE_CHILDREN_PTR(parent) = object->next;
-        } else if (prev != NULL) {
-            while (prev->next != object) {
-                if (prev == NULL) {
-                    return -0x18;
-                }
-                prev = prev->next;
-                if (prev == NULL) {
-                    return -0x18;
-                }
-            }
-            prev->next = object->next;
-        } else {
-            return -0x18;
-        }
-    }
-    object->parent = new_parent;
-    object->next = NODE_CHILDREN(new_parent);
-    *NODE_CHILDREN_PTR(new_parent) = object;
-    return -0xFF;
+    return Ram_Addr(Gool_ObjectHasPidFlags((GoolObj *)node, *(s32 *)context));
 }
 
-static __inline__ void Gool_ZoneObjectsTerminate_inline(void *object)
+static s32 Gool_VisitFindNearest(struct Node *node, void *context)
 {
-    s32 index;
-
-    for (index = 0; index < 8; index++) {
-        Gool_ObjectHandleTraverseTreePostorder(&((ObjectRoot *)g_free_objects)[index], Gool_ZoneObjectTerminate, object);
-    }
-}
-
-static __inline__ void Gool_ZoneObjectTerminateSingle(void)
-{
-    ZoneHeaderView *zone;
-    s32 i;
-    void *entry;
-
-    if (g_pads[0] != NULL) {
-        zone = g_pads[0]->data;
-        for (i = 0; i < zone->neighbor_count; i++) {
-            entry = Ns_Lookup(&zone->neighbors[i]);
-            Gool_ZoneObjectsTerminate_inline(entry);
-        }
-    }
+    return Gool_FindNearestObject((GoolObj *)node, (GoolQuery *)context);
 }
 
 s32 GOOL_InterpretObject(GoolObj *obj, u32 flags, GoolStateOut *out_state)
@@ -385,7 +367,8 @@ s32 GOOL_InterpretObject(GoolObj *obj, u32 flags, GoolStateOut *out_state)
 
 next_ins:
     while (1) {
-        ins = *obj->pc++;
+        ins = *RAM_AT(u32, obj->pc);
+        obj->pc += 4;
         opcode = ins >> 24;
         switch (opcode) {
         case 0x80:
@@ -410,13 +393,16 @@ next_ins:
         case 0x26:
         {
             s32 *s_ptr; s32 *d_ptr; s32 s_val; s32 d_val;
-            s_ptr = TRANS_GOP_IN(obj, (ins >> 12) & 0xFFF);
-            d_ptr = TRANS_GOP_IN(obj, ins & 0xFFF);
+            u32 s_addr; u32 d_addr;
+            s_addr = TRANS_GOP_IN_ADDR(obj, (ins >> 12) & 0xFFF);
+            d_addr = TRANS_GOP_IN_ADDR(obj, ins & 0xFFF);
+            s_ptr = RAM_AT(s32, s_addr);
+            d_ptr = RAM_AT(s32, d_addr);
             if ((ins >> 24) == 0x26) {
                 if (d_ptr != NULL) {
-                    *obj->sp++ = (s32)d_ptr;
+                    GOOL_PUSH(obj, d_addr);
                     if (s_ptr != NULL) {
-                        *obj->sp++ = (s32)s_ptr;
+                        GOOL_PUSH(obj, s_addr);
                     }
                 }
             } else {
@@ -424,9 +410,9 @@ next_ins:
                     if (s_ptr != NULL) {
                         tmp_swap = *s_ptr;
                     }
-                    *obj->sp++ = *d_ptr;
+                    GOOL_PUSH(obj, *d_ptr);
                     if (s_ptr != NULL) {
-                        *obj->sp++ = tmp_swap;
+                        GOOL_PUSH(obj, tmp_swap);
                     }
                 }
             }
@@ -436,7 +422,7 @@ next_ins:
         case 0x14:
         {
             s32 *s_ptr; s32 *d_ptr; s32 s_val; s32 d_val;
-            s_val = (s32)TRANS_GOP_IN(obj, (ins >> 12) & 0xFFF);
+            s_val = TRANS_GOP_IN_ADDR(obj, (ins >> 12) & 0xFFF);
             d_ptr = TRANS_GOP_OUT(obj, ins & 0xFFF);
             if (d_ptr != NULL) {
                 *d_ptr = s_val;
@@ -450,7 +436,7 @@ next_ins:
             s_ptr = TRANS_GOP_IN(obj, (ins >> 12) & 0xFFF);
             d_ptr = TRANS_GOP_OUT(obj, ins & 0xFFF);
             if (d_ptr != NULL) {
-                *d_ptr = (s32)&obj->exec->anims[((u32)*s_ptr >> 8) << 2];
+                *d_ptr = RAM_AT(GoolExecutable, obj->exec)->anims + (((u32)*s_ptr >> 8) << 2);
             }
             break;
 
@@ -474,7 +460,7 @@ next_ins:
                 d_ptr = TRANS_REG_OUT(obj, (ins >> 14) & 0x3F);
                 offset = ins & 0x3FFF;
                 if (offset != 0x3FFF) {
-                    *d_ptr = (s32)&obj->exec->code[offset];
+                    *d_ptr = RAM_AT(GoolExecutable, obj->exec)->code + offset * 4;
                 } else {
                     *d_ptr = 0;
                 }
@@ -513,11 +499,8 @@ next_ins:
                 s32 val;
 
                 if (((ins >> 12) & 0xFFF) == 0xBF0) {
-                    s32 *sp = obj->sp;
-                    obj->sp = sp - 1;
-                    rate = *(sp - 1);
-                    obj->sp = sp - 2;
-                    limit = *(sp - 2);
+                    rate = GOOL_POP(obj);
+                    limit = GOOL_POP(obj);
                 } else {
                     rate = 0x100;
                     limit = *TRANS_GOP_IN(obj, (ins >> 12) & 0xFFF);
@@ -540,7 +523,7 @@ next_ins:
                     }
                     d_ptr = TRANS_GOP_OUT(obj, ins & 0xFFF);
                     *d_ptr = val;
-                    *obj->sp++ = limit;
+                    GOOL_PUSH(obj, limit);
                 }
             }
             break;
@@ -555,11 +538,8 @@ next_ins:
                 s32 target;
 
                 if (((ins >> 12) & 0xFFF) == 0xBF0) {
-                    s32 *sp = obj->sp;
-                    obj->sp = sp - 1;
-                    rate = *(sp - 1);
-                    obj->sp = sp - 2;
-                    target = *(sp - 2);
+                    rate = GOOL_POP(obj);
+                    target = GOOL_POP(obj);
                 } else {
                     rate = 0x100;
                     target = *TRANS_GOP_IN(obj, (ins >> 12) & 0xFFF);
@@ -571,12 +551,12 @@ next_ins:
                         if (rate < 0) {
                             rate = -rate;
                         }
-                        *obj->sp++ = Gool_Seek(s_val, target, rate);
+                        GOOL_PUSH(obj, Gool_Seek(s_val, target, rate));
                     } else {
-                        *obj->sp++ = Gool_ObjectRotate(s_val, target, rate, 0);
+                        GOOL_PUSH(obj, Gool_ObjectRotate(s_val, target, rate, 0));
                     }
                 } else {
-                    *obj->sp++ = 0;
+                    GOOL_PUSH(obj, 0);
                 }
             }
             break;
@@ -587,7 +567,7 @@ next_ins:
             s32 *s_ptr; s32 *d_ptr; s32 s_val; s32 d_val;
             s_ptr = TRANS_GOP_IN(obj, (ins >> 12) & 0xFFF);
             d_ptr = TRANS_GOP_IN(obj, ins & 0xFFF);
-            *obj->sp++ = *s_ptr + *d_ptr;
+            GOOL_PUSH(obj, *s_ptr + *d_ptr);
             break;
 
         }
@@ -596,7 +576,7 @@ next_ins:
             s32 *s_ptr; s32 *d_ptr; s32 s_val; s32 d_val;
             s_ptr = TRANS_GOP_IN(obj, (ins >> 12) & 0xFFF);
             d_ptr = TRANS_GOP_IN(obj, ins & 0xFFF);
-            *obj->sp++ = ({ s32 v = *s_ptr; *d_ptr - v; });
+            GOOL_PUSH(obj, *d_ptr - *s_ptr);
             break;
 
         }
@@ -605,7 +585,7 @@ next_ins:
             s32 *s_ptr; s32 *d_ptr; s32 s_val; s32 d_val;
             s_val = *TRANS_GOP_IN(obj, (ins >> 12) & 0xFFF);
             d_ptr = TRANS_GOP_IN(obj, ins & 0xFFF);
-            *obj->sp++ = Gool_AngDiff(*d_ptr, s_val);
+            GOOL_PUSH(obj, Gool_AngDiff(*d_ptr, s_val));
             break;
 
         }
@@ -614,7 +594,7 @@ next_ins:
             s32 *s_ptr; s32 *d_ptr; s32 s_val; s32 d_val;
             s_ptr = TRANS_GOP_IN(obj, (ins >> 12) & 0xFFF);
             d_ptr = TRANS_GOP_IN(obj, ins & 0xFFF);
-            *obj->sp++ = *s_ptr * *d_ptr;
+            GOOL_PUSH(obj, *s_ptr * *d_ptr);
             break;
 
         }
@@ -623,7 +603,7 @@ next_ins:
             s32 *s_ptr; s32 *d_ptr; s32 s_val; s32 d_val;
             s_ptr = TRANS_GOP_IN(obj, (ins >> 12) & 0xFFF);
             d_ptr = TRANS_GOP_IN(obj, ins & 0xFFF);
-            *obj->sp++ = *d_ptr / *s_ptr;
+            GOOL_PUSH(obj, *d_ptr / *s_ptr);
             break;
 
         }
@@ -632,7 +612,7 @@ next_ins:
             s32 *s_ptr; s32 *d_ptr; s32 s_val; s32 d_val;
             s_val = *TRANS_GOP_IN(obj, (ins >> 12) & 0xFFF);
             d_ptr = TRANS_GOP_IN(obj, ins & 0xFFF);
-            *obj->sp++ = *d_ptr % s_val;
+            GOOL_PUSH(obj, *d_ptr % s_val);
             break;
 
         }
@@ -641,16 +621,17 @@ next_ins:
             s32 *s_ptr; s32 *d_ptr; s32 s_val; s32 d_val;
             s_val = *TRANS_GOP_IN(obj, (ins >> 12) & 0xFFF);
             d_val = *TRANS_GOP_IN(obj, ins & 0xFFF);
-            *obj->sp++ = Math_Randa(s_val - d_val) + d_val;
+            GOOL_PUSH(obj, Math_Randa(s_val - d_val) + d_val);
             break;
 
         }
         case 0x15:
         {
-            s32 *s_ptr; s32 *d_ptr; s32 s_val; long d_val;
+            s32 *s_ptr; s32 *d_ptr; s32 s_val; s32 d_val;
             s_val = *TRANS_GOP_IN(obj, (ins >> 12) & 0xFFF);
             d_val = *TRANS_GOP_IN(obj, ins & 0xFFF);
-            *obj->sp++ = s_val < 0 ? d_val >> -s_val : d_val << s_val;
+            /* srav/sllv use the low five bits of the amount. */
+            GOOL_PUSH(obj, s_val < 0 ? d_val >> (-s_val & 0x1F) : (s32)((u32)d_val << (s_val & 0x1F)));
             break;
 
         }
@@ -659,7 +640,7 @@ next_ins:
             s32 *s_ptr; s32 *d_ptr; s32 s_val; s32 d_val;
             s_ptr = TRANS_GOP_IN(obj, (ins >> 12) & 0xFFF);
             d_ptr = TRANS_GOP_IN(obj, ins & 0xFFF);
-            *obj->sp++ = *s_ptr & *d_ptr;
+            GOOL_PUSH(obj, *s_ptr & *d_ptr);
             break;
 
         }
@@ -668,7 +649,7 @@ next_ins:
             s32 *s_ptr; s32 *d_ptr; s32 s_val; s32 d_val;
             s_ptr = TRANS_GOP_IN(obj, (ins >> 12) & 0xFFF);
             d_ptr = TRANS_GOP_IN(obj, ins & 0xFFF);
-            *obj->sp++ = *s_ptr | *d_ptr;
+            GOOL_PUSH(obj, *s_ptr | *d_ptr);
             break;
 
         }
@@ -677,7 +658,7 @@ next_ins:
             s32 *s_ptr; s32 *d_ptr; s32 s_val; s32 d_val;
             s_ptr = TRANS_GOP_IN(obj, (ins >> 12) & 0xFFF);
             d_ptr = TRANS_GOP_IN(obj, ins & 0xFFF);
-            *obj->sp++ = *s_ptr ^ *d_ptr;
+            GOOL_PUSH(obj, *s_ptr ^ *d_ptr);
             break;
 
         }
@@ -686,7 +667,7 @@ next_ins:
             s32 *s_ptr; s32 *d_ptr; s32 s_val; s32 d_val;
             s_val = *TRANS_GOP_IN(obj, (ins >> 12) & 0xFFF);
             d_ptr = TRANS_GOP_IN(obj, ins & 0xFFF);
-            *obj->sp++ = !((s_val & *d_ptr) ^ s_val);
+            GOOL_PUSH(obj, !((s_val & *d_ptr) ^ s_val));
             break;
 
         }
@@ -695,7 +676,7 @@ next_ins:
             s32 *s_ptr; s32 *d_ptr; s32 s_val; s32 d_val;
             s_ptr = TRANS_GOP_IN(obj, (ins >> 12) & 0xFFF);
             d_ptr = TRANS_GOP_IN(obj, ins & 0xFFF);
-            *obj->sp++ = (*s_ptr == *d_ptr);
+            GOOL_PUSH(obj, (*s_ptr == *d_ptr));
             break;
 
         }
@@ -704,7 +685,7 @@ next_ins:
             s32 *s_ptr; s32 *d_ptr; s32 s_val; s32 d_val;
             s_ptr = TRANS_GOP_IN(obj, (ins >> 12) & 0xFFF);
             d_ptr = TRANS_GOP_IN(obj, ins & 0xFFF);
-            *obj->sp++ = (*s_ptr > *d_ptr);
+            GOOL_PUSH(obj, (*s_ptr > *d_ptr));
             break;
 
         }
@@ -713,7 +694,7 @@ next_ins:
             s32 *s_ptr; s32 *d_ptr; s32 s_val; s32 d_val;
             s_ptr = TRANS_GOP_IN(obj, (ins >> 12) & 0xFFF);
             d_ptr = TRANS_GOP_IN(obj, ins & 0xFFF);
-            *obj->sp++ = (*s_ptr >= *d_ptr);
+            GOOL_PUSH(obj, (*s_ptr >= *d_ptr));
             break;
 
         }
@@ -722,7 +703,7 @@ next_ins:
             s32 *s_ptr; s32 *d_ptr; s32 s_val; s32 d_val;
             s_ptr = TRANS_GOP_IN(obj, (ins >> 12) & 0xFFF);
             d_ptr = TRANS_GOP_IN(obj, ins & 0xFFF);
-            *obj->sp++ = (*s_ptr < *d_ptr);
+            GOOL_PUSH(obj, (*s_ptr < *d_ptr));
             break;
 
         }
@@ -731,7 +712,7 @@ next_ins:
             s32 *s_ptr; s32 *d_ptr; s32 s_val; s32 d_val;
             s_ptr = TRANS_GOP_IN(obj, (ins >> 12) & 0xFFF);
             d_ptr = TRANS_GOP_IN(obj, ins & 0xFFF);
-            *obj->sp++ = (*s_ptr <= *d_ptr);
+            GOOL_PUSH(obj, (*s_ptr <= *d_ptr));
             break;
 
         }
@@ -740,7 +721,7 @@ next_ins:
             s32 *s_ptr; s32 *d_ptr; s32 s_val; s32 d_val;
             s_ptr = TRANS_GOP_IN(obj, (ins >> 12) & 0xFFF);
             d_ptr = TRANS_GOP_IN(obj, ins & 0xFFF);
-            *obj->sp++ = (*d_ptr && *s_ptr);
+            GOOL_PUSH(obj, (*d_ptr && *s_ptr));
             break;
 
         }
@@ -749,14 +730,14 @@ next_ins:
             s32 *s_ptr; s32 *d_ptr; s32 s_val; s32 d_val;
             s_ptr = TRANS_GOP_IN(obj, (ins >> 12) & 0xFFF);
             d_ptr = TRANS_GOP_IN(obj, ins & 0xFFF);
-            *obj->sp++ = (*d_ptr || *s_ptr);
+            GOOL_PUSH(obj, (*d_ptr || *s_ptr));
             break;
 
         }
         case 0x1A:
         {
             s32 *s_ptr; s32 *d_ptr; s32 s_val; s32 d_val;
-            *obj->sp++ = Gool_TestControls(ins & 0x1FFFFF, 0);
+            GOOL_PUSH(obj, Gool_TestControls(ins & 0x1FFFFF, 0));
             break;
 
         }
@@ -765,7 +746,7 @@ next_ins:
             s32 *s_ptr; s32 *d_ptr; s32 s_val; s32 d_val;
             s_val = *TRANS_GOP_IN(obj, (ins >> 12) & 0xFFF);
             d_val = *TRANS_GOP_IN(obj, ins & 0xFFF);
-            *obj->sp++ = d_val + SCALE_DT(s_val);
+            GOOL_PUSH(obj, d_val + SCALE_DT(s_val));
             break;
 
         }
@@ -783,7 +764,7 @@ next_ins:
                 phase = (*d_ptr << 11) / period;
                 shift = (period > 0xFFFF) << 1;
                 sin_val = (Math_Sin(phase - 0x400) + 0x1000) >> shift;
-                *obj->sp++ = (sin_val * period) >> (0xD - shift);
+                GOOL_PUSH(obj, (sin_val * period) >> (0xD - shift));
             }
             break;
 
@@ -793,7 +774,7 @@ next_ins:
             s32 *s_ptr; s32 *d_ptr; s32 s_val; s32 d_val;
             s_val = *TRANS_GOP_IN(obj, (ins >> 12) & 0xFFF);
             d_val = *TRANS_GOP_IN(obj, ins & 0xFFF);
-            *obj->sp++ = (s_val + g_draw_stamp[0]) % d_val;
+            GOOL_PUSH(obj, (s_val + g_draw_stamp[0]) % d_val);
             break;
 
         }
@@ -801,7 +782,7 @@ next_ins:
         {
             s32 *s_ptr; s32 *d_ptr; s32 s_val; s32 d_val;
             d_ptr = TRANS_GOP_IN(obj, ins & 0xFFF);
-            *obj->sp++ = g_cur_display_flags[*d_ptr >> 8];
+            GOOL_PUSH(obj, g_cur_display_flags[*d_ptr >> 8]);
             break;
 
         }
@@ -818,8 +799,8 @@ next_ins:
         {
             s32 *s_ptr; s32 *d_ptr; s32 s_val; s32 d_val;
             {
-                GoolObj *link = (&obj->self)[(ins >> 12) & 7];
-                *obj->sp++ = link->defaults[(ins >> 15) & 0x3F];
+                GoolObj *link = OBJ_LINK(obj, (ins >> 12) & 7);
+                GOOL_PUSH(obj, link->defaults[(ins >> 15) & 0x3F]);
             }
             break;
 
@@ -828,7 +809,7 @@ next_ins:
         {
             s32 *s_ptr; s32 *d_ptr; s32 s_val; s32 d_val;
             {
-                GoolObj *link = (&obj->self)[(ins >> 12) & 7];
+                GoolObj *link = OBJ_LINK(obj, (ins >> 12) & 7);
                 u32 idx = (ins >> 15) & 0x3F;
                 d_ptr = TRANS_GOP_IN(obj, ins & 0xFFF);
                 link->defaults[idx] = *(u16 *)d_ptr;
@@ -848,7 +829,7 @@ next_ins:
                 case 0:
                     if (s_ptr != NULL) {
                         if (*s_ptr != 0) {
-                            *obj->sp++ = ((s32 *)*s_ptr)[subarg];
+                            GOOL_PUSH(obj, RAM_AT(s32, *s_ptr)[subarg]);
                         } else {
                             goto push_zero;
                         }
@@ -869,7 +850,7 @@ next_ins:
                         } else {
                             vec_a = &obj->trans;
                         }
-                        link = (&obj->self)[(ins >> 12) & 7];
+                        link = OBJ_LINK(obj, (ins >> 12) & 7);
                         vec_b = &link->trans;
                         if (subarg & 2) {
                             v1.x = vec_a->x;
@@ -882,40 +863,40 @@ next_ins:
                             vec_b = &v2;
                         }
                         if (subarg & 1) {
-                            *obj->sp++ = Math_EucDist(vec_a, vec_b);
+                            GOOL_PUSH(obj, Math_EucDist(vec_a, vec_b));
                         } else {
-                            *obj->sp++ = Math_ApxDist(vec_a, vec_b);
+                            GOOL_PUSH(obj, Math_ApxDist(vec_a, vec_b));
                         }
                     }
                     break;
 
                 case 5:
                     {
-                        GoolObj *link = (&obj->self)[(ins >> 12) & 7];
-                        s32 diff = Math_AngDistXZ(&obj->trans, &link->trans) - (obj->rot.y & 0xFFF);
+                        GoolObj *link = OBJ_LINK(obj, (ins >> 12) & 7);
+                        s32 diff = Math_AngDistXZ((s32 *)&obj->trans, (s32 *)&link->trans) - (obj->rot.y & 0xFFF);
                         if (ABS(diff) >= 0x800) {
                             diff = (-diff) & 0xFFF;
                         }
-                        *obj->sp++ = diff;
+                        GOOL_PUSH(obj, diff);
                     }
                     break;
 
                 case 2:
                     if (!(obj->status_b & 0x200200)) {
-                        *obj->sp++ = Math_AngDistXZ(&(&obj->self)[(ins >> 12) & 7]->trans, (Vec3 *)s_ptr);
+                        GOOL_PUSH(obj, Math_AngDistXZ((s32 *)&OBJ_LINK(obj, (ins >> 12) & 7)->trans, s_ptr));
                     } else {
-                        *obj->sp++ = Math_AngDistXY(&(&obj->self)[(ins >> 12) & 7]->trans, s_ptr);
+                        GOOL_PUSH(obj, Math_AngDistXY((s32 *)&OBJ_LINK(obj, (ins >> 12) & 7)->trans, s_ptr));
                     }
                     break;
 
                 case 3:
-                    *obj->sp++ = ((s32 *)&(&obj->self)[(ins >> 12) & 7]->self)[(u32)*s_ptr >> 8];
+                    GOOL_PUSH(obj, ((s32 *)((u8 *)OBJ_LINK(obj, (ins >> 12) & 7) + 0x60))[(u32)*s_ptr >> 8]);
                     break;
 
                 case 4:
                     {
-                        GoolObj *link = (&obj->self)[(ins >> 12) & 7];
-                        ((s32 *)&link->self)[(u32)*s_ptr >> 8] = *--obj->sp;
+                        GoolObj *link = OBJ_LINK(obj, (ins >> 12) & 7);
+                        ((s32 *)((u8 *)link + 0x60))[(u32)*s_ptr >> 8] = GOOL_POP(obj);
                     }
                     break;
 
@@ -924,11 +905,12 @@ next_ins:
                         if (*s_ptr != 0 && (g_spawns[(u32)*s_ptr >> 8] & 1)) {
                             s32 i = 3;
                             s32 found = 0;
+                            s32 pid = *s_ptr;
                             do {
                                 ObjectRoot *root = &((ObjectRoot *)g_free_objects)[i++];
-                                found = Gool_FindObject_inline((GoolObj *)root, Gool_ObjectHasPidFlags, (void *)*s_ptr);
+                                found = Gool_FindObject_inline((GoolObj *)root, Gool_VisitHasPidFlags, &pid);
                             } while (found == 0 && i < 5);
-                            *obj->sp++ = found;
+                            GOOL_PUSH(obj, found);
                         } else {
                             goto push_zero;
                         }
@@ -957,7 +939,7 @@ next_ins:
                         case 4:
                             {
                                 u16 *p = g_level_spawns;
-                                u16 tag = (*s_ptr >> 8) | (g_ns_page_pool[0]->level_id << 9);
+                                u16 tag = (*s_ptr >> 8) | (RAM_AT(LevelStateView, g_ns_page_pool[0])->level_id << 9);
                                 while (*p != 0) {
                                     if (*p == tag) {
                                         if (p[1] != 0) {
@@ -977,8 +959,8 @@ next_ins:
                             {
                                 u16 *p = g_level_spawns;
                                 u16 *free_slot = NULL;
-                                s32 tag = (*s_ptr >> 8) | (g_ns_page_pool[0]->level_id << 9);
-                                if (!(g_pads[0]->data->flags2FC & 0x2000)) {
+                                s32 tag = (*s_ptr >> 8) | (RAM_AT(LevelStateView, g_ns_page_pool[0])->level_id << 9);
+                                if (!(RAM_AT(ZoneHeaderView, RAM_AT(ResourceEntry, g_pads[0])->data)->flags2FC & 0x2000)) {
                                     while (*p != 0) {
                                         if (*p == (u16)tag) {
                                             goto set_bit_3;
@@ -1011,27 +993,27 @@ next_ins:
                 case 11:
                     switch (subarg) {
                     case 1:
-                        *obj->sp++ = s_ptr ? (((g_spawns[(u32)*s_ptr >> 8] >> 1) ^ 1) & 1) : 0;
+                        GOOL_PUSH(obj, s_ptr ? (((g_spawns[(u32)*s_ptr >> 8] >> 1) ^ 1) & 1) : 0);
                         break;
                     case 2:
-                        *obj->sp++ = s_ptr ? (g_spawns[(u32)*s_ptr >> 8] & 4) : 0;
+                        GOOL_PUSH(obj, s_ptr ? (g_spawns[(u32)*s_ptr >> 8] & 4) : 0);
                         break;
                     case 3:
-                        *obj->sp++ = s_ptr ? (g_spawns[(u32)*s_ptr >> 8] & 8) : 0;
+                        GOOL_PUSH(obj, s_ptr ? (g_spawns[(u32)*s_ptr >> 8] & 8) : 0);
                         break;
                     }
                     break;
 
                 case 9:
                     {
-                        ResourceEntry *zone;
+                        s32 zone;
                         if (s_ptr == NULL) {
                             zone = g_pads[0];
                         } else {
-                            zone = Zone_FindNeighbor(g_pads[0], s_ptr);
+                            zone = Zone_FindNeighbor(RAM_AT(struct ZoneEntry, g_pads[0]), (struct ZqVec *)s_ptr);
                         }
-                        if ((s32)zone < -0xFE) {
-                            (&obj->self)[(ins >> 12) & 7]->zone = zone;
+                        if (zone < -0xFE) {
+                            OBJ_LINK(obj, (ins >> 12) & 7)->zone = zone;
                         }
                     }
                     break;
@@ -1039,27 +1021,27 @@ next_ins:
                 case 12:
                     switch (subarg) {
                     case 0:
-                        Level_SaveState(obj, g_checkpoint_save_state, 0);
+                        Level_SaveState((struct SaveObj *)obj, (struct LevelSave *)g_checkpoint_save_state, 0);
                         break;
                     case 1:
-                        Level_Restart(g_checkpoint_save_state);
+                        Level_Restart((struct LevelSave *)g_checkpoint_save_state);
                         break;
                     case 2:
                         {
                             GoolObj *new_parent = (GoolObj *)&((ObjectRoot *)g_free_objects)[(u32)*s_ptr >> 8];
-                            GoolObj *parent = obj->parent;
+                            GoolObj *parent = RAM_AT(GoolObj, obj->parent);
                             GoolObj *prev;
 
                             if (parent != NULL) {
-                                prev = NODE_CHILDREN(parent);
+                                prev = RAM_AT(GoolObj, NODE_CHILDREN(parent));
                                 if (prev == obj) {
                                     *NODE_CHILDREN_PTR(parent) = obj->next;
                                 } else if (prev != NULL) {
-                                    while (prev->next != obj) {
+                                    while (prev->next != Ram_Addr(obj)) {
                                         if (prev == NULL) {
                                             goto end_case_2;
                                         }
-                                        prev = prev->next;
+                                        prev = RAM_AT(GoolObj, prev->next);
                                         if (prev == NULL) {
                                             goto next_ins;
                                         }
@@ -1069,17 +1051,17 @@ next_ins:
                                     goto next_ins;
                                 }
                             }
-                            obj->parent = new_parent;
+                            obj->parent = Ram_Addr(new_parent);
                             obj->next = NODE_CHILDREN(new_parent);
-                            *NODE_CHILDREN_PTR(new_parent) = obj;
+                            *NODE_CHILDREN_PTR(new_parent) = Ram_Addr(obj);
                         end_case_2:;
                         }
                         break;
                     case 3:
-                        Cd_Stub_22(*s_ptr);
+                        Cd_Stub_22();
                         break;
                     case 4:
-                        ((GoolObj *)*s_ptr)->zone = g_cur_zone_ptr[0];
+                        RAM_AT(GoolObj, *s_ptr)->zone = g_cur_zone_ptr[0];
                         break;
                     case 5:
                         Midi_ResetFadeStep();
@@ -1092,9 +1074,9 @@ next_ins:
                         break;
                     case 8:
                         {
-                            GoolObj *link = (&obj->self)[(ins >> 12) & 7];
-                            s32 dist = Math_EucDistXZ(&link->trans, s_ptr);
-                            *obj->sp++ = ratan2(link->trans.y - s_ptr[1], dist);
+                            GoolObj *link = OBJ_LINK(obj, (ins >> 12) & 7);
+                            s32 dist = Math_EucDistXZ(&link->trans, (Vec3 *)s_ptr);
+                            GOOL_PUSH(obj, ratan2(link->trans.y - s_ptr[1], dist));
                         }
                         break;
                     case 9:
@@ -1114,15 +1096,15 @@ next_ins:
                         GoolQuery query;
                         query.kind = (ins >> 15) & 0x1F;
                         query.obj = (&obj->self)[(ins >> 12) & 7];
-                        query.result = NULL;
+                        query.result = 0;
                         query.best_dist = 0x7FFFFFFF;
                         query.max_dist = *s_ptr;
-                        Gool_FindObject_inline(&g_gool_obj_list_4, Gool_FindNearestObject, &query);
-                        if (query.result != NULL) {
-                            *obj->sp++ = (s32)query.result;
+                        Gool_FindObject_inline(&g_gool_obj_list_4, Gool_VisitFindNearest, &query);
+                        if (query.result != 0) {
+                            GOOL_PUSH(obj, query.result);
                         } else {
                         push_zero:
-                            *obj->sp++ = 0;
+                            GOOL_PUSH(obj, 0);
                         }
                     }
                     break;
@@ -1130,14 +1112,14 @@ next_ins:
                 case 14:
                     {
                         GoolBound bound;
-                        GoolObj *link = (&obj->self)[(ins >> 12) & 7];
+                        GoolObj *link = OBJ_LINK(obj, (ins >> 12) & 7);
                         bound.p1.x = link->trans.x + link->bound.p1.x;
                         bound.p1.y = link->trans.y + link->bound.p1.y;
                         bound.p1.z = link->trans.z + link->bound.p1.z;
                         bound.p2.x = link->trans.x + link->bound.p2.x;
                         bound.p2.y = link->trans.y + link->bound.p2.y;
                         bound.p2.z = link->trans.z + link->bound.p2.z;
-                        *obj->sp++ = Level_TestPointInBound(s_ptr, &bound);
+                        GOOL_PUSH(obj, Level_TestPointInBound((struct ZqVec *)s_ptr, (struct ZqBound *)&bound));
                     }
                     break;
 
@@ -1192,8 +1174,8 @@ next_ins:
                         return -0xFF;
                     }
                 } else if (mode == 0) {
-                    obj->pc += (s32)(ins << 22) >> 22;
-                    obj->sp = (s32 *)((u8 *)obj->sp - ((ins >> 8) & 0x3C));
+                    obj->pc += ((s32)(ins << 22) >> 22) * 4;
+                    obj->sp -= (ins >> 8) & 0x3C;
                 }
             }
             break;
@@ -1222,8 +1204,7 @@ next_ins:
                     switch (mode) {
                     case 2:
                         {
-                            s32 saved_flags;
-                            ((struct { s32 v; } *)&saved_flags)->v = flags;
+                            s32 saved_flags = flags;
                             res = Gool_ObjectPopFrame(obj, &saved_flags, flags);
                             if (flags & 8) {
                                 if (flags & 0x20) {
@@ -1235,7 +1216,7 @@ next_ins:
                             if ((flags & 1) || res >= -0xFE) {
                                 if (flags & 0x10) {
                                     if (res < -0xFE) {
-                                        *obj->sp++ = 0;
+                                        GOOL_PUSH(obj, 0);
                                     }
                                 }
                                 return res;
@@ -1246,13 +1227,13 @@ next_ins:
                         }
                         break;
                     case 0:
-                        obj->pc += (s32)(ins << 22) >> 22;
-                        obj->sp = (s32 *)((u8 *)obj->sp - ((ins >> 8) & 0x3C));
+                        obj->pc += ((s32)(ins << 22) >> 22) * 4;
+                        obj->sp -= (ins >> 8) & 0x3C;
                         break;
                     case 1:
                         {
                             u32 status_c = obj->status_c;
-                            u32 state_status_c = obj->exec->states[ins & 0x3FFF].status_c;
+                            u32 state_status_c = RAM_AT(GoolState, RAM_AT(GoolExecutable, obj->exec)->states)[ins & 0x3FFF].status_c;
                             s32 inv_state = obj->invincibility_state;
                             u32 mask;
 
@@ -1262,11 +1243,11 @@ next_ins:
                                 mask = status_c & state_status_c;
                             }
                             if (mask == 0) {
-                                res = GOOL_ChangeObjectState(obj, ins & 0x3FFF, NULL, 0);
+                                res = GOOL_ChangeObjectState(obj, ins & 0x3FFF, 0, NULL);
                                 if (res < -0xFE && (flags & 2)) {
                                     return res;
                                 }
-                                obj->sp--;
+                                obj->sp -= 4;
                             }
                         }
                         break;
@@ -1284,9 +1265,9 @@ next_ins:
                 GOOL_CreateObjectStackFrame_inline(obj, (ins >> 20) & 0xF, flags);
                 offset = ins & 0x3FFF;
                 if (offset != 0x3FFF) {
-                    obj->pc = &obj->exec->code[offset];
+                    obj->pc = RAM_AT(GoolExecutable, obj->exec)->code + offset * 4;
                 } else {
-                    obj->pc = NULL;
+                    obj->pc = 0;
                 }
                 flags &= ~9;
             }
@@ -1296,9 +1277,9 @@ next_ins:
         case 0x83:
         {
             s32 *s_ptr; s32 *d_ptr; s32 s_val; s32 d_val;
-            obj->anim_seq = (GoolAnimSeq *)((u32)obj->exec->anims + ((ins >> 5) & 0x7FC));
+            obj->anim_seq = RAM_AT(GoolExecutable, obj->exec)->anims + ((ins >> 5) & 0x7FC);
             obj->anim_frame = (ins & 0x7F) << 8;
-            *obj->sp++ = (((ins >> 16) & 0x3F) << 24) | g_level_zone_flags[0];
+            GOOL_PUSH(obj, (((ins >> 16) & 0x3F) << 24) | g_level_zone_flags[0]);
             switch ((ins >> 22) & 3) {
             case 0:
                 if (obj->scale.x < 0) {
@@ -1315,7 +1296,7 @@ next_ins:
                 break;
             }
             if (obj->status_b & 0x18) {
-                if (!Math_OutOfRange(obj, &obj->trans, &gp_crash_obj->trans, 0x7D000, 0xAF000, 0x7D000) || (s32)obj->status_b < 0) {
+                if (!Math_OutOfRange((struct ObjectFlagsView *)obj, &obj->trans, &RAM_AT(GoolObj, gp_crash_obj)->trans, 0x7D000, 0xAF000, 0x7D000) || (s32)obj->status_b < 0) {
                     Gool_ObjectLocalBound(obj, &obj->scale.x);
                 }
             }
@@ -1330,7 +1311,7 @@ next_ins:
             s32 *s_ptr; s32 *d_ptr; s32 s_val; s32 d_val;
             d_ptr = TRANS_GOP_IN(obj, ins & 0xFFF);
             obj->anim_frame = *d_ptr;
-            *obj->sp++ = (((ins >> 16) & 0x3F) << 24) | g_level_zone_flags[0];
+            GOOL_PUSH(obj, (((ins >> 16) & 0x3F) << 24) | g_level_zone_flags[0]);
             switch ((ins >> 22) & 3) {
             case 0:
                 if (obj->scale.x < 0) {
@@ -1356,30 +1337,30 @@ next_ins:
         case 0x8B:
         {
             s32 *s_ptr; s32 *d_ptr; s32 s_val; s32 d_val;
-            s_val = *Gool_TranslateOutGop(obj, (ins >> 12) & 0xFFF, 0);
-            s_ptr = Gool_TranslateOutGop(obj, ins & 0xFFF, 0);
+            s_val = *RAM_AT(s32, Gool_TranslateOutGop((struct GoolObjView *)obj, (ins >> 12) & 0xFFF, 0));
+            s_ptr = RAM_AT(s32, Gool_TranslateOutGop((struct GoolObjView *)obj, ins & 0xFFF, 0));
             switch (s_val) {
             case 1:
-                obj->misc_flag = Ns_Open(s_ptr, 0, 1);
+                obj->misc_flag = Ns_Open((u32 *)s_ptr, 0, 1);
                 break;
             case 6:
-                obj->misc_flag = Ns_Open(s_ptr, 1, 1);
+                obj->misc_flag = Ns_Open((u32 *)s_ptr, 1, 1);
                 break;
             case 2:
-                obj->misc_flag = Ns_Close(s_ptr, 1);
+                obj->misc_flag = Ns_Close((u32 *)s_ptr, 1);
                 break;
             case 3:
-                *obj->sp++ = Ns_Close(s_ptr, 0);
+                GOOL_PUSH(obj, Ns_Close((u32 *)s_ptr, 0));
                 break;
             case 4:
-                *obj->sp++ = Ns_CountAvailablePages(s_ptr);
+                GOOL_PUSH(obj, Ns_CountAvailablePages());
                 break;
             case 5:
                 {
                     s32 n = *s_ptr;
-                    d_val = Ns_CountAvailablePages2(&obj->sp[-n], n);
-                    obj->sp -= n;
-                    *obj->sp++ = d_val;
+                    d_val = Ns_CountAvailablePages2(RAM_AT(u32, obj->sp) - n, n);
+                    obj->sp -= n * 4;
+                    GOOL_PUSH(obj, d_val);
                 }
                 break;
             }
@@ -1396,10 +1377,10 @@ next_ins:
                 s_ptr = TRANS_GOP_IN(obj, ins & 0xFFF);
                 switch ((ins >> 18) & 7) {
                 case 0:
-                    if (s_ptr != NULL && obj->entity != NULL) {
+                    if (s_ptr != NULL && obj->entity != 0) {
                         Vec3 v2;
                         v2 = *vec_dst;
-                        Gool_ObjectOrientOnPath(obj, *s_ptr, &v2);
+                        Gool_ObjectOrientOnPath(obj, *s_ptr, (s32 *)&v2);
                         *vec_dst = v2;
                         obj->floor_y = vec_dst->y;
                     }
@@ -1424,8 +1405,8 @@ next_ins:
                         Vec3 *scale_ptr = NULL;
 
                         v1.z = *s_ptr;
-                        v1.y = *--obj->sp;
-                        v1.x = *--obj->sp;
+                        v1.y = GOOL_POP(obj);
+                        v1.x = GOOL_POP(obj);
                         vec_src = &(&obj->trans)[(ins >> 15) & 7];
                         if (((ins >> 18) & 7) == 4) {
                             rot_ptr = &obj->rot;
@@ -1441,16 +1422,16 @@ next_ins:
                     {
                         Vec3 v3;
                         Vec3 v4;
-                        GoolObj *link = (&obj->self)[(ins >> 21) & 7];
-                        GoolAnimSeq *anim_seq = link->anim_seq;
+                        GoolObj *link = OBJ_LINK(obj, (ins >> 21) & 7);
+                        GoolAnimSeq *anim_seq = RAM_AT(GoolAnimSeq, link->anim_seq);
                         if (anim_seq != NULL && anim_seq->type == 1) {
-                            GoolAnimFrame *frame = (GoolAnimFrame *)Ns_Lookup(&anim_seq->eid)->items[(u32)link->anim_frame >> 8];
-                            GoolAnimEntry *model_group = (GoolAnimEntry *)Ns_Lookup(&link->anim_seq->eid)->items[(u32)link->anim_frame >> 8];
+                            GoolAnimFrame *frame = RAM_AT(GoolAnimFrame, RAM_AT(GoolAnimEntry, Ns_Lookup(&anim_seq->eid))->items[(u32)link->anim_frame >> 8]);
+                            GoolAnimEntry *model_group = RAM_AT(GoolAnimEntry, RAM_AT(GoolAnimEntry, Ns_Lookup(&RAM_AT(GoolAnimSeq, link->anim_seq)->eid))->items[(u32)link->anim_frame >> 8]);
                             GoolAnimModel *model;
                             GoolAnimVertex *vert;
 
-                            model_group = Ns_Lookup((u32 *)model_group + 1);
-                            model = (GoolAnimModel *)model_group->items[0];
+                            model_group = RAM_AT(GoolAnimEntry, Ns_Lookup((u32 *)model_group + 1));
+                            model = RAM_AT(GoolAnimModel, model_group->items[0]);
                             vert = &frame->verts[(u32)*s_ptr >> 8];
                             v3.x = ((frame->offset.x - 0x80) + vert->x) << 10;
                             v3.y = ((frame->offset.y - 0x80) + vert->y) << 10;
@@ -1493,7 +1474,7 @@ next_ins:
                 Vec3 *vec_src;
 
                 vec_src = &(&obj->trans)[(ins >> 12) & 7];
-                Gool_TranslateOutGop(obj, ins & 0xFFF, 0);
+                Gool_TranslateOutGop((struct GoolObjView *)obj, ins & 0xFFF, 0);
                 switch ((ins >> 18) & 7) {
                 case 0:
                     {
@@ -1503,7 +1484,7 @@ next_ins:
                         va = obj->trans;
                         vb = *vec_src;
                         va.y += obj->bound.p2.y / 2;
-                        obj->misc_flag = Zone_ReboundVector(&va, &vb);
+                        obj->misc_flag = Zone_ReboundVector((struct ZqVec *)&va, (struct ZqVec *)&vb);
                         if ((ins & 0xFFF) != 0xBE0) {
                             *(Vec3 *)TRANS_GOP_OUT(obj, ins & 0xFFF) = vb;
                         }
@@ -1515,14 +1496,15 @@ next_ins:
                     {
                         Vec3 v_tmp;
                         Vec3 va;
-                        Vec3 vb;
+                        /* Never set: the original stores a stale stack slot. */
+                        Vec3 vb = {0, 0, 0};
 
                         v_tmp = obj->trans;
                         va = obj->trans;
-                        if (obj == gp_crash_obj || obj->parent == gp_crash_obj) {
-                            Zone_FindNearestObjectNode2(obj, &v_tmp);
+                        if (Ram_Addr(obj) == gp_crash_obj || obj->parent == gp_crash_obj) {
+                            Zone_FindNearestObjectNode2((struct SubObj *)obj, (struct ZqVec *)&v_tmp);
                         }
-                        obj->misc_flag = Zone_FindNearestObjectNode(obj, &va);
+                        obj->misc_flag = Zone_FindNearestObjectNode((struct SubObj *)obj, (struct ZqVec *)&va);
                         if ((ins & 0xFFF) != 0xBE0) {
                             *(Vec3 *)TRANS_GOP_OUT(obj, ins & 0xFFF) = vb;
                         }
@@ -1536,7 +1518,8 @@ next_ins:
                 case 5:
                     {
                         Vec3 va;
-                        Vec3 vb;
+                        /* Never set: the original stores a stale stack slot. */
+                        Vec3 vb = {0, 0, 0};
                         u32 subop = (ins >> 18) & 7;
                         s32 arg3 = (u32)(subop - 4) < 2;
                         s32 is_odd = (subop == 5 || subop == 3);
@@ -1546,13 +1529,13 @@ next_ins:
 
                         va = obj->trans;
                         va_ptr = &va;
-                        zone = obj->zone ? obj->zone : g_pads[0];
-                        if (zone->data->flags2FC & 1) {
+                        zone = RAM_AT(ResourceEntry, obj->zone ? obj->zone : g_pads[0]);
+                        if (RAM_AT(ZoneHeaderView, zone->data)->flags2FC & 1) {
                             mode_flags = is_odd ? 6 : 2;
                         } else {
                             mode_flags = is_odd ? 5 : 1;
                         }
-                        Zone_FindNearestObjectNode3(obj, va_ptr, mode_flags, !arg3);
+                        Zone_FindNearestObjectNode3((struct SubObj *)obj, (struct ZqVec *)va_ptr, mode_flags, !arg3);
                         if ((ins & 0xFFF) != 0xBE0) {
                             *(Vec3 *)TRANS_GOP_OUT(obj, ins & 0xFFF) = vb;
                         }
@@ -1561,7 +1544,7 @@ next_ins:
                     break;
 
                 case 6:
-                    Zone_ColorsScaleSeekByEntityNode(obj);
+                    Zone_ColorsScaleSeekByEntityNode((struct SubObj *)obj);
                     break;
                 }
             }
@@ -1572,10 +1555,12 @@ next_ins:
         case 0x90:
         {
             s32 *s_ptr; s32 *d_ptr; s32 s_val; s32 d_val;
-            recipient = (&obj->self)[(ins >> 21) & 7];
+            recipient = OBJ_LINK(obj, (ins >> 21) & 7);
         case 0x8F:
             {
-                s32 args[16];
+                /* The handler receives the arguments by address. */
+                u32 args_addr = Ram_StackAlloc(16 * sizeof(s32));
+                s32 *args = RAM_AT(s32, args_addr);
                 s32 *event_ptr;
                 s32 cond;
                 s32 count;
@@ -1587,29 +1572,30 @@ next_ins:
                 if (cond != 0 && (opcode == 0x8F || recipient != NULL) && event_ptr != NULL) {
                     count = (ins >> 18) & 7;
                     for (i = 0; i < count; i++) {
-                        args[i] = obj->sp[i - count];
+                        args[i] = RAM_AT(s32, obj->sp)[i - count];
                     }
                     switch (opcode) {
                     case 0x87:
-                        Gool_ExecStateCode(obj, recipient, *event_ptr, count, args);
+                        Gool_ExecStateCode((struct GoolObjView *)obj, (struct GoolObjView *)recipient, *event_ptr, count, args);
                         break;
                     case 0x90:
-                        Gool_SendToColliders2(obj, recipient, *event_ptr, (ins >> 21) & 7, count, args);
+                        Gool_SendToColliders2((struct Node *)obj, (struct Node *)recipient, *event_ptr, (ins >> 21) & 7, count, args_addr);
                         break;
                     case 0x8F:
-                        Gool_SendToColliders(obj, *event_ptr, (ins >> 21) & 7, count, args);
+                        Gool_SendToColliders((struct Node *)obj, *event_ptr, (ins >> 21) & 7, count, args);
                         break;
                     }
                 } else {
                     obj->misc_flag = 0;
                 }
+                Ram_StackFree(16 * sizeof(s32));
                 if (!(obj->status_a & 0x20000)) {
-                    obj->sp = (s32 *)((u8 *)obj->sp - ((ins >> 16) & 0x1C));
+                    obj->sp -= (ins >> 16) & 0x1C;
                 } else {
                     if (flags & 2) {
                         return -0xFF;
                     }
-                    obj->sp--;
+                    obj->sp -= 4;
                 }
             }
             break;
@@ -1626,25 +1612,25 @@ next_ins:
 
                 if (count == 0) {
                     d_val = arg_count + 1;
-                    count = *(obj->sp - d_val);
+                    count = RAM_AT(s32, obj->sp)[-d_val];
                     arg_count = d_val;
                 }
                 for (i = 0; i < count; i++) {
-                    GoolObj *child = GOOL_CreateObject(
+                    s32 child = GOOL_CreateObject(
                         obj,
                         (ins >> 12) & 0xFF,
                         (ins >> 6) & 0x3F,
                         (ins >> 20) & 0xF,
-                        &obj->sp[-((ins >> 20) & 0xF)],
+                        RAM_AT(s32, obj->sp) - ((ins >> 20) & 0xF),
                         opcode == 0x91);
-                    if ((s32)child < -0xFE) {
-                        child->creator = obj;
-                        obj->misc_flag = (s32)child;
+                    if (child < -0xFE) {
+                        RAM_AT(GoolObj, child)->creator = Ram_Addr(obj);
+                        obj->misc_flag = child;
                     } else {
                         obj->misc_flag = 0;
                     }
                 }
-                obj->sp -= arg_count;
+                obj->sp -= arg_count * 4;
             }
             break;
 
@@ -1654,7 +1640,7 @@ next_ins:
             s32 *s_ptr; s32 *d_ptr; s32 s_val; s32 d_val;
             s_ptr = TRANS_GOP_IN(obj, (ins >> 12) & 0xFFF);
             d_ptr = TRANS_GOP_IN(obj, ins & 0xFFF);
-            obj->voice_id = Audio_VoiceCreate(obj, d_ptr, *(s16 *)s_ptr);
+            obj->voice_id = Audio_VoiceCreate((struct GoolObjectAudio *)obj, (u32 *)d_ptr, *(s16 *)s_ptr);
             break;
 
         }
@@ -1683,7 +1669,7 @@ next_ins:
                 if (ins & 0x80000) {
                     mode |= 0x20000000;
                 }
-                Audio_Control(val, mode, d_ptr, obj);
+                Audio_Control(val, mode, d_ptr, (struct GoolObjectAudio *)obj);
             }
             break;
 

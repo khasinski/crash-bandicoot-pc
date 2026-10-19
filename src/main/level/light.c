@@ -41,7 +41,7 @@ void Zone_ColorsScaleByNode(s32 idx, LightMat *src, LightMat *dst)
 {
     if (idx >= 0x27) {
         Zone_ColorsScale(src, dst, 0, 0, 0);
-        if (g_ns_page_pool[0]->level_id == 0x13) {
+        if (RAM_AT(LevelHeader, g_ns_page_pool[0])->level_id == 0x13) {
             if (idx == 0x28) {
                 Zone_ColorsScale(src, dst, 0x64, 0x64, 0x64);
                 dst->a[0] = 0;
@@ -57,7 +57,7 @@ void Zone_ColorsScaleByNode(s32 idx, LightMat *src, LightMat *dst)
                 dst->c[2][1] = 0x64;
                 dst->c[2][2] = 0xFF;
             }
-        } else if (g_ns_page_pool[0]->level_id == 7) {
+        } else if (RAM_AT(LevelHeader, g_ns_page_pool[0])->level_id == 7) {
             if (idx == 0x28) {
                 dst->b[0] = 0;
                 dst->b[1] = 0xFF;
@@ -84,7 +84,7 @@ void Zone_ColorsScaleByNode(s32 idx, LightMat *src, LightMat *dst)
                 dst->c[2][1] = 0xF0;
                 dst->c[2][2] = 0xF0;
             }
-        } else if (g_ns_page_pool[0]->level_id == 3) {
+        } else if (RAM_AT(LevelHeader, g_ns_page_pool[0])->level_id == 3) {
             if (idx == 0x28) {
                 dst->b[0] = 0;
                 dst->b[1] = 0xFF;
@@ -111,7 +111,7 @@ void Zone_ColorsScaleByNode(s32 idx, LightMat *src, LightMat *dst)
                 dst->c[2][1] = 0x80;
                 dst->c[2][2] = 0x80;
             }
-        } else if (g_ns_page_pool[0]->level_id == 0x1C || g_ns_page_pool[0]->level_id == 0x1D) {
+        } else if (RAM_AT(LevelHeader, g_ns_page_pool[0])->level_id == 0x1C || RAM_AT(LevelHeader, g_ns_page_pool[0])->level_id == 0x1D) {
             switch (idx) {
             case 0x28:
                 Zone_ColorsScale(src, dst, 0x32, 0x64, 0x64);

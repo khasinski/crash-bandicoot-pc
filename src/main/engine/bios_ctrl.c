@@ -8,13 +8,13 @@
 
 static __inline__ s32 Card_ClearFlag20_inline(void)
 {
-    gp_card->word04 &= ~0x20;
+    RAM_AT(EngineState, gp_card)->word04 &= ~0x20;
     return 0;
 }
 
 static __inline__ s32 Card_StartWritePart_inline(s32 value)
 {
-    EngineState *state = gp_card;
+    EngineState *state = RAM_AT(EngineState, gp_card);
     s32 result = 0;
 
     if (state->word04 & 13) {
@@ -32,7 +32,7 @@ static __inline__ s32 Card_StartWritePart_inline(s32 value)
 
 static __inline__ s32 Card_StartReadPart_inline(s32 value)
 {
-    EngineState *state = gp_card;
+    EngineState *state = RAM_AT(EngineState, gp_card);
     s32 result = 0;
 
     if (state->word04 & 13) {
@@ -58,7 +58,7 @@ static __inline__ s32 Card_RequestCheck_inline(void)
 {
     s32 result;
     if (gp_card) {
-        Card_ResetStateAndFlags((gp_card->word04 & 0x10) | 4);
+        Card_ResetStateAndFlags((RAM_AT(EngineState, gp_card)->word04 & 0x10) | 4);
         result = 0;
     } else {
         result = 1;

@@ -1,7 +1,6 @@
 #include "common.h"
 
 /* Storage is owned by the containing state unit. */
-                               /* extern */
 
 void Card_ResetSoftEvent(void) {
     TestEvent(gp_edesc_s_end_io);

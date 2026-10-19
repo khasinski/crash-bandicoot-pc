@@ -14,23 +14,14 @@ extern u32 g_pbak_frame_cursor[];
 #endif
 
 #ifdef CRASH_EXT_GOOL_CHANGE_STATE_0
-extern struct {
-    u8 reserved[0x10];
-    RAM_REF(u8) data;
-} *g_pads;
-extern struct {
-    s32 word_0;
-    s32 type;
-} *g_ns_page_pool;
+extern RAM_REF(ResourceEntry) g_pads;
+extern RAM_REF(GoolLevelHeader) g_ns_page_pool;
 extern RAM_REF(void) gp_crash_obj;
 extern RAM_REF(void) g_savestate[2];
 #endif
 
 #ifdef CRASH_EXT_GOOL_CHANGE_STATE_1
-extern struct {
-    u8 reserved[0x7C];
-    u32 stamp;
-} *g_db_prev[2];
+extern RAM_REF(GoolDbView) g_db_prev[2];
 #endif
 
 #ifdef CRASH_EXT_GOOL_CHANGE_STATE_2
@@ -53,26 +44,14 @@ extern GoolObj g_gool_obj_list_4;
 
 #ifdef CRASH_EXT_GOOL_ENTRIES_9D08
 extern RAM_REF(u16) gp_level_entry;
-extern struct {
-    u8 reserved[0x10];
-    RAM_REF(u8) data;
-} *g_pads;
+extern RAM_REF(ResourceEntry) g_pads;
 extern s32 g_view_proj;
-extern struct {
-    s32 word_0;
-    s32 type;
-} *g_ns_page_pool;
+extern RAM_REF(GoolLevelHeader) g_ns_page_pool;
 #endif
 
 #ifdef CRASH_EXT_GOOL_ENTRIES_A2F4
-extern struct {
-    u8 reserved[0x10];
-    RAM_REF(ZoneFogHeader) data;
-} *g_pads;
-extern struct {
-    s32 word_0;
-    s32 type;
-} *g_ns_page_pool;
+extern RAM_REF(ResourceEntry) g_pads;
+extern RAM_REF(GoolLevelHeader) g_ns_page_pool;
 #endif
 
 #ifdef CRASH_EXT_GOOL_ENTRIES_A3CC
@@ -84,10 +63,7 @@ extern RAM_REF(NsdHeader) g_ns_page_pool[];
 
 #ifdef CRASH_EXT_GOOL_ENTRIES_A5E0
 extern RAM_REF(u16) gp_level_entry[];
-extern struct {
-    u8 reserved[0x10];
-    RAM_REF(u8) data;
-} *g_pads[];
+extern RAM_REF(ResourceEntry) g_pads;
 #endif
 
 #ifdef CRASH_EXT_GOOL_ENTRIES_A8CC
@@ -99,16 +75,13 @@ extern RAM_REF(NsdHeader) g_ns_page_pool[];
 
 #ifdef CRASH_EXT_GOOL_ENTRIES_AAE0_0
 extern RAM_REF(u16) gp_level_entry[];
-extern struct {
-    u8 reserved[0x10];
-    RAM_REF(u8) data;
-} *g_pads[];
+extern RAM_REF(ResourceEntry) g_pads;
 extern RAM_REF(void) gp_crash_obj;
 #endif
 
 #ifdef CRASH_EXT_GOOL_ENTRIES_AAE0_1
 extern GoolAllocGlobals gool_alloc;
-extern GoolObj * volatile g_player[];
+extern RAM_REF(GoolObj) g_player[];
 extern s32 g_gool_obj_list_7[];
 extern RAM_REF(void) g_savestate[];
 #endif
@@ -157,14 +130,8 @@ extern s32 g_cam_trans_x;
 #endif
 
 #ifdef CRASH_EXT_GOOL_QUERY_NEAREST
-extern struct {
-    u8 reserved[0x10];
-    RAM_REF(u8) data;
-} *g_pads;
-extern struct {
-    s32 word_0;
-    s32 type;
-} *g_ns_page_pool;
+extern RAM_REF(ResourceEntry) g_pads;
+extern RAM_REF(GoolLevelHeader) g_ns_page_pool;
 #endif
 
 #ifdef CRASH_EXT_GOOL_RESOURCE

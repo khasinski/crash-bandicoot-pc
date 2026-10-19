@@ -73,11 +73,11 @@ void Level_SaveState(SaveObj *obj, LevelSave *save, s32 flag)
     ZoneHeader *header;
     s32 i;
 
-    if (((ZoneHeader *)((ZoneEntry *)level_position.zone)->items[0])->flags & 0x2000) {
+    if ((RAM_AT(ZoneHeader, RAM_AT(ZoneEntry, level_position.zone)->items[0]))->flags & 0x2000) {
         return;
     }
     save->flag34 = flag;
-    save->transform = (*(SaveObj **)&gp_crash_obj)->transform;
+    save->transform = RAM_AT(SaveObj, gp_crash_obj[0])->transform;
     if (!(obj->status_b & 0x200)) {
         save->transform.trans = obj->transform.trans;
     }
@@ -87,12 +87,12 @@ void Level_SaveState(SaveObj *obj, LevelSave *save, s32 flag)
     save->transform.rot.x = 0;
     save->transform.rot.y = 0;
     save->transform.rot.z = 0;
-    save->zone_eid = level_position.zone->id;
+    save->zone_eid = RAM_AT(ResourceEntry, level_position.zone)->id;
     save->progress = level_position.progress;
-    save->level_id = g_ns_page_pool[0]->level_id;
-    for (i = 0; i < ((ZoneHeader *)((ZoneEntry *)level_position.zone)->items[0])->path_count; i++) {
-        header = (ZoneHeader *)((ZoneEntry *)level_position.zone)->items[0];
-        if ((void *)level_position.path == ((ZoneEntry *)level_position.zone)->items[i + header->path_index]) {
+    save->level_id = RAM_AT(LevelHeader, g_ns_page_pool[0])->level_id;
+    for (i = 0; i < (RAM_AT(ZoneHeader, RAM_AT(ZoneEntry, level_position.zone)->items[0]))->path_count; i++) {
+        header = RAM_AT(ZoneHeader, RAM_AT(ZoneEntry, level_position.zone)->items[0]);
+        if (level_position.path == RAM_AT(ZoneEntry, level_position.zone)->items[i + header->path_index]) {
             save->path_idx = i;
             break;
         }
@@ -112,18 +112,18 @@ void Level_Restart(LevelSave *save)
     s32 i;
 
     g_checkpoint_clear_flag[0] = 0;
-    if (save->level_id != g_ns_page_pool[0]->level_id) {
+    if (save->level_id != RAM_AT(LevelHeader, g_ns_page_pool[0])->level_id) {
         gp_pbak_frame_idx = -2;
         gp_checkpoint_zone_id = 1;
         return;
     }
     Gool_SendToColliders(NULL, 0x1300, 0, 0, 0);
-    if (level_position.zone != NULL) {
-        header = (ZoneHeader *)((ZoneEntry *)level_position.zone)->items[0];
-        level_position.object_zone = (ResourceEntry *)-1;
+    if (level_position.zone != 0) {
+        header = RAM_AT(ZoneHeader, RAM_AT(ZoneEntry, level_position.zone)->items[0]);
+        level_position.object_zone = 0xFFFFFFFF;
         for (i = 0; i < header->neighbor_count; i++) {
-            neighbor = Ns_Lookup(&header->neighbors[i]);
-            n_header = (ZoneHeader *)neighbor->items[0];
+            neighbor = RAM_AT(ZoneEntry, Ns_Lookup(&header->neighbors[i]));
+            n_header = RAM_AT(ZoneHeader, neighbor->items[0]);
             if (n_header->display_flags & 1) {
                 Gool_ZoneObjectsTerminate(neighbor);
                 n_header->display_flags &= ~3;
@@ -131,7 +131,7 @@ void Level_Restart(LevelSave *save)
         }
         Ns_ZoneUnload(&header->load);
     }
-    level_position.zone = NULL;
+    level_position.zone = 0;
     SetGeomScreen(g_view_proj);
     if (gp_checkpoint_zone_id) {
         for (i = 0; i < sizeof(g_spawns) / sizeof(u32); i++) {
@@ -146,14 +146,14 @@ void Level_Restart(LevelSave *save)
         }
     }
     zone_eid = save->zone_eid;
-    zone = (ZoneEntry *)Ns_Open(&zone_eid, 1, 1);
-    Level_Update((ResourceEntry *)zone, zone->items[save->path_idx + ((ZoneHeader *)zone->items[0])->path_index], save->progress, !gp_checkpoint_zone_id);
+    zone = RAM_AT(ZoneEntry, Ns_Open(&zone_eid, 1, 1));
+    Level_Update((ResourceEntry *)zone, RAM_AT(ZonePath, zone->items[save->path_idx + RAM_AT(ZoneHeader, zone->items[0])->path_index]), save->progress, !gp_checkpoint_zone_id);
     Ns_Close(&zone_eid, 1);
-    if (gp_crash_obj[0] == NULL) {
-        GOOL_CreateObject(g_gool_obj_list_5, 0, 0, 0, 0, 1);
+    if (gp_crash_obj[0] == 0) {
+        GOOL_CreateObject((struct GoolObj *)g_gool_obj_list_5, 0, 0, 0, 0, 1);
     }
-    gp_crash_obj[0]->transform = save->transform;
-    player = gp_crash_obj[0];
+    RAM_AT(SaveObj, gp_crash_obj[0])->transform = save->transform;
+    player = RAM_AT(SaveObj, gp_crash_obj[0]);
     player->entry = level_position.zone;
     player->word_130 = 0;
     player->vel_x = 0;
@@ -162,9 +162,9 @@ void Level_Restart(LevelSave *save)
     player->word_124 = 0;
     player->status_a = player->status_a;
     player->target_rot_y = player->transform.rot.y;
-    if (player->collider != NULL) {
-        player->collider->collider = NULL;
-        player->collider = NULL;
+    if (player->collider != 0) {
+        RAM_AT(SaveObj, player->collider)->collider = 0;
+        player->collider = 0;
     }
     g_draw_stamp[0] = 0;
     g_cam_mat_dirty_flag = 0;

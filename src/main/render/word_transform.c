@@ -1,3 +1,4 @@
+#include "common.h"
 #include "render.h"
 
 typedef RenderTransformWords TransformWords;

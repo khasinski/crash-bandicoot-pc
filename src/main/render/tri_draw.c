@@ -112,14 +112,19 @@ void Gfx_UpdateCamMatrices(u32 *arg0)
     s32 temp;
     PolyG3_9DCC *poly_g3;
     s32 reserved[2];
+    SortList9DCC *list;
+    u8 *tex_tab;
+    u32 *tex;
+    u32 *ot_entry;
 
-    groups = (Group9DCC *)(g_pads->header + 4);
+    groups = RAM_AT(Group9DCC, RAM_AT(ZoneEntry9DCC, g_pads)->header + 4);
+    list = RAM_AT(SortList9DCC, gp_level_entry);
     ot_idx = 0x7FF;
-    SetRotMatrix(g_m_view);
-    SetLightMatrix(g_m_view + 0x110);
+    SetRotMatrix((MATRIX *)g_m_view);
+    SetLightMatrix((MATRIX *)(g_m_view + 0x110));
     prev_group = -1;
-    for (i = gp_level_entry->count - 1; i >= 0; i--) {
-        entry = gp_level_entry->entries[i];
+    for (i = list->count - 1; i >= 0; i--) {
+        entry = list->entries[i];
         if ((s32)(entry >> 12) != prev_group) {
             s32 trx, try, trz;
             prev_group = entry >> 12;
@@ -129,46 +134,47 @@ void Gfx_UpdateCamMatrices(u32 *arg0)
             trz = group_ptr->trz;
             gte_ldtr(trx, try, trz);
         }
-        tri_ptr = (Tri9DCC *)(((entry & 0xFFF) << 3) + (u32)group_ptr->tris);
+        tri_ptr = (Tri9DCC *)(((entry & 0xFFF) << 3) + RAM_AT(u8, group_ptr->tris));
         tri_w1 = tri_ptr->w1;
-        verts = group_ptr->verts;
-        vtx0 = (Vert9DCC *)(((tri_w1 >> 20) << 3) + (u32)verts);
+        verts = RAM_AT(u8, group_ptr->verts);
+        vtx0 = (Vert9DCC *)(((tri_w1 >> 20) << 3) + verts);
         a0 = vtx0->v1;
         tri_w0 = tri_ptr->w0;
         xy = (((a0 >> 16) & ~7) << 16) | (a0 & 0xFFF8);
         z = ((s32)(((a0 << 13) & 0xE0000000) | ((a0 << 26) & 0x18000000) | ((vtx0->v0 >> 5) & 0x07F80000)) >> 16) & ~7;
         gte_ldv0(xy, z);
 
-        vtx1 = (Vert9DCC *)((((tri_w1 >> 8) & 0xFFF) << 3) + (u32)verts);
+        vtx1 = (Vert9DCC *)((((tri_w1 >> 8) & 0xFFF) << 3) + verts);
         a0 = vtx1->v1;
         xy = (((a0 >> 16) & ~7) << 16) | (a0 & 0xFFF8);
         z = ((s32)(((a0 << 13) & 0xE0000000) | ((a0 << 26) & 0x18000000) | ((vtx1->v0 >> 5) & 0x07F80000)) >> 16) & ~7;
         gte_ldv1(xy, z);
 
-        vtx2 = (Vert9DCC *)(((tri_w0 >> 20) << 3) + (u32)verts);
+        vtx2 = (Vert9DCC *)(((tri_w0 >> 20) << 3) + verts);
         a0 = vtx2->v1;
         xy = (((a0 >> 16) & ~7) << 16) | (a0 & 0xFFF8);
         z = ((s32)(((a0 << 13) & 0xE0000000) | ((a0 << 26) & 0x18000000) | ((vtx2->v0 >> 5) & 0x07F80000)) >> 16) & ~7;
         gte_ldv2(xy, z);
         gte_rtpt();
 
-        xy = (((tri_w0 >> 8) & 0xFFF) << 2) + (u32)group_ptr->tex_tab;
-        w0 = *(u32 *)xy;
+        tex_tab = RAM_AT(u8, group_ptr->tex_tab);
+        tex = (u32 *)((((tri_w0 >> 8) & 0xFFF) << 2) + tex_tab);
+        w0 = *tex;
         gte_ldrgb(w0);
         w0 >>= 24;
         if (w0 & 0x80) {
-            void *p = g_ot_cur->prim_ptr;
-            g_ot_cur->prim_ptr = (PolyGT3_9DCC *)p + 1;
-            t3 = **(u32 ***)(((tri_w0 & 0xE0) >> 3) + (u32)group_ptr->tex_tab - 0x20);
+            void *p = RAM_AT(void, RAM_AT(PrimBuf9398, g_ot_cur)->prim_ptr);
+            RAM_AT(PrimBuf9398, g_ot_cur)->prim_ptr = Ram_Addr((PolyGT3_9DCC *)p + 1);
+            t3 = *RAM_AT(u32, *(u32 *)(((tri_w0 & 0xE0) >> 3) + tex_tab - 0x20));
             poly = (PolyGT3_9DCC *)p;
             poly->color0 = vtx0->v0;
             poly->color1 = vtx1->v0;
             poly->color2 = vtx2->v0;
             if (tri_w1 & 0x1E) {
                 a0 = (tri_w1 & 0x1E) | 1;
-                w1 = ((u32 *)xy)[1 + (((g_draw_stamp[0] >> ((tri_w1 >> 5) & 7)) + (tri_w0 & 0x1F)) & a0)];
+                w1 = tex[1 + (((g_draw_stamp[0] >> ((tri_w1 >> 5) & 7)) + (tri_w0 & 0x1F)) & a0)];
             } else {
-                w1 = ((u32 *)xy)[1];
+                w1 = tex[1];
             }
             gte_stsxy0(poly->xy0);
             uv_base = (w1 >> 20) & 3;
@@ -192,12 +198,12 @@ void Gfx_UpdateCamMatrices(u32 *arg0)
             temp = 0x800 - ((u32)(sz1 + (s32)xy) >> 5);
             sz1 = temp - (g_view_proj / 2);
             ot_idx = (sz1 >= ot_idx) ? ot_idx : ((sz1 >= 0) ? sz1 : 0);
-            xy = (u32)&arg0[ot_idx];
-            poly->tag = *(u32 *)xy | 0x09000000;
-            *(u32 *)xy = (u32)poly & 0xFFFFFF;
+            ot_entry = &arg0[ot_idx];
+            poly->tag = *ot_entry | 0x09000000;
+            *ot_entry = Ram_Addr(poly) & 0xFFFFFF;
         } else {
-            void *p = g_ot_cur->prim_ptr;
-            g_ot_cur->prim_ptr = (PolyG3_9DCC *)p + 1;
+            void *p = RAM_AT(void, RAM_AT(PrimBuf9398, g_ot_cur)->prim_ptr);
+            RAM_AT(PrimBuf9398, g_ot_cur)->prim_ptr = Ram_Addr((PolyG3_9DCC *)p + 1);
             poly_g3 = (PolyG3_9DCC *)p;
             poly_g3->color0 = vtx0->v0;
             poly_g3->color1 = vtx1->v0;
@@ -213,9 +219,9 @@ void Gfx_UpdateCamMatrices(u32 *arg0)
             temp = 0x800 - ((u32)(sz1 + (s32)xy) >> 5);
             sz1 = temp - (g_view_proj / 2);
             ot_idx = (sz1 >= ot_idx) ? ot_idx : ((sz1 >= 0) ? sz1 : 0);
-            xy = (u32)&arg0[ot_idx];
-            poly_g3->tag = *(u32 *)xy | 0x06000000;
-            *(u32 *)xy = (u32)poly_g3 & 0xFFFFFF;
+            ot_entry = &arg0[ot_idx];
+            poly_g3->tag = *ot_entry | 0x06000000;
+            *ot_entry = Ram_Addr(poly_g3) & 0xFFFFFF;
         }
     }
 }

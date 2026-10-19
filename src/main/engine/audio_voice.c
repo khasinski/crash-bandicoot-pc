@@ -57,30 +57,6 @@ typedef struct VoiceEntry {
     VoiceParams params;
 } VoiceEntry;
 
-typedef struct SpuVoiceAttrLocal {
-    u32 voice;
-    u32 mask;
-    AudioVolume volume;
-    AudioVolume volmode;
-    AudioVolume volumex;
-    u16 pitch;
-    u16 note;
-    u16 sample_note;
-    s16 envx;
-    u32 addr;
-    u32 loop_addr;
-    s32 a_mode;
-    s32 s_mode;
-    s32 r_mode;
-    u16 ar;
-    u16 dr;
-    u16 sr;
-    u16 rr;
-    u16 sl;
-    u16 ads_stat;
-    u16 r_stat;
-    u16 reserved;
-} SpuVoiceAttrLocal;
 
 typedef struct LevelHeaderInfo {
     s32 word_00;
@@ -107,15 +83,24 @@ typedef struct ZonePtr57914 {
 #include "engine_externs.h"
 #undef CRASH_EXT_ENGINE_AUDIO_VOICE_2
 
+/* A voice's object, or for a voice without one the word the PS1 read at
+ * address 0 + offset (low RAM). */
+#define VOICE_OBJ(word) RAM_AT(GoolObjectAudio, (word) != 0 ? (word) : RAM_PS1_BASE)
+
+static __inline__ void audio_set_volume(SpuVolume *dst, AudioVolume *src) {
+    dst->left = src->left;
+    dst->right = src->right;
+}
+
 AudioVolume *Audio_Spatialize(Vec3 *pos, s32 vol) {
     s32 x, z, y, dist, pan, base_vol, left, right;
 
     x = pos->x / 32;
     z = (pos->z - 0x4B000) / 32;
-    if (g_ns_page_pool->id == 0x22 || g_ns_page_pool->id == 0x2E) {
+    if (RAM_AT(LevelHeaderInfo, g_ns_page_pool)->id == 0x22 || RAM_AT(LevelHeaderInfo, g_ns_page_pool)->id == 0x2E) {
         y = pos->y / 32;
         dist = RSqrMagnitude3(x, z, y);
-        RSqrMagnitude2(x, z, y);
+        RSqrMagnitude2(x, z);
     } else {
         dist = RSqrMagnitude2(x, z);
     }
@@ -146,11 +131,11 @@ void Audio_VoiceFree(GoolObjectAudio *obj) {
         i = gp_sfx_voice_limit;
         entry = &g_voices[i];
         for (; i < 24; i++, entry++) {
-            if ((entry->params.b3) && entry->params.obj == obj) {
+            if ((entry->params.b3) && entry->params.obj == Ram_Addr(obj)) {
                 zero = 0;
                 gp_midi_state = 9;
-                Audio_Control(entry->id, 0x40000000, &zero, entry->params.obj);
-                entry->params.obj = NULL;
+                Audio_Control(entry->id, 0x40000000, &zero, RAM_AT(GoolObjectAudio, entry->params.obj));
+                entry->params.obj = 0;
                 entry->params.priority = 0;
             }
         }
@@ -158,7 +143,7 @@ void Audio_VoiceFree(GoolObjectAudio *obj) {
 }
 
 s32 Audio_VoiceAlloc(void) {
-    SpuVoiceAttrLocal attr;
+    SpuVoiceAttr attr;
     s32 min_vol = 0x3FFF;
     s32 min_prio = 0xFF;
     s32 best_idx;
@@ -205,8 +190,8 @@ s32 Audio_VoiceAlloc(void) {
     return best_idx;
 }
 
-s32 Audio_VoiceCreate(GoolObjectAudio *obj, u32 arg1, s32 vol) {
-    SpuVoiceAttrLocal attr;
+s32 Audio_VoiceCreate(GoolObjectAudio *obj, u32 *ref, s32 vol) {
+    SpuVoiceAttr attr;
     Vec3 pos;
     VoiceEntry *entry;
     s32 voice_idx;
@@ -214,15 +199,17 @@ s32 Audio_VoiceCreate(GoolObjectAudio *obj, u32 arg1, s32 vol) {
     u32 addr;
 
     if (g_cur_map_level[0] == 0) {
-        return;
+        return 0;
     }
     voice_idx = Audio_VoiceAlloc();
     if (voice_idx > 0) {
         entry = &g_voices[voice_idx];
-        if (arg1 & 1) {
-            addr = arg1 & ~1;
+        /* A tagged argument is an SPU address itself; native callers always
+         * pass a pointer to the sound's EID. */
+        if ((uintptr_t)ref & 1) {
+            addr = (u32)((uintptr_t)ref & ~(uintptr_t)1);
         } else {
-            res = Ns_Lookup(arg1);
+            res = Ns_Lookup(ref);
             if (res >= -0xFE) {
                 return -1;
             }
@@ -233,7 +220,7 @@ s32 Audio_VoiceCreate(GoolObjectAudio *obj, u32 arg1, s32 vol) {
         if (entry->params.b6) {
             entry->params.vol_step = (entry->params.target_vol - entry->params.volume) / entry->params.vol_ticks;
         }
-        entry->params.obj = obj;
+        entry->params.obj = Ram_Addr(obj);
         if (obj != NULL) {
             entry->params.world_pos = obj->trans;
             Gool_Transform2(&obj->trans, &pos, 1);
@@ -243,7 +230,7 @@ s32 Audio_VoiceCreate(GoolObjectAudio *obj, u32 arg1, s32 vol) {
         g_audio_voices_end.priority = 0x80;
         g_audio_voices_end.volume = 0x3FFF;
         g_audio_voices_end.pitch = 0x1000;
-        g_audio_voices_end.obj = NULL;
+        g_audio_voices_end.obj = 0;
         g_audio_voices_end.delay = 0;
         g_audio_voices_end.trans_pos.x = 0;
         g_audio_voices_end.trans_pos.y = 0;
@@ -262,11 +249,11 @@ s32 Audio_VoiceCreate(GoolObjectAudio *obj, u32 arg1, s32 vol) {
         g_audio_voices_end.b11 = 0;
         attr.mask = 0xFF93;
         attr.voice = 1 << voice_idx;
-        if (entry->params.obj->status_b & 0x200) {
+        if (VOICE_OBJ(entry->params.obj)->status_b & 0x200) {
             attr.volume.left = attr.volume.right = entry->params.volume;
             entry->params.b9 = 0;
         } else {
-            attr.volume = *Audio_Spatialize(&entry->params.trans_pos, entry->params.volume);
+            audio_set_volume(&attr.volume, Audio_Spatialize(&entry->params.trans_pos, entry->params.volume));
         }
         attr.pitch = entry->params.pitch;
         attr.addr = addr;
@@ -291,7 +278,7 @@ s32 Audio_VoiceCreate(GoolObjectAudio *obj, u32 arg1, s32 vol) {
 }
 
 s32 Audio_Control(s32 id, u32 op, void *arg2, GoolObjectAudio *obj) {
-    SpuVoiceAttrLocal s_attr;
+    SpuVoiceAttr s_attr;
     u8 c_attr[0x28];
     Vec3 v1;
     Vec3 v2;
@@ -302,7 +289,7 @@ s32 Audio_Control(s32 id, u32 op, void *arg2, GoolObjectAudio *obj) {
     i = gp_sfx_voice_limit;
     entry = &g_voices[i];
     for (; i < 24; i++, entry++) {
-        if ((id == 0 || (id == -1 || entry->id == id)) && (id != -1 || entry->params.obj == obj)) {
+        if ((id == 0 || (id == -1 || entry->id == id)) && (id != -1 || entry->params.obj == Ram_Addr(obj))) {
             params = &g_audio_voices_end;
             if (id != 0) {
                 params = &entry->params;
@@ -330,7 +317,7 @@ s32 Audio_Control(s32 id, u32 op, void *arg2, GoolObjectAudio *obj) {
                     params->volume = *(s16 *)arg2;
                     if (id != 0) {
                         s_attr.mask |= 3;
-                        s_attr.volume = *Audio_Spatialize(&params->trans_pos, params->volume);
+                        audio_set_volume(&s_attr.volume, Audio_Spatialize(&params->trans_pos, params->volume));
                     }
                 }
                 break;
@@ -358,7 +345,7 @@ s32 Audio_Control(s32 id, u32 op, void *arg2, GoolObjectAudio *obj) {
                     if (id != 0) {
                         entry->params.trans_pos = *(Vec3 *)arg2;
                         s_attr.mask = 3;
-                        s_attr.volume = *Audio_Spatialize(&params->trans_pos, params->volume);
+                        audio_set_volume(&s_attr.volume, Audio_Spatialize(&params->trans_pos, params->volume));
                     }
                 }
                 break;
@@ -366,7 +353,7 @@ s32 Audio_Control(s32 id, u32 op, void *arg2, GoolObjectAudio *obj) {
                 params->word_0c = *(u8 *)arg2;
                 break;
             case 5:
-                params->obj = *(GoolObjectAudio **)arg2;
+                params->obj = *(u32 *)arg2;
                 break;
             case 6:
                 gp_midi_state = *(s32 *)arg2;
@@ -407,7 +394,7 @@ s32 Audio_Control(s32 id, u32 op, void *arg2, GoolObjectAudio *obj) {
 }
 
 void Audio_Update(void) {
-    SpuVoiceAttrLocal attr;
+    SpuVoiceAttr attr;
     Vec3 pos;
     s32 flag = 0;
     s32 i;
@@ -416,7 +403,7 @@ void Audio_Update(void) {
     u32 tmp;
     GoolObjectAudio *obj;
 
-    tmp = g_ns_page_pool->id;
+    tmp = RAM_AT(LevelHeaderInfo, g_ns_page_pool)->id;
     if (tmp == 0x19) {
         v = g_cur_map_level[0];
         tmp = v << 14;
@@ -426,8 +413,8 @@ void Audio_Update(void) {
         v = g_levels_unlocked[0];
         Midi_ResetSeqVol((s16)((v * 0x3FFF) >> 8));
     }
-    if (g_pads != NULL) {
-        Midi_Update(g_pads->word_10 + 0x304);
+    if (g_pads != 0) {
+        Midi_Update(RAM_AT(s32, RAM_AT(ZonePtr57914, g_pads)->word_10 + 0x304));
     }
     if (gp_midi_fade_step != 0) {
         if (gp_midi_fade_step < 0 && gp_spu_master_vol < -gp_midi_fade_step) {
@@ -444,13 +431,13 @@ void Audio_Update(void) {
     if (gp_use_cd == 1) {
         gp_midi_fade_step = -0x222;
         if (gp_midi_default_rvol != 0 && gp_midi_open_seq_cnt >= 2 && gp_card_chan == 3) {
-            Midi_Control(g_midi_seq_slot_b, 2, 0);
+            Midi_Control((struct AudioChannel *)g_midi_seq_slot_b, 2, 0);
         }
     }
     if (gp_use_cd == -1) {
         gp_midi_fade_step = 0x667;
         if (gp_midi_default_rvol != 0 && gp_midi_open_seq_cnt >= 2 && gp_card_chan == 3) {
-            Midi_Control(g_midi_seq_slot_b, 3, 0);
+            Midi_Control((struct AudioChannel *)g_midi_seq_slot_b, 3, 0);
         }
     }
     SpuGetAllKeysStatus(g_spu_key_statuses);
@@ -483,10 +470,10 @@ void Audio_Update(void) {
                     entry->params.b6 = 0;
                 }
                 attr.mask |= 3;
-                if (entry->params.obj->status_b & 0x200) {
+                if (VOICE_OBJ(entry->params.obj)->status_b & 0x200) {
                     attr.volume.left = attr.volume.right = entry->params.volume;
                 } else {
-                    attr.volume = *Audio_Spatialize(&entry->params.trans_pos, entry->params.volume);
+                    audio_set_volume(&attr.volume, Audio_Spatialize(&entry->params.trans_pos, entry->params.volume));
                 }
             }
             if (entry->params.b7) {
@@ -499,12 +486,12 @@ void Audio_Update(void) {
                 attr.mask |= 0x10;
                 attr.pitch = entry->params.pitch;
             }
-            if (entry->params.b9 && (obj = entry->params.obj) != NULL) {
+            if (entry->params.b9 && (obj = RAM_AT(GoolObjectAudio, entry->params.obj)) != NULL) {
                 entry->params.world_pos = obj->trans;
                 Gool_Transform2(&obj->trans, &pos, 1);
                 entry->params.trans_pos = pos;
                 attr.mask |= 3;
-                attr.volume = *Audio_Spatialize(&entry->params.trans_pos, entry->params.volume);
+                audio_set_volume(&attr.volume, Audio_Spatialize(&entry->params.trans_pos, entry->params.volume));
             }
             if (attr.mask != 0) {
                 attr.voice = 1 << i;

@@ -1,5 +1,7 @@
 #include "common.h"
 #include "gpu.h"
+#include <libapi.h>
+#include <libetc.h>
 
 /* =========================================================================
  * 1. Gpu_Update (asm/USA/main/text_765C.s)
@@ -87,28 +89,28 @@ void Gpu_Update(void)
     }
     if (!(g_cur_lid_ro[0] & 0x80000)) {
         if (g_cur_lid_ro[0] & 0x2000) {
-            Gpu_DrawRect(0, 0, 0x200, g_pads[0]->header->word2E0, token->bytes[0], token->bytes[1], token->bytes[2]);
-            Gpu_DrawRect(0, g_pads[0]->header->word2E0, 0x200, 0xD8 - g_pads[0]->header->word2E0, g_pads[0]->header->r310, g_pads[0]->header->g311, g_pads[0]->header->b312);
+            Gpu_DrawRect(0, 0, 0x200, RAM_AT(ZoneHeader8214, RAM_AT(ZoneEntry8214, g_pads[0])->header)->word2E0, token->bytes[0], token->bytes[1], token->bytes[2]);
+            Gpu_DrawRect(0, RAM_AT(ZoneHeader8214, RAM_AT(ZoneEntry8214, g_pads[0])->header)->word2E0, 0x200, 0xD8 - RAM_AT(ZoneHeader8214, RAM_AT(ZoneEntry8214, g_pads[0])->header)->word2E0, RAM_AT(ZoneHeader8214, RAM_AT(ZoneEntry8214, g_pads[0])->header)->r310, RAM_AT(ZoneHeader8214, RAM_AT(ZoneEntry8214, g_pads[0])->header)->g311, RAM_AT(ZoneHeader8214, RAM_AT(ZoneEntry8214, g_pads[0])->header)->b312);
         } else {
             Gpu_DrawRect(0, 0, 0x200, 0xD8, 0, 0, 0);
         }
     }
     Audio_Update();
-    g_db_prev->word80 = frame_counter;
+    RAM_AT(RenderBufferFull, g_db_prev)->word80 = frame_counter;
     DrawSync(0);
     if (g_pbak_frame_step == 0) {
-        g_box_count = frame_counter - g_db_prev->word7C;
+        g_box_count = frame_counter - RAM_AT(RenderBufferFull, g_db_prev)->word7C;
     } else {
         g_box_count = 0x11;
     }
     if (g_ns_load_done_flag[0] == 0) {
-        swap = g_db_prev;
-        g_db_cur.buf = swap;
+        swap = RAM_AT(RenderBufferFull, g_db_prev);
+        g_db_cur.buf = Ram_Addr(swap);
         g_db_prev = g_ot_cur;
-        g_ot_cur = swap;
+        g_ot_cur = Ram_Addr(swap);
     }
     VSync(0);
-    if ((u32)(frame_counter - g_db_cur.buf->word7C) < 0x19) {
+    if ((u32)(frame_counter - RAM_AT(RenderBufferFull, g_db_cur.buf)->word7C) < 0x19) {
         VSync(0);
     }
     if (g_cur_lid_ro[0] & 0x100000) {
@@ -130,21 +132,21 @@ void Gpu_Update(void)
     }
     EnterCriticalSection();
     if (g_pbak_frame_step == 2) {
-        frame_counter = *gp_cur_pbak_header;
+        frame_counter = *RAM_AT(s32, gp_cur_pbak_header);
     }
-    g_db_prev->word7C = frame_counter;
+    RAM_AT(RenderBufferFull, g_db_prev)->word7C = frame_counter;
     ExitCriticalSection();
-    g_db_cur.buf->word84 = Gfx_TgeoGetTexinfoArray(g_db_prev->word7C - g_db_cur.buf->word7C);
-    PutDispEnv(&g_db_cur.buf->display);
-    PutDrawEnv(&g_db_prev->drawing);
+    RAM_AT(RenderBufferFull, g_db_cur.buf)->word84 = Gfx_TgeoGetTexinfoArray(RAM_AT(RenderBufferFull, g_db_prev)->word7C - RAM_AT(RenderBufferFull, g_db_cur.buf)->word7C);
+    PutDispEnv(&RAM_AT(RenderBufferFull, g_db_cur.buf)->display);
+    PutDrawEnv(&RAM_AT(RenderBufferFull, g_db_prev)->drawing);
     if (g_ns_load_done_flag[0] > 0) {
         g_ns_load_done_flag[0]--;
     }
     if (g_ns_load_done_flag[0] == 0) {
-        DrawOTag(g_db_prev->ordering_table);
+        DrawOTag(RAM_AT(RenderBufferFull, g_db_prev)->ordering_table);
     }
-    g_ot_cur->word78 = g_ot_cur->word74;
-    Gpu_RResetOT(g_ot_cur->ordering_table, 0x800);
+    RAM_AT(RenderBufferFull, g_ot_cur)->word78 = RAM_AT(RenderBufferFull, g_ot_cur)->word74;
+    Gpu_RResetOT(RAM_AT(RenderBufferFull, g_ot_cur)->ordering_table, 0x800);
     g_cur_lid_ro[0] = g_fade_counter;
 }
 

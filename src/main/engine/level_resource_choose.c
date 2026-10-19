@@ -1,15 +1,10 @@
 #include "resource.h"
-
-/* Unsized storage views retain the native absolute addressing. Only the
- * mode word above is accessed through gp in this function. */
-#define CRASH_EXT_ENGINE_LEVEL_RESOURCE_CHOOSE
-#include "engine_externs.h"
-#undef CRASH_EXT_ENGINE_LEVEL_RESOURCE_CHOOSE
+#include "ns.h"
 
 void Pbak_Choose(s32 *resource_id)
 {
     u8 name[8];
-    s32 count = Ns_FileOpen(&g_ns[0], 19);
+    s32 count = Ns_FileOpen(&g_ns, 19);
 
     __builtin_memcpy(name, gp_str_pbak_name_tmpl, 6);
     BIOS_MemSet(name + 6, 0, 2);

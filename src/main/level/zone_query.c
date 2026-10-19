@@ -77,30 +77,31 @@ s32 Level_TestBoundInBound(ZqBound *a, ZqBound *b)
 }
 
 /* ZoneFindNeighbor: find the neighbour of zone (or of the current level zone)
- * whose bounding box contains v, or return -0x17 if none does. */
-void * Zone_FindNeighbor(ZoneEntry *zone, ZqVec *v)
+ * whose bounding box contains v. Returns its PS1 address, or -0x17 if none
+ * does. */
+s32 Zone_FindNeighbor(ZoneEntry *zone, ZqVec *v)
 {
     ZoneHeader *header;
     ZoneEntry *neighbor;
     s32 i;
 
-    header = (ZoneHeader *)zone->items[0];
+    header = RAM_AT(ZoneHeader, zone->items[0]);
     for (i = header->neighbor_count - 1; i >= 0; i--) {
-        neighbor = Ns_Lookup(&header->neighbors[i]);
-        if (zone_rect_contains((ZqZoneRect *)neighbor->items[1], v)) {
-            return neighbor;
+        neighbor = RAM_AT(ZoneEntry, Ns_Lookup(&header->neighbors[i]));
+        if (zone_rect_contains(RAM_AT(ZqZoneRect, neighbor->items[1]), v)) {
+            return (s32)Ram_Addr(neighbor);
         }
     }
-    if (zone != (ZoneEntry *)level_position.zone) {
-        header = (ZoneHeader *)((ZoneEntry *)level_position.zone)->items[0];
+    if (zone != RAM_AT(ZoneEntry, level_position.zone)) {
+        header = RAM_AT(ZoneHeader, RAM_AT(ZoneEntry, level_position.zone)->items[0]);
         for (i = header->neighbor_count - 1; i >= 0; i--) {
-            neighbor = Ns_Lookup(&header->neighbors[i]);
-            if (zone_rect_contains((ZqZoneRect *)neighbor->items[1], v)) {
-                return neighbor;
+            neighbor = RAM_AT(ZoneEntry, Ns_Lookup(&header->neighbors[i]));
+            if (zone_rect_contains(RAM_AT(ZqZoneRect, neighbor->items[1]), v)) {
+                return (s32)Ram_Addr(neighbor);
             }
         }
     }
-    return (ZoneEntry *)-0x17;
+    return -0x17;
 }
 
 /* ZoneFindNode: follow the ray va + t*vb through the zone octree below node,
@@ -115,15 +116,15 @@ s32 Zone_FindNode(ZqZoneRect *zone, u16 node, ZqRect *rect, ZqVec *va, ZqVec *vb
     /* Non-leaf nodes are offsets of their child arrays in the zone item;
      * leaves (odd) and empty nodes (0) are returned as they are. */
     if (!(node & 1) && node) {
-        children = (u16 *)((u32)zone + node);
+        children = (u16 *)((u8 *)zone + node);
     } else {
-        children = (u16 *)(u32)node;
+        children = NULL;
     }
     if ((node & 1) || !node) {
         ZqVec corner;
 
         t = 0x7FFFFFFF;
-        if (!children) {
+        if (!node) {
             if (vb->x > 0) {
                 corner.x = rect->x + rect->w;
             } else {
@@ -215,7 +216,7 @@ s32 Zone_FindNode(ZqZoneRect *zone, u16 node, ZqRect *rect, ZqVec *va, ZqVec *vb
                 break;
             }
         }
-        return (s32)children;
+        return node;
     } else {
         s32 split[3];
         ZqRect child;
@@ -258,8 +259,8 @@ s32 Zone_FindNode(ZqZoneRect *zone, u16 node, ZqRect *rect, ZqVec *va, ZqVec *vb
                 }
             }
         }
-        /* No return here: retail leaves whatever is in v0 (0 on every
-         * path that gets here). */
+        /* Retail leaves v0 = 0 on every path that gets here. */
+        return 0;
     }
 }
 
@@ -274,16 +275,16 @@ s32 Zone_ReboundVector(ZqVec *va, ZqVec *vb)
     ZqZoneRect *zone_rect;
     s32 i, res;
 
-    header = (ZoneHeader *)((ZoneEntry *)level_position.zone)->items[0];
+    header = RAM_AT(ZoneHeader, RAM_AT(ZoneEntry, level_position.zone)->items[0]);
     if (vb->x == 0 && vb->y == 0 && vb->z == 0) {
         return 0;
     }
     do {
         copy = *va;
         for (i = 0; i < header->neighbor_count; i++) {
-            neighbor = Ns_Lookup(&header->neighbors[i]);
-            if (zone_rect_contains((ZqZoneRect *)neighbor->items[1], va)) {
-                zone_rect = (ZqZoneRect *)neighbor->items[1];
+            neighbor = RAM_AT(ZoneEntry, Ns_Lookup(&header->neighbors[i]));
+            if (zone_rect_contains(RAM_AT(ZqZoneRect, neighbor->items[1]), va)) {
+                zone_rect = RAM_AT(ZqZoneRect, neighbor->items[1]);
                 rect.x = zone_rect->x << 8;
                 rect.y = zone_rect->y << 8;
                 rect.z = zone_rect->z << 8;

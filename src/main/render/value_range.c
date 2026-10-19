@@ -16,40 +16,33 @@ s32 Gfx_TgeoGetTexinfoArray(s32 arg0)
     return arg0;
 }
 
-typedef struct RenderEntryData {
-    u32 words[5];
-    struct {
-        u8 reserved[3];
-        u8 flags;
-    } entries[1];
-} RenderEntryData;
-
+/* Entry data words; the top byte of word i + 5 flags a three-word item. */
 typedef struct RenderEntry {
     u8 reserved_00[0x10];
-    RAM_REF(RenderEntryData) data;
+    RAM_REF(u32) data;
 } RenderEntry;
 
 s32 Gfx_TgeoLookupEntry(RenderEntry *entry)
 {
-    RenderEntryData *data = entry->data;
+    u32 *words = RAM_AT(u32, entry->data);
     u32 i;
 
-    for (i = 0; i < data->words[6]; i++) {
-        Ns_Lookup(&data->words[i + 8]);
+    for (i = 0; i < words[6]; i++) {
+        Ns_Lookup(&words[i + 8]);
     }
     return -0xFF;
 }
 
 s32 Gfx_TgeoOnLoad(RenderEntry *entry)
 {
-    RenderEntryData *data = entry->data;
+    u32 *words = RAM_AT(u32, entry->data);
     u32 i = 0;
 
     if (gp_pbak_mode == 0x19 || gp_pbak_mode == 0x38) {
-        while (i < data->words[4]) {
-            if (data->entries[i].flags & 0x80) {
-                if (data->words[i + 6] & 1) {
-                    data->words[i + 6] = Ns_Probe(data->words[i + 6]);
+        while (i < words[4]) {
+            if (((u8 *)&words[i + 5])[3] & 0x80) {
+                if (words[i + 6] & 1) {
+                    words[i + 6] = Ram_Addr(Ns_Probe(words[i + 6]));
                 }
                 i += 3;
             } else {
@@ -57,9 +50,9 @@ s32 Gfx_TgeoOnLoad(RenderEntry *entry)
             }
         }
     } else {
-        while (i < data->words[4]) {
-            if (data->entries[i].flags & 0x80) {
-                Ns_Open(&data->words[i + 6], 0, 1);
+        while (i < words[4]) {
+            if (((u8 *)&words[i + 5])[3] & 0x80) {
+                Ns_Open(&words[i + 6], 0, 1);
                 i += 3;
             } else {
                 i += 1;

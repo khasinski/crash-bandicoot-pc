@@ -60,10 +60,6 @@ extern RAM_REF(SaveObj) gp_crash_obj;
 extern RAM_REF(SaveObj) g_shader_obj_color_scale;
 #endif
 
-#ifdef CRASH_EXT_ENGINE_LEVEL_RESOURCE_CHOOSE
-extern s32 g_ns[];
-#endif
-
 #ifdef CRASH_EXT_ENGINE_LEVEL_RESOURCE_INITIALIZE
 extern RAM_REF(u8) gp_cur_pbak_header;
 extern RAM_REF(GoolActorView) gp_crash_obj;

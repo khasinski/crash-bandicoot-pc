@@ -1,16 +1,17 @@
 #include "common.h"
-/* The formatter copies from its digit buffer or an input string.
+/* The retail memmove, renamed so that it does not replace the host C
+ * library's. The formatter copies from its digit buffer or an input string.
  * Retail returns the advanced destination for forward copies and the
  * original destination for backward copies. Keep this asymmetric result.
  */
-u8 *memmove(u8 *destination,const u8 *source,s32 length)
+u8 *LIBC_Memmove(u8 *destination,const u8 *source,s32 length)
 {
     if (destination >= source) {
         u8 *last;
         const u8 *source_last;
         if (length-- > 0) {
-            last = (u8 *)(length + (u32)destination);
-            source_last = (const u8 *)(length + (u32)source);
+            last = destination + length;
+            source_last = source + length;
             do {
                 *last-- = *source_last--;
             } while (length-- > 0);

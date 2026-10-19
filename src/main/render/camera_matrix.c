@@ -76,6 +76,7 @@ typedef struct ZoneHeader9A2C {
 
 void Gfx_UpdateMatrices(void)
 {
+    ZoneCamData *zone;
     s16 sp10[16];
     s32 sp30[4];
     s16 s0_1, s0_2, s0_3, s0_4, v0, v0_2, v0_3, v0_4;
@@ -111,7 +112,7 @@ void Gfx_UpdateMatrices(void)
     sp10[6] = 0;
     sp10[7] = s0_2;
     sp10[8] = v0_2;
-    MulMatrix(m, sp10);
+    MulMatrix((MATRIX *)m, (MATRIX *)sp10);
 
     s0_3 = Math_Sin(-g_cam_rot_y);
     v0_3 = Math_Cos(-g_cam_rot_y);
@@ -124,13 +125,14 @@ void Gfx_UpdateMatrices(void)
     sp10[6] = -s0_3;
     sp10[7] = 0;
     sp10[8] = v0_3;
-    MulMatrix(m, sp10);
+    MulMatrix((MATRIX *)m, (MATRIX *)sp10);
 
-    SetBackColor(g_m_light.z914->data->bg_color[0], g_m_light.z914->data->bg_color[1], g_m_light.z914->data->bg_color[2]);
+    zone = RAM_AT(ZoneCamData, RAM_AT(ZoneCamEntry, g_m_light.z914)->data);
+    SetBackColor(zone->bg_color[0], zone->bg_color[1], zone->bg_color[2]);
     sp30[0] = *(s32 *)cam >> 8;
     sp30[1] = g_cam_trans_y >> 8;
     sp30[2] = g_cam_trans_z >> 8;
-    TransMatrix(m, sp30);
+    TransMatrix((MATRIX *)m, (VECTOR *)sp30);
 
     (*(s16 *)g_m_view) = g_m_rot;
     g_m_view_01 = g_m_cam_rot_01;
@@ -144,7 +146,7 @@ void Gfx_UpdateMatrices(void)
 
     g_m_light.m804 = *(cam - 4);
 
-    if (g_m_light.z914->data->flags & 0x1000) {
+    if (RAM_AT(ZoneCamData, RAM_AT(ZoneCamEntry, g_m_light.z914)->data)->flags & 0x1000) {
         *(((s32 *)cam) + 10) = __builtin_abs(((g_draw_stamp[0] % 128) - 64) * 800) + 0xDC1E0;
         s0_4 = Math_Sin(0x7D);
         v0_4 = Math_Cos(0x7D);
@@ -193,7 +195,7 @@ void Gfx_UpdateMatrices(void)
     g_saved_item_pool2 = g_cam_rot_y;
     g_cam_prev_rot_z = g_cam_rot_z;
 
-    if (!(*(u32 *)(void *)&(*(ZoneCamData **)(void *)&g_m_light.z914->data)->flags & 0x1000)) {
+    if (!(RAM_AT(ZoneCamData, RAM_AT(ZoneCamEntry, g_m_light.z914)->data)->flags & 0x1000)) {
         g_m_light.m888 = *(Copy12 *)t1;
         g_cam_dir_rot_y.w[0] = g_m_light.w938 & 0xFFF;
     } else {
@@ -205,5 +207,5 @@ void Gfx_UpdateMatrices(void)
     g_cam_sin_rot_y = Math_Sin(*s0_5) >> 4;
     g_cam_dir_vec_y = 0;
     g_cam_cos_rot_y = Math_Cos(*s0_5) >> 4;
-    Gfx_LoadWorldsFog(*(ZoneHeader9A2C **)(void *)&g_m_light.z914->data);
+    Gfx_LoadWorldsFog(RAM_AT(ZoneHeader9A2C, RAM_AT(ZoneCamEntry, g_m_light.z914)->data));
 }

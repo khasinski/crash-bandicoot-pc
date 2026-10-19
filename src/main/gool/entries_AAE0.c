@@ -1,5 +1,6 @@
 #include "common.h"
 #include "render.h"
+#include "resource.h"
 
 #define CRASH_EXT_GOOL_ENTRIES_AAE0_0
 #include "gool_externs.h"
@@ -18,25 +19,25 @@ void Gfx_TransformWorldsDark2(s32 arg0)
     u32 dst;
     ZoneItem64 *ptr;
 
-    data = (s32 *)g_pads[0]->data;
-    if (*gp_level_entry[0] != 0) {
-        SetRotMatrix(g_m_view);
-        SetLightMatrix(g_m_view + 0x110);
-        RMemcpy(data + 1, 0x1F800100, 0x100);
+    data = RAM_AT(s32, RAM_AT(ResourceEntry, g_pads)->data);
+    if (*RAM_AT(u16, gp_level_entry[0]) != 0) {
+        SetRotMatrix((MATRIX *)g_m_view);
+        SetLightMatrix((MATRIX *)(g_m_view + 0x110));
+        RMemcpy(data + 1, RAM_AT(void, 0x1F800100), 0x100);
         dst = 0x1F800300;
         for (i = 0; i < *data; i++) {
-            ptr = (ZoneItem64 *)((u32)data + (i << 6));
-            RMemcpy(ptr->ptr14, dst, 6);
+            ptr = (ZoneItem64 *)((u8 *)data + (i << 6));
+            RMemcpy(RAM_AT(u8, ptr->ptr14), RAM_AT(void, dst), 6);
             dst += 0x10;
         }
-        *(s32 *)0x1F800048 = gp_dark_target_x >> 8;
-        *(s32 *)0x1F80004C = gp_dark_target_y >> 8;
-        *(s32 *)0x1F800050 = gp_dark_target_z >> 8;
-        *(s32 *)0x1F800054 = gp_dark_cone_rot;
-        *(s32 *)0x1F800058 = gp_shader_dark_radius;
-        *(s32 *)0x1F80005C = gp_shader_dark_intensity;
-        *(s32 *)0x1F800060 = gp_shader_dark_z_bias;
-        Gte_RTransformWorldsDark2(gp_level_entry[0], arg0, 0x800 - (g_view_proj.distance / 2), g_draw_stamp[0], Gpu_GetCurPrimsTail(), g_wgeo_tex_anim_masks);
+        *RAM_AT(s32, 0x1F800048) = gp_dark_target_x >> 8;
+        *RAM_AT(s32, 0x1F80004C) = gp_dark_target_y >> 8;
+        *RAM_AT(s32, 0x1F800050) = gp_dark_target_z >> 8;
+        *RAM_AT(s32, 0x1F800054) = gp_dark_cone_rot;
+        *RAM_AT(s32, 0x1F800058) = gp_shader_dark_radius;
+        *RAM_AT(s32, 0x1F80005C) = gp_shader_dark_intensity;
+        *RAM_AT(s32, 0x1F800060) = gp_shader_dark_z_bias;
+        Gte_RTransformWorldsDark2(RAM_AT(void, gp_level_entry[0]), arg0, 0x800 - (g_view_proj.distance / 2), g_draw_stamp[0], Gpu_GetCurPrimsTail(), g_wgeo_tex_anim_masks);
     }
 }
 
@@ -69,16 +70,16 @@ void Gfx_FreezeMapTextures(u32 arg0, u32 arg1)
     u32 idx;
     u32 *target;
 
-    data = g_pads[0]->data;
+    data = RAM_AT(u8, RAM_AT(ResourceEntry, g_pads)->data);
     group = -1;
     count = *(s32 *)data;
     base = (ZoneItem64 *)(data + 4);
     for (j = 0; j < count; j++) {
-        res = Ns_Lookup(&base[j]);
+        res = RAM_AT(WgeoEntry, Ns_Lookup((u32 *)&base[j]));
         if (res->item_count >= 4) {
-            list = res->list;
+            list = RAM_AT(u16, res->list);
             len = list[0];
-            sub = res->sub;
+            sub = RAM_AT(WgeoSubHeader, res->sub);
             for (i = 1; i < len + 1; i++) {
                 item = list[i];
                 if (item & 0x8000) {
@@ -86,7 +87,7 @@ void Gfx_FreezeMapTextures(u32 arg0, u32 arg1)
                 } else {
                     idx = item & 0xFFF;
                     if (idx < sub->count) {
-                        target = (u32 *)(base[j].ptr14 + (idx << 3));
+                        target = RAM_AT(u32, base[j].ptr14 + (idx << 3));
                         if (group < 32) {
                             if (arg0 & (1 << group)) {
                                 goto set_flag;
@@ -128,7 +129,7 @@ void Gfx_GetIconTexinfo(s32 arg0, u8 *arg1, s32 arg2, s16 *arg3)
         ptr = (AnimSpriteDesc *)(arg1 + (((arg2 >> 8) << 4) + 12));
         break;
     }
-    res = (u32)Ns_Lookup(arg1 + 4);
+    res = (u32)Ns_Lookup((u32 *)(arg1 + 4));
     word = ptr->word;
     switch (arg0) {
     case 2:
@@ -194,12 +195,13 @@ void Gfx_FormatCardString(u8 *arg0, s32 arg1, u8 *arg2, s32 arg3)
 
 void Gfx_BlitCardIcon(s32 arg0, u8 *arg1, s32 arg2, u8 *arg3, u8 *arg4)
 {
-    u8 buf[0x200];
+    /* 0x100 more than retail so a 0x200-byte image after alignment stays in bounds. */
+    u8 buf[0x300];
     s16 rect[4];
     u8 *aligned;
     s32 i;
 
-    aligned = (u8 *)(((u32)buf + 0x100) & ~0xFF);
+    aligned = buf + 0x100 - ((uintptr_t)buf & 0xFF);
     if (arg3 != NULL) {
         Gfx_GetIconTexinfo(2, arg1, arg2, rect);
         if (arg0 == 1) {
@@ -260,35 +262,39 @@ s32 GOOL_InitAllocTable(void)
 {
     s32 i;
     GoolObj *obj;
+    GoolObj *objects;
+    GoolObj *player;
 
-    gp_crash_obj = NULL;
-    gool_alloc.db4 = LIBC_Malloc(0xE280);
-    gool_alloc.db0 = LIBC_Malloc(0x35C);
-    if (gool_alloc.db4 == NULL || gool_alloc.db0 == NULL) {
+    gp_crash_obj = 0;
+    gool_alloc.db4 = Ram_Addr(LIBC_Malloc(0xE280));
+    gool_alloc.db0 = Ram_Addr(LIBC_Malloc(0x35C));
+    if (gool_alloc.db4 == 0 || gool_alloc.db0 == 0) {
         return -0xF;
     }
-    g_savestate[0] = NULL;
+    g_savestate[0] = 0;
     g_level_zone_flags[0] = 0;
     g_gool_obj_list_7[0] = 2;
     gool_alloc.dfc = gool_alloc.db4;
+    objects = RAM_AT(GoolObj, gool_alloc.db4);
     for (i = 0; i < 0x60; i++) {
-        obj = &gool_alloc.db4[i];
+        obj = &objects[i];
         obj->header = 0;
-        obj->parent = &gool_alloc.df8;
-        obj->child = NULL;
+        obj->parent = Ram_Addr(&gool_alloc.df8);
+        obj->child = 0;
         if (i < 0x5F) {
-            obj->sibling = &gool_alloc.db4[i + 1];
+            obj->sibling = Ram_Addr(&objects[i + 1]);
         } else {
-            obj->sibling = NULL;
+            obj->sibling = 0;
         }
     }
     for (i = 0; i < 8; i++) {
         ((s32 *)g_free_objects)[i * 2] = 2;
         ((s32 *)g_free_objects)[i * 2 + 1] = 0;
     }
-    g_player[0]->header = 0;
-    g_player[0]->parent = NULL;
-    g_player[0]->child = NULL;
-    g_player[0]->sibling = NULL;
+    player = RAM_AT(GoolObj, g_player[0]);
+    player->header = 0;
+    player->parent = 0;
+    player->child = 0;
+    player->sibling = 0;
     return -0xFF;
 }

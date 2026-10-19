@@ -1,7 +1,4 @@
 #include "object_links.h"
-      /* extern */
-                           /* extern */
-                                 /* extern */
 #define CRASH_EXT_ENGINE_LEVEL_START
 #include "engine_externs.h"
 #undef CRASH_EXT_ENGINE_LEVEL_START
@@ -12,11 +9,11 @@ void Level_InitMisc(s32 arg0) {
     s32 var_a2;
     s32 temp_v0;
 
-    temp_v0 = g_ns_page_pool[1];
+    temp_v0 = RAM_AT(s32, g_ns_page_pool)[1];
     switch (temp_v0) {
     case 23:
         if (arg0 != 0) {
-            g_level_pause_menu_obj = GOOL_CreateObject(&g_gool_obj_list_3, 0x27, 4, 0, 0, 1);
+            g_level_pause_menu_obj = GOOL_CreateObject((struct GoolObj *)&g_gool_obj_list_3, 0x27, 4, 0, 0, 1);
         }
         break;
     case 20:
@@ -43,7 +40,7 @@ void Level_InitMisc(s32 arg0) {
             root = &g_gool_obj_list_3;
             var_a2 = 0xD;
 create_object:
-            GOOL_CreateObject(root, var_a1, var_a2, 0, 0, 1);
+            GOOL_CreateObject((struct GoolObj *)root, var_a1, var_a2, 0, 0, 1);
         }
         break;
     case 14:

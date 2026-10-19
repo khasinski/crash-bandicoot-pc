@@ -11,7 +11,7 @@ typedef struct ZoneBase {
     s32 x, y, z;
 } ZoneBase;
 
-#define PATH_POINT(p, i) (((ZonePath *)((i) * sizeof(ZonePoint) + (u32)(p)))->points[0])
+#define PATH_POINT(p, i) ((p)->points[i])
 
 u16 Zone_PathProgressToLoc(ZonePath *path, s32 progress, CamSample *out)
 {
@@ -28,7 +28,7 @@ u16 Zone_PathProgressToLoc(ZonePath *path, s32 progress, CamSample *out)
 
     progress = __builtin_abs(progress);
     pt = progress >> 8;
-    base = (ZoneBase *)((ZoneEntry *)path->zone)->items[1];
+    base = RAM_AT(ZoneBase, RAM_AT(ZoneEntry, path->zone)->items[1]);
     out->x = (base->x << 8) + (PATH_POINT(path, pt).x << 8);
     out->y = (base->y << 8) + (PATH_POINT(path, pt).y << 8);
     out->z = (base->z << 8) + (PATH_POINT(path, pt).z << 8);
@@ -40,9 +40,9 @@ u16 Zone_PathProgressToLoc(ZonePath *path, s32 progress, CamSample *out)
     if (pt == path->length - 1 && frac != 0) {
         for (i = 0; i < path->neighbor_count; i++) {
             if (path->neighbors[i].relation & 2) {
-                n_zone = Ns_Lookup(&((ZoneHeader *)((ZoneEntry *)path->zone)->items[0])->neighbors[path->neighbors[i].zone]);
-                n_path = (ZonePath *)n_zone->items[path->neighbors[i].path + ((ZoneHeader *)n_zone->items[0])->path_index];
-                n_base = (ZoneBase *)n_zone->items[1];
+                n_zone = RAM_AT(ZoneEntry, Ns_Lookup(&RAM_AT(ZoneHeader, RAM_AT(ZoneEntry, path->zone)->items[0])->neighbors[path->neighbors[i].zone]));
+                n_path = RAM_AT(ZonePath, n_zone->items[path->neighbors[i].path + RAM_AT(ZoneHeader, n_zone->items[0])->path_index]);
+                n_base = RAM_AT(ZoneBase, n_zone->items[1]);
                 if (n_path->cam_mode != 1) {
                     n_pt = 0;
                     if (path->neighbors[i].goal & 2) {

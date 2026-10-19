@@ -29,10 +29,23 @@ function(crash_original_module target)
     if(MSVC)
         target_compile_options(${target} PRIVATE /Gy /Gw /W3)
     else()
+        # Pointer/integer conversions are errors: game memory holds PS1
+        # addresses (docs/MEMORY_MODEL.md), never truncated host pointers.
         target_compile_options(${target} PRIVATE -ffunction-sections -fdata-sections
-            -Wall -Wextra -Wno-unused-parameter)
+            -Wall -Wextra -Wno-unused-parameter -Wno-unused-label
+            -Werror=int-conversion -Werror=pointer-integer-compare
+            -Werror=pointer-to-int-cast -Werror=int-to-pointer-cast
+            -Werror=incompatible-pointer-types -Werror=implicit-function-declaration
+            -Werror=incompatible-function-pointer-types -Werror=return-type
+            -Werror=deprecated-non-prototype)
     endif()
 endfunction()
+
+# PsyQ libsnd functions the game uses that PsyZ has only as assembly.
+add_library(crash-psyz-extra OBJECT src/platform/libsnd.c)
+target_include_directories(crash-psyz-extra PRIVATE ${PSYZ_DIR}/decomp/src/libsnd)
+target_link_libraries(crash-psyz-extra PRIVATE psyz)
+target_compile_definitions(crash-psyz-extra PRIVATE __psyz)
 
 # Game memory (a PS1 RAM image with every global at its original address)
 # and the host side of the PS1-format interfaces.
@@ -53,11 +66,190 @@ crash_original_module(crash-original-math
     src/main/math/contains_point.c
     src/main/math/delta.c
     src/main/math/distance.c
+    src/main/math/distance_limit.c
     src/main/math/matrix_vector.c
     src/main/math/random_state.c
     src/main/math/scaled_sine.c
     src/main/math/step_halfword.c
     src/main/math/vector_distance.c)
+
+crash_original_module(crash-original-camera
+    src/main/cam/camera.c)
+
+crash_original_module(crash-original-core
+    src/main/core/main.c)
+
+crash_original_module(crash-original-engine
+    src/main/engine/allocate_buffers.c
+    src/main/engine/audio_channel_initialize.c
+    src/main/engine/audio_initialize.c
+    src/main/engine/audio_mode_update.c
+    src/main/engine/audio_reset.c
+    src/main/engine/audio_sequence_gain.c
+    src/main/engine/audio_stop.c
+    src/main/engine/audio_stop_current.c
+    src/main/engine/audio_transition_update.c
+    src/main/engine/audio_voice.c
+    src/main/engine/bios_ctrl.c
+    src/main/engine/card.c
+    src/main/engine/cd_dir.c
+    src/main/engine/cd_read.c
+    src/main/engine/display_clear.c
+    src/main/engine/field138.c
+    src/main/engine/fixed_result.c
+    src/main/engine/format.c
+    src/main/engine/format_copy.c
+    src/main/engine/grid_cell.c
+    src/main/engine/grid_rectangle.c
+    src/main/engine/level_effects.c
+    src/main/engine/level_resource_choose.c
+    src/main/engine/level_resource_initialize.c
+    src/main/engine/level_start.c
+    src/main/engine/message_callback.c
+    src/main/engine/midi_load.c
+    src/main/engine/noop_175C8.c
+    src/main/engine/noop_26138.c
+    src/main/engine/noop_2F6A8.c
+    src/main/engine/noop_entries.c
+    src/main/engine/object_defaults.c
+    src/main/engine/object_state_filter.c
+    src/main/engine/release_buffers.c
+    src/main/engine/reset.c
+    src/main/engine/resource_adjust.c
+    src/main/engine/reverb_disable.c
+    src/main/engine/reverb_set.c
+    src/main/engine/settings_reset.c
+    src/main/engine/shutdown.c
+    src/main/engine/state.c
+    src/main/engine/state_word_copy.c
+    src/main/engine/stream_dispatch.c
+    src/main/engine/tag_list.c
+    src/main/engine/tree_message.c
+    src/main/engine/tree_recursive.c
+    src/main/engine/tree_roots.c
+    src/main/engine/tree_visit_first.c
+    src/main/engine/tree_visit_recursive.c
+    src/main/engine/tree_walk.c
+    src/main/engine/update_request.c
+    src/main/engine/value_56644.c
+    src/main/engine/value_56664.c)
+
+crash_original_module(crash-original-gool
+    src/main/gool/alloc.c
+    src/main/gool/bitfield.c
+    src/main/gool/broadcast.c
+    src/main/gool/change_state.c
+    src/main/gool/create_object.c
+    src/main/gool/entries_9D08.c
+    src/main/gool/entries_A2F4.c
+    src/main/gool/entries_A3CC.c
+    src/main/gool/entries_A5E0.c
+    src/main/gool/entries_A8CC.c
+    src/main/gool/entries_AAE0.c
+    src/main/gool/frame_restore.c
+    src/main/gool/groups.c
+    src/main/gool/interpret.c
+    src/main/gool/object.c
+    src/main/gool/object_release_callback.c
+    src/main/gool/path_follow.c
+    src/main/gool/physics.c
+    src/main/gool/project.c
+    src/main/gool/query_nearest.c
+    src/main/gool/resource.c
+    src/main/gool/send_event.c
+    src/main/gool/test_state_flags.c
+    src/main/gool/text_draw.c
+    src/main/gool/translate_gop.c
+    src/main/gool/update_object.c
+    src/main/gool/vm_operands.c)
+
+crash_original_module(crash-original-level
+    src/main/level/checkpoint.c
+    src/main/level/collision.c
+    src/main/level/grid_search.c
+    src/main/level/grid_workspace.c
+    src/main/level/light.c
+    src/main/level/octree.c
+    src/main/level/path_sample.c
+    src/main/level/update.c
+    src/main/level/zone_query.c)
+
+crash_original_module(crash-original-libc
+    src/main/libc/malloc.c)
+
+crash_original_module(crash-original-ns
+    src/main/ns/alloc.c
+    src/main/ns/cd.c
+    src/main/ns/cd_seek.c
+    src/main/ns/encoding.c
+    src/main/ns/entry_lookup.c
+    src/main/ns/hash_lookup.c
+    src/main/ns/id_string.c
+    src/main/ns/init.c
+    src/main/ns/load_526C.c
+    src/main/ns/load_5408.c
+    src/main/ns/load_5500.c
+    src/main/ns/load_5634.c
+    src/main/ns/load_5918.c
+    src/main/ns/load_5C58.c
+    src/main/ns/load_list.c
+    src/main/ns/name.c
+    src/main/ns/page.c
+    src/main/ns/page_4170.c
+    src/main/ns/page_free.c
+    src/main/ns/parse_value.c
+    src/main/ns/release.c
+    src/main/ns/resource_handle_resolve.c
+    src/main/ns/resource_process.c
+    src/main/ns/resource_resolve_check.c
+    src/main/ns/resource_type.c
+    src/main/ns/slot_4E44.c
+    src/main/ns/slot_release.c
+    src/main/ns/slot_unref.c
+    src/main/ns/slots.c
+    src/main/ns/texture_allocate.c
+    src/main/ns/wait.c)
+
+crash_original_module(crash-original-render
+    src/main/render/buffer.c
+    src/main/render/buffer_swap.c
+    src/main/render/camera_matrix.c
+    src/main/render/display.c
+    src/main/render/frame_update.c
+    src/main/render/gte.c
+    src/main/render/mode_initialize.c
+    src/main/render/object_transform.c
+    src/main/render/quad_draw.c
+    src/main/render/tile_fade.c
+    src/main/render/transform.c
+    src/main/render/transform_88CC.c
+    src/main/render/transform_8964.c
+    src/main/render/tri_draw.c
+    src/main/render/value_range.c
+    src/main/render/word_transform.c
+    src/main/render/world_setup.c)
+
+# The executable: the platform layer (disc, executable loading, crt0, BIOS)
+# starts the original CORE_Main.
+add_executable(crash-bandicoot-pc
+    src/platform/main.c
+    src/platform/bios.c
+    src/platform/ram_code.c
+    $<TARGET_OBJECTS:crash-platform>
+    $<TARGET_OBJECTS:crash-psyz-extra>
+    $<TARGET_OBJECTS:crash-original-math>
+    $<TARGET_OBJECTS:crash-original-camera>
+    $<TARGET_OBJECTS:crash-original-core>
+    $<TARGET_OBJECTS:crash-original-engine>
+    $<TARGET_OBJECTS:crash-original-gool>
+    $<TARGET_OBJECTS:crash-original-level>
+    $<TARGET_OBJECTS:crash-original-libc>
+    $<TARGET_OBJECTS:crash-original-ns>
+    $<TARGET_OBJECTS:crash-original-render>)
+target_include_directories(crash-bandicoot-pc PRIVATE include)
+target_link_libraries(crash-bandicoot-pc PRIVATE psyz)
+target_compile_definitions(crash-bandicoot-pc PRIVATE __psyz)
+psyz_title(crash-bandicoot-pc "Crash Bandicoot")
 
 if(BUILD_TESTING)
     add_executable(test-original-math tests/original_math.c

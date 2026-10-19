@@ -134,62 +134,6 @@ static __inline__ s32 Level_TestBoundIntersection_inline(ZqBound *a, ZqBound *b)
     return 0;
 }
 
-static __inline__ s32 Level_TestBoundInBound(ZqBound *a, ZqBound *b)
-{
-    if (a->p1.x >= b->p1.x && a->p1.y >= b->p1.y && a->p1.z >= b->p1.z
-        && a->p2.x < b->p2.x && a->p2.y < b->p2.y && a->p2.z < b->p2.z) {
-        return 1;
-    }
-    return 0;
-}
-
-static __inline__ void Solid_PlotWallB(s32 x1, s32 y1, s32 x2, s32 y2, s32 set)
-{
-    s32 *p;
-    u32 mask;
-
-    x2 += 16;
-    mask = -1;
-    if (x2 < 32) {
-        if (x2 <= 0) {
-            return;
-        }
-        mask = -1 << (32 - x2);
-    }
-    x1 += 15;
-    if (x1 >= 32) {
-        return;
-    }
-    if (x1 >= 0) {
-        mask &= ~((s32)0x80000000 >> x1);
-    }
-    if (mask == 0) {
-        return;
-    }
-    y1 += 16;
-    y2 += 16;
-    if (y1 < 0) {
-        y1 = 0;
-    }
-    if (y2 > 32) {
-        y2 = 32;
-    }
-    if (y1 >= 32) {
-        return;
-    }
-    p = &gp_grid_rows[y1];
-    if (set) {
-        for (; y1 < y2; y1++, p++) {
-            *p |= mask;
-        }
-    } else {
-        mask = ~mask;
-        for (; y1 < y2; y1++, p++) {
-            *p &= mask;
-        }
-    }
-}
-
 static __inline__ void clamp_light(s16 *dst_f, s16 *src_f, s32 step)
 {
     if (step != 0) {
@@ -209,10 +153,10 @@ void Zone_ColorsScaleSeek(void *defaults, SubObj *obj, s32 idx, s32 flag)
     s32 step, i;
 
     dst = &obj->light;
-    if (obj == gp_crash_obj[0] && (obj->flags120 & 0x20)) {
+    if (Ram_Addr(obj) == gp_crash_obj[0] && (obj->flags120 & 0x20)) {
         idx = 0x37;
     }
-    Zone_ColorsScaleByNode(idx, defaults, &buf);
+    Zone_ColorsScaleByNode(idx, defaults, (struct LightMat *)&buf);
     step = flag ? 0x15E : 0;
     clamp_light(&dst->v1[0], &buf.v1[0], step);
     clamp_light(&dst->v1[1], &buf.v1[1], step);
@@ -235,22 +179,24 @@ u32 Zone_FindNearestNode(ZqZoneRect *zone, u16 node, ZqRect *rect, ZqVec *va, s3
     u16 *children;
     s32 i, j, k, idx;
 
+    /* Non-leaf nodes are offsets of their child arrays in the zone item;
+     * leaves (odd) and empty nodes (0) are node values. */
     if (!(node & 1) && node) {
-        children = (u16 *)((u32)zone + node);
+        children = (u16 *)((u8 *)zone + node);
     } else {
-        children = (u16 *)(u32)node;
+        children = NULL;
     }
     if ((node & 1) || !node) {
-        if (children
-            && (!((flags & 8) && (children ? ((((u32)children & 0xE) >> 1) + 1) : 0) == 4))
-            && (((u32)children & 0x3F0) >> 4) != 0xB
-            && (children ? ((((u32)children & 0xE) >> 1) + 1) : 0) != 5) {
+        if (node
+            && (!((flags & 8) && (node ? (((node & 0xE) >> 1) + 1) : 0) == 4))
+            && ((node & 0x3F0) >> 4) != 0xB
+            && (node ? (((node & 0xE) >> 1) + 1) : 0) != 5) {
             if (flags & 1) {
                 va->y = rect->y + rect->h;
             } else if (flags & 2) {
                 va->z = rect->z + rect->d;
             }
-            return (u32)children;
+            return node;
         } else {
             if (flags & 1) {
                 va->y = rect->y - 1;
@@ -310,6 +256,8 @@ u32 Zone_FindNearestNode(ZqZoneRect *zone, u16 node, ZqRect *rect, ZqVec *va, s3
                 }
             }
         }
+        /* Not reached: (tx, ty, tz) always names a child. */
+        return 0;
     }
 }
 
@@ -323,48 +271,50 @@ static __inline__ s32 zone_rect_contains(ZqZoneRect *rect, ZqVec *v)
     return 0;
 }
 
-void * Zone_FindNearestObjectNode(SubObj *obj, ZqVec *va)
+/* Returns a leaf node value or the PS1 address of the object below va. */
+u32 Zone_FindNearestObjectNode(SubObj *obj, ZqVec *va)
 {
     ZqVec orig;
     ZqVec copy;
     ZqRect rect;
     s32 best_y, i, cand_y;
-    SubObj *res, *best_obj, *cand_obj;
+    u32 res;
+    SubObj *best_obj, *cand_obj;
     ZoneHeader *header;
     ZoneEntry *neighbor;
     ZqZoneRect *zone_rect;
     SubBox *box;
 
     best_y = -0x3B9AC9FF;
-    res = NULL;
+    res = 0;
     best_obj = NULL;
-    header = (ZoneHeader *)((ZoneEntry *)level_position.zone)->items[0];
+    header = RAM_AT(ZoneHeader, RAM_AT(ZoneEntry, level_position.zone)->items[0]);
     orig = *va;
     do {
         copy = *va;
         for (i = 0; i < header->neighbor_count; i++) {
-            neighbor = Ns_Lookup(&header->neighbors[i]);
-            if (zone_rect_contains((ZqZoneRect *)neighbor->items[1], va)) {
-                zone_rect = (ZqZoneRect *)neighbor->items[1];
+            neighbor = RAM_AT(ZoneEntry, Ns_Lookup(&header->neighbors[i]));
+            if (zone_rect_contains(RAM_AT(ZqZoneRect, neighbor->items[1]), va)) {
+                zone_rect = RAM_AT(ZqZoneRect, neighbor->items[1]);
                 rect.x = zone_rect->x << 8;
                 rect.y = zone_rect->y << 8;
                 rect.z = zone_rect->z << 8;
                 rect.w = zone_rect->w << 8;
                 rect.h = zone_rect->h << 8;
                 rect.d = zone_rect->d << 8;
-                res = (SubObj *)Zone_FindNearestNode(zone_rect, zone_rect->root, &rect, va, 0, 9);
+                res = Zone_FindNearestNode(zone_rect, zone_rect->root, &rect, va, 0, 9);
                 break;
             }
         }
         if (i == header->neighbor_count) {
-            res = NULL;
+            res = 0;
             break;
         }
     } while (!res);
     if (g_obj_bounds.count > 0) {
         box = g_obj_bounds.boxes;
         for (i = 0; i < g_obj_bounds.count; i++, box++) {
-            cand_obj = box->obj;
+            cand_obj = RAM_AT(SubObj, box->obj);
             if (cand_obj->status_b & 0x20000) {
                 cand_y = box->bound.p2.y;
                 if (orig.x >= box->bound.p1.x - 0x4E20
@@ -373,7 +323,7 @@ void * Zone_FindNearestObjectNode(SubObj *obj, ZqVec *va)
                     && orig.z <= box->bound.p2.z + 0x4E20) {
                     if (va->y <= cand_y && va->y >= box->bound.p1.y) {
                         va->y = cand_y;
-                        res = cand_obj;
+                        res = Ram_Addr(cand_obj);
                         goto done;
                     }
                     if (cand_y > best_y && cand_y <= orig.y) {
@@ -383,9 +333,9 @@ void * Zone_FindNearestObjectNode(SubObj *obj, ZqVec *va)
                 }
             }
         }
-        if (best_obj != NULL && (res == NULL || best_y >= va->y)) {
+        if (best_obj != NULL && (res == 0 || best_y >= va->y)) {
             va->y = best_y;
-            res = best_obj;
+            res = Ram_Addr(best_obj);
         }
     }
 done:
@@ -394,7 +344,7 @@ done:
 
 static __inline__ s32 get_offset_base(SubObj *obj)
 {
-    return !(obj->parent->flags120 & 0x10) ? 0x18 : 0;
+    return !(RAM_AT(SubObj, obj->parent)->flags120 & 0x10) ? 0x18 : 0;
 }
 
 u32 Zone_FindNearestObjectNode2(SubObj *obj, ZqVec *va)
@@ -413,22 +363,22 @@ u32 Zone_FindNearestObjectNode2(SubObj *obj, ZqVec *va)
     best_y = -0x3B9AC9FF;
     res = 0;
     best_obj = NULL;
-    header = (ZoneHeader *)((ZoneEntry *)level_position.zone)->items[0];
+    header = RAM_AT(ZoneHeader, RAM_AT(ZoneEntry, level_position.zone)->items[0]);
     hit_box = 0;
     if (!(obj->status_b & 0x4000000)) {
         return 0;
     found_y:
         va->y = cand_y;
-        res = (u32)cand_obj;
+        res = Ram_Addr(cand_obj);
         goto set_hit_box;
     }
     orig = *va;
     do {
         copy = *va;
         for (i = 0; i < header->neighbor_count; i++) {
-            neighbor = Ns_Lookup(&header->neighbors[i]);
-            if (zone_rect_contains((ZqZoneRect *)neighbor->items[1], va)) {
-                zone_rect = (ZqZoneRect *)neighbor->items[1];
+            neighbor = RAM_AT(ZoneEntry, Ns_Lookup(&header->neighbors[i]));
+            if (zone_rect_contains(RAM_AT(ZqZoneRect, neighbor->items[1]), va)) {
+                zone_rect = RAM_AT(ZqZoneRect, neighbor->items[1]);
                 rect.x = zone_rect->x << 8;
                 rect.y = zone_rect->y << 8;
                 rect.z = zone_rect->z << 8;
@@ -447,7 +397,7 @@ u32 Zone_FindNearestObjectNode2(SubObj *obj, ZqVec *va)
     if (g_obj_bounds.count > 0) {
         box = g_obj_bounds.boxes;
         for (i = 0; i < g_obj_bounds.count; i++, box++) {
-            cand_obj = box->obj;
+            cand_obj = RAM_AT(SubObj, box->obj);
             if ((cand_obj->status_b & 0x40020000) == 0x20000) {
                 cand_y = box->bound.p2.y;
                 if (orig.x >= box->bound.p1.x - 0x88B8
@@ -466,25 +416,25 @@ u32 Zone_FindNearestObjectNode2(SubObj *obj, ZqVec *va)
         }
         if (best_obj != NULL && (res == 0 || best_y >= va->y)) {
             va->y = best_y;
-            res = (u32)best_obj;
+            res = Ram_Addr(best_obj);
         set_hit_box:
             hit_box = 1;
         }
     }
     if (res != 0) {
         if (hit_box) {
-            offset = ((SubObj *)res)->offset138;
+            offset = RAM_AT(SubObj, res)->offset138;
             dy = obj->trans.y - g_cam_trans_y;
             if (dy > 0) {
                 offset -= dy >> 12;
             }
-            obj->parent->offset138 = get_offset_base(obj) + offset;
+            RAM_AT(SubObj, obj->parent)->offset138 = get_offset_base(obj) + offset;
         } else {
             idx = (res & 0x3C00) >> 10;
-            obj->parent->offset138 = get_offset_base(obj) + (idx >= 0 ? g_cam_zoom_presets[idx] : -1);
+            RAM_AT(SubObj, obj->parent)->offset138 = get_offset_base(obj) + (idx >= 0 ? g_cam_zoom_presets[idx] : -1);
         }
     } else {
-        obj->parent->offset138 = get_offset_base(obj) + g_cam_zoom_presets[0];
+        RAM_AT(SubObj, obj->parent)->offset138 = get_offset_base(obj) + g_cam_zoom_presets[0];
     }
     return res;
 }
@@ -509,9 +459,9 @@ u32 Zone_FindNearestObjectNode3(SubObj *obj, ZqVec *in_va, s32 flags, s32 arg3)
     res = 0;
     best_obj = NULL;
     hit_box = 0;
-    header = (ZoneHeader *)((ZoneEntry *)level_position.zone)->items[0];
+    header = RAM_AT(ZoneHeader, RAM_AT(ZoneEntry, level_position.zone)->items[0]);
     va = &local_va;
-    if (!(obj->status_b & 0x4000000) || ((flags & 4) && !(obj->parent->status_b & 0x4000000))) {
+    if (!(obj->status_b & 0x4000000) || ((flags & 4) && !(RAM_AT(SubObj, obj->parent)->status_b & 0x4000000))) {
         return 0;
     }
     *va = *in_va;
@@ -520,9 +470,9 @@ u32 Zone_FindNearestObjectNode3(SubObj *obj, ZqVec *in_va, s32 flags, s32 arg3)
     do {
         copy = *va;
         for (i = 0; i < header->neighbor_count; i++) {
-            neighbor = Ns_Lookup(&header->neighbors[i]);
-            if (zone_rect_contains((ZqZoneRect *)neighbor->items[1], va)) {
-                zone_rect = (ZqZoneRect *)neighbor->items[1];
+            neighbor = RAM_AT(ZoneEntry, Ns_Lookup(&header->neighbors[i]));
+            if (zone_rect_contains(RAM_AT(ZqZoneRect, neighbor->items[1]), va)) {
+                zone_rect = RAM_AT(ZqZoneRect, neighbor->items[1]);
                 rect.x = zone_rect->x << 8;
                 rect.y = zone_rect->y << 8;
                 rect.z = zone_rect->z << 8;
@@ -541,7 +491,7 @@ u32 Zone_FindNearestObjectNode3(SubObj *obj, ZqVec *in_va, s32 flags, s32 arg3)
     if (g_obj_bounds.count > 0) {
         box = g_obj_bounds.boxes;
         for (i = 0; i < g_obj_bounds.count; i++, box++) {
-            cand_obj = box->obj;
+            cand_obj = RAM_AT(SubObj, box->obj);
             if (cand_obj != obj && cand_obj->word_158 != 0xFFFF) {
                 if (flags & 1) {
                     cand_v = box->bound.p2.y;
@@ -549,7 +499,7 @@ u32 Zone_FindNearestObjectNode3(SubObj *obj, ZqVec *in_va, s32 flags, s32 arg3)
                         && orig.z >= box->bound.p1.z && orig.z <= box->bound.p2.z) {
                         if (va->y <= cand_v && va->y >= box->bound.p1.y) {
                             va->y = box->bound.p1.y;
-                            res = (u32)cand_obj;
+                            res = Ram_Addr(cand_obj);
                             hit_box = 1;
                             goto done_boxes;
                         }
@@ -564,7 +514,7 @@ u32 Zone_FindNearestObjectNode3(SubObj *obj, ZqVec *in_va, s32 flags, s32 arg3)
                         && orig.y >= box->bound.p1.y && orig.y <= box->bound.p2.y) {
                         if (va->z <= cand_v && va->z >= box->bound.p1.z) {
                             va->z = box->bound.p1.z;
-                            res = (u32)cand_obj;
+                            res = Ram_Addr(cand_obj);
                             hit_box = 1;
                             goto done_boxes;
                         }
@@ -580,13 +530,13 @@ u32 Zone_FindNearestObjectNode3(SubObj *obj, ZqVec *in_va, s32 flags, s32 arg3)
             if (flags & 1) {
                 if (res == 0 || best_v >= va->y) {
                     va->y = best_v;
-                    res = (u32)best_obj;
+                    res = Ram_Addr(best_obj);
                     hit_box = 1;
                 }
             } else if (flags & 2) {
                 if (res == 0 || best_v >= va->z) {
                     va->z = best_v;
-                    res = (u32)best_obj;
+                    res = Ram_Addr(best_obj);
                     hit_box = 1;
                 }
             }
@@ -594,22 +544,22 @@ u32 Zone_FindNearestObjectNode3(SubObj *obj, ZqVec *in_va, s32 flags, s32 arg3)
     }
 done_boxes:
     if (flags & 4) {
-        if (obj == gp_crash_obj[0] || obj->parent == gp_crash_obj[0]) {
-            defaults = obj->parent->entry->data + 0x348;
+        if (Ram_Addr(obj) == gp_crash_obj[0] || obj->parent == gp_crash_obj[0]) {
+            defaults = RAM_AT(u8, RAM_AT(ResourceEntry, RAM_AT(SubObj, obj->parent)->entry)->data) + 0x348;
         } else {
-            defaults = obj->parent->entry->data + 0x318;
+            defaults = RAM_AT(u8, RAM_AT(ResourceEntry, RAM_AT(SubObj, obj->parent)->entry)->data) + 0x318;
         }
     } else {
-        if (obj == gp_crash_obj[0] || obj->parent == gp_crash_obj[0]) {
-            defaults = obj->entry->data + 0x348;
+        if (Ram_Addr(obj) == gp_crash_obj[0] || obj->parent == gp_crash_obj[0]) {
+            defaults = RAM_AT(u8, RAM_AT(ResourceEntry, obj->entry)->data) + 0x348;
         } else {
-            defaults = obj->entry->data + 0x318;
+            defaults = RAM_AT(u8, RAM_AT(ResourceEntry, obj->entry)->data) + 0x318;
         }
     }
     idx = -1;
     if (res != 0) {
         if (hit_box) {
-            idx = ((SubObj *)res)->word_158;
+            idx = RAM_AT(SubObj, res)->word_158;
             if (idx < 0) {
                 idx = -idx;
                 arg3 = 0;
@@ -622,7 +572,7 @@ done_boxes:
         }
     }
     if (flags & 4) {
-        Zone_ColorsScaleSeek(defaults, obj->parent, idx, arg3);
+        Zone_ColorsScaleSeek(defaults, RAM_AT(SubObj, obj->parent), idx, arg3);
     }
     return res;
 }
@@ -634,12 +584,12 @@ void Zone_ColorsScaleSeekByEntityNode(SubObj *obj)
     u32 val;
     s32 idx;
 
-    if (obj == gp_crash_obj[0] || obj->parent == gp_crash_obj[0]) {
-        defaults = obj->entry->data + 0x348;
+    if (Ram_Addr(obj) == gp_crash_obj[0] || obj->parent == gp_crash_obj[0]) {
+        defaults = RAM_AT(u8, RAM_AT(ResourceEntry, obj->entry)->data) + 0x348;
     } else {
-        defaults = obj->entry->data + 0x318;
+        defaults = RAM_AT(u8, RAM_AT(ResourceEntry, obj->entry)->data) + 0x318;
     }
-    ptr = obj->word_110;
+    ptr = RAM_AT(u16, obj->word_110);
     if (ptr != NULL) {
         val = ptr[2] >> 3;
         if (val != 0xFFFF) {
@@ -654,7 +604,6 @@ void Zone_ColorsScaleSeekByEntityNode(SubObj *obj)
 
 s32 Zone_QueryOctrees(ZqVec *v, SubObj *obj, SubWorkspace *ws)
 {
-    u8 unused[0x18];
     ZoneHeader *header;
     ZqZoneRect *rect;
     s32 i;
@@ -667,9 +616,9 @@ s32 Zone_QueryOctrees(ZqVec *v, SubObj *obj, SubWorkspace *ws)
     ws->bound1.p2.x = v->x + 0x12C00;
     ws->bound1.p2.y = v->y + 0x3A480;
     ws->bound1.p2.z = v->z + 0x12C00;
-    header = (ZoneHeader *)((ZoneEntry *)level_position.zone)->items[0];
+    header = RAM_AT(ZoneHeader, RAM_AT(ZoneEntry, level_position.zone)->items[0]);
     for (i = 0; i < header->neighbor_count; i++) {
-        rect = (ZqZoneRect *)Ns_Lookup(&header->neighbors[i])->items[1];
+        rect = RAM_AT(ZqZoneRect, RAM_AT(ZoneEntry, Ns_Lookup(&header->neighbors[i]))->items[1]);
         if (zone_rect_overlaps(&ws->bound1, (ZqRect *)rect)) {
             ws->count = Solid_RZoneQueryOctree(rect, &ws->bound1, &ws->nodes[ws->count], ws->count);
         }

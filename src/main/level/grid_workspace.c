@@ -30,12 +30,14 @@ typedef struct LevelStateView {
     s32 level_id;
 } LevelStateView;
 
+typedef struct SubExecHeader {
+    s32 type;
+    s32 category;
+} SubExecHeader;
+
 typedef struct SubExec {
     u8 reserved_00[0x10];
-    struct {
-        s32 type;
-        s32 category;
-    } *header;
+    RAM_REF(SubExecHeader) header;
 } SubExec;
 
 typedef struct SubObj {
@@ -129,62 +131,6 @@ static __inline__ s32 Level_TestBoundIntersection_inline(ZqBound *a, ZqBound *b)
     return 0;
 }
 
-static __inline__ s32 Level_TestBoundInBound(ZqBound *a, ZqBound *b)
-{
-    if (a->p1.x >= b->p1.x && a->p1.y >= b->p1.y && a->p1.z >= b->p1.z
-        && a->p2.x < b->p2.x && a->p2.y < b->p2.y && a->p2.z < b->p2.z) {
-        return 1;
-    }
-    return 0;
-}
-
-static __inline__ void Solid_PlotWallB(s32 x1, s32 y1, s32 x2, s32 y2, s32 set)
-{
-    s32 *p;
-    u32 mask;
-
-    x2 += 16;
-    mask = -1;
-    if (x2 < 32) {
-        if (x2 <= 0) {
-            return;
-        }
-        mask = -1 << (32 - x2);
-    }
-    x1 += 15;
-    if (x1 >= 32) {
-        return;
-    }
-    if (x1 >= 0) {
-        mask &= ~((s32)0x80000000 >> x1);
-    }
-    if (mask == 0) {
-        return;
-    }
-    y1 += 16;
-    y2 += 16;
-    if (y1 < 0) {
-        y1 = 0;
-    }
-    if (y2 > 32) {
-        y2 = 32;
-    }
-    if (y1 >= 32) {
-        return;
-    }
-    p = &gp_grid_rows[y1];
-    if (set) {
-        for (; y1 < y2; y1++, p++) {
-            *p |= mask;
-        }
-    } else {
-        mask = ~mask;
-        for (; y1 < y2; y1++, p++) {
-            *p &= mask;
-        }
-    }
-}
-
 void Solid_PlotObjWalls(ZqVec *v, SubObj *obj, SubWorkspace *ws, s32 flag)
 {
     ZqBound bound1;
@@ -196,11 +142,11 @@ void Solid_PlotObjWalls(ZqVec *v, SubObj *obj, SubWorkspace *ws, s32 flag)
     SubObj *collider, *cand_obj;
     SubBox *box;
 
-    no_grid = !(((ZoneHeader *)((ZoneEntry *)level_position.zone)->items[0])->flags & 0x100000);
+    no_grid = !((RAM_AT(ZoneHeader, RAM_AT(ZoneEntry, level_position.zone)->items[0]))->flags & 0x100000);
     vx = v->x;
     vz = v->z;
     if (g_obj_bounds.count != 0) {
-        collider = obj->collider;
+        collider = RAM_AT(SubObj, obj->collider);
         bound1.p1.x = v->x + obj->bound.p1.x;
         bound1.p1.y = v->y + obj->bound.p1.y;
         bound1.p1.z = v->z + obj->bound.p1.z;
@@ -216,7 +162,7 @@ void Solid_PlotObjWalls(ZqVec *v, SubObj *obj, SubWorkspace *ws, s32 flag)
         ws->word_104c += 0x100;
         box = g_obj_bounds.boxes;
         for (i = g_obj_bounds.count - 1; i >= 0; i--, box++) {
-            cand_obj = box->obj;
+            cand_obj = RAM_AT(SubObj, box->obj);
             if ((cand_obj != collider || !flag || box->bound.p2.y > bound2.p1.y)
                 && Level_TestBoundIntersection_inline(&bound2, &box->bound)) {
                 bound3.p1.x = box->bound.p1.x + cand_obj->head_turn;
@@ -228,11 +174,11 @@ void Solid_PlotObjWalls(ZqVec *v, SubObj *obj, SubWorkspace *ws, s32 flag)
                 if (no_grid
                     && (cand_obj->status_b & 0x10000)
                     && (!(((obj->flags120 & 0x10) || obj->anim_state == 5)
-                          && cand_obj->word_20->header->category == 0x300
+                          && RAM_AT(SubExecHeader, RAM_AT(SubExec, cand_obj->word_20)->header)->category == 0x300
                           && (!(cand_obj->status_c & 0x1012) || (cand_obj->flags120 & 0x10020))))
                     && bound2.p1.y <= box->bound.p2.y
                     && bound2.p2.y > box->bound.p1.y
-                    && (cand_obj->word_20->header->type != 0xB
+                    && (RAM_AT(SubExecHeader, RAM_AT(SubExec, cand_obj->word_20)->header)->type != 0xB
                         || (diff.x = (v->x - cand_obj->trans.x) >> 8,
                             diff.z = (v->z - cand_obj->trans.z) >> 8,
                             (SquareRoot0(diff.x * diff.x + diff.z * diff.z) << 8) > 0x19000))) {
@@ -259,7 +205,7 @@ void Solid_PlotObjWalls(ZqVec *v, SubObj *obj, SubWorkspace *ws, s32 flag)
                     }
                 }
                 if (flag && Level_TestBoundIntersection_inline(&bound1, &box->bound)) {
-                    Gool_Collide(obj, &bound1, box->obj, &box->bound);
+                    Gool_Collide((struct CollideObj *)obj, (s32 *)&bound1, RAM_AT(struct CollideObj, box->obj), (s32 *)&box->bound);
                 }
             }
         }
@@ -268,22 +214,21 @@ void Solid_PlotObjWalls(ZqVec *v, SubObj *obj, SubWorkspace *ws, s32 flag)
 
 void Solid_PlotWalls(ZqVec *v, SubObj *obj, SubWorkspace *ws)
 {
-    u8 unused[0x30];
     s32 i, state, status_c, a, c;
     s32 *p1;
     u32 *p2;
     ZqBound *bound;
 
-    if (!(((ZoneHeader *)((ZoneEntry *)level_position.zone)->items[0])->flags & 0x100000)) {
+    if (!((RAM_AT(ZoneHeader, RAM_AT(ZoneEntry, level_position.zone)->items[0]))->flags & 0x100000)) {
         i = 0x1F;
-        p1 = &gp_grid_rows[0x1F];
+        p1 = &RAM_AT(s32, gp_grid_rows)[0x1F];
         do {
             *p1 = 0;
             i--;
             p1--;
         } while (i >= 0);
         i = 0x7F;
-        p2 = &gp_solid_scratch_grid[0x7F];
+        p2 = &RAM_AT(u32, gp_solid_scratch_grid)[0x7F];
         do {
             *p2 = 0;
             i--;

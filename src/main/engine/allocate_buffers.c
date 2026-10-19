@@ -22,12 +22,12 @@ s32 Slst_Init(void)
     }
     allocation_size = (capacity * 2) + 4;
     first = LIBC_Malloc(allocation_size);
-    gp_level_entry = first;
-    gp_slst_poly_list_a = first;
+    gp_level_entry = Ram_Addr(first);
+    gp_slst_poly_list_a = Ram_Addr(first);
     if (first != NULL) {
         first->count = 0;
         second = LIBC_Malloc(allocation_size);
-        gp_slst_poly_list_b = second;
+        gp_slst_poly_list_b = Ram_Addr(second);
         if (second != NULL) {
             second->count = 0;
             return -0xFF;

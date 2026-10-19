@@ -72,12 +72,14 @@ extern RAM_REF(s32) gp_grid_rows;
 extern s32 gp_edesc_h_timeout;
 extern s32 gp_edesc_h_newdev;
 
+#define TITLE RAM_AT(State, gp_title)
+
 s32 Title_Init(void)
 {
     State *state;
     if(gp_pbak_mode == 25) {
         state = LIBC_Calloc(1, sizeof(State));
-        gp_title = state;
+        gp_title = Ram_Addr(state);
         if(state == NULL) BIOS_Abs(-1);
     }
     return 0;
@@ -106,18 +108,18 @@ s32 Title_LoadNextState(void)
             value = g_game_substate;
             switch (value) {
             case 0: case 0x100: case 0x300: case 0x400:
-                (gp_title)->word35D0 = (gp_title)->word35D4 = g_island_cam_state;
+                TITLE->word35D0 = TITLE->word35D4 = g_island_cam_state;
                 selection = g_title_menu_selection[0];
-                (gp_title)->word3598 = 1;
-                (gp_title)->word35A4 = selection;
-                (gp_title)->word35A0 = selection;
+                TITLE->word3598 = 1;
+                TITLE->word35A4 = selection;
+                TITLE->word35A0 = selection;
                 break;
             case 0x600:
-                reset_state = gp_title;
+                reset_state = TITLE;
                 value = 5;
                 goto set_value;
             case 0x200:
-                reset_state = gp_title;
+                reset_state = TITLE;
                 value = 12;
 set_value:
                 g_island_cam_state = value;
@@ -129,7 +131,7 @@ set_value:
             }
         } else {
             g_island_cam_state = 10;
-            requested_state = gp_title;
+            requested_state = TITLE;
             requested_state->word35D4 = 10;
             requested_state->word35D0 = 10;
             requested_state->word3598 = 0;
@@ -147,6 +149,7 @@ void Title_LoadScreen(s32 *reference, s32 mode)
 #include "engine_externs.h"
 #undef CRASH_EXT_ENGINE_STATE_2
     s32 index;
+    s32 address;
     ResourceItemListView *resource;
     gp_next_lid = 0;
     gp_use_cd = -1;
@@ -154,11 +157,11 @@ void Title_LoadScreen(s32 *reference, s32 mode)
     switch (mode) {
     case 0:
         g_fade_counter[0] = (g_fade_counter[0] & 0xFFFE3FF0) | 0x20000;
-        gp_title->word359C = 1;
+        TITLE->word359C = 1;
         break;
     case 1:
         g_fade_counter[0] = 0xFFFF;
-        gp_title->word359C = 0;
+        TITLE->word359C = 0;
         for (index = 8; index < 15; index++) {
             if (g_slst_buf1[index].state == 30)
                 g_slst_buf1[index].state = 1;
@@ -166,13 +169,14 @@ void Title_LoadScreen(s32 *reference, s32 mode)
         break;
     case 3:
         g_fade_counter[0] = 0x2FFFC;
-        gp_title->word359C = 1;
+        TITLE->word359C = 1;
         break;
     }
-    resource = (ResourceItemListView *)Ns_Open(reference, 1, 1);
-    Level_Update(resource,
-        resource->items[((ResourceItemSelection *)resource->items[0])->word204], 0, 2);
-    Ns_Close(reference, 1);
+    address = Ns_Open((u32 *)reference, 1, 1);
+    resource = RAM_AT(ResourceItemListView, address);
+    Level_Update(RAM_AT(struct ResourceEntry, address),
+        RAM_AT(struct ZonePath, resource->items[RAM_AT(ResourceItemSelection, resource->items[0])->word204]), 0, 2);
+    Ns_Close((u32 *)reference, 1);
 }
 
 #include "ns.h"
@@ -184,12 +188,13 @@ s32 Title_LoadState(void) {
     char buf[32];
     s32 ref;
     s32 mode;
+    s32 list_address;
     ResourceItemListView *list;
     s32 *header;
     s32 i;
 
     g_key_count[0] = 0;
-    switch (gp_title->word35D0) {
+    switch (TITLE->word35D0) {
     case 1:
     case 2:
     case 3:
@@ -197,21 +202,21 @@ s32 Title_LoadState(void) {
         BIOS_Abs(0);
     case 6:
     case 15:
-        g_ns_page_pool->word114 = 0x25;
+        RAM_AT(RenderContextView, g_ns_page_pool)->word114 = 0x25;
         break;
     case 5:
     case 8:
     case 12:
     case 13:
     case 14:
-        g_ns_page_pool->word114 = 0x37;
+        RAM_AT(RenderContextView, g_ns_page_pool)->word114 = 0x37;
         break;
     default:
-        g_ns_page_pool->word114 = 0x5A;
+        RAM_AT(RenderContextView, g_ns_page_pool)->word114 = 0x5A;
         break;
     }
     Gfx_InitMatrices();
-    switch (gp_title->word35D0) {
+    switch (TITLE->word35D0) {
     case 12:
         ref = Ns_StringToEID(gp_game_over_zone_name);
         mode = 1;
@@ -258,12 +263,12 @@ s32 Title_LoadState(void) {
     }
     g_gfx_debug_flag[0] = 0;
     g_item_pool1[0] = 0;
-    switch (gp_title->word35D0) {
+    switch (TITLE->word35D0) {
     case 1:
     case 2:
     case 3:
     case 4:
-        g_title_fade_mask[0] = ~gp_title->word35D0;
+        g_title_fade_mask[0] = ~TITLE->word35D0;
         break;
     case 5:
     case 6:
@@ -276,28 +281,29 @@ s32 Title_LoadState(void) {
         break;
     default:
         g_title_fade_mask[0] = 0;
-        gp_title->word359C = 1;
+        TITLE->word359C = 1;
         break;
     }
     g_fade_counter[0] |= 0x200000;
-    sprintf(buf, gp_mdat_fmt_name, (u8)Ns_AlphaNumChar(gp_title->word35D0));
-    gp_title->word00 = Ns_StringToEID(buf);
-    if ((g_fade_counter[0] & 0x20000) && gp_title->word359C != 0) {
+    sprintf(buf, gp_mdat_fmt_name, (u8)Ns_AlphaNumChar(TITLE->word35D0));
+    TITLE->word00 = Ns_StringToEID(buf);
+    if ((g_fade_counter[0] & 0x20000) && TITLE->word359C != 0) {
         s32 h1;
-        list = Ns_Lookup((s32 *)&gp_title->word00);
-        header = (s32 *)list->items[0];
-        Title_LoadEntries(gp_title->word35D0, 1, 1);
-        gp_title->word0C = header[0];
+        list_address = Ns_Lookup(&TITLE->word00);
+        list = RAM_AT(ResourceItemListView, list_address);
+        header = RAM_AT(s32, list->items[0]);
+        Title_LoadEntries(TITLE->word35D0, 1, 1);
+        TITLE->word0C = header[0];
         h1 = header[1];
-        gp_title->word14 = 0;
-        gp_title->word18 = 0;
-        gp_title->word10 = h1;
-        gp_title->word04 = gp_title->word0C << 4;
-        gp_title->word08 = gp_title->word10 << 4;
+        TITLE->word14 = 0;
+        TITLE->word18 = 0;
+        TITLE->word10 = h1;
+        TITLE->word04 = TITLE->word0C << 4;
+        TITLE->word08 = TITLE->word10 << 4;
         for (i = 0; i < header[3]; i++) {
             typedef struct MapItemHeader { u8 reserved_00[0x18]; s16 max_level; } MapItemHeader;
-            if ((u32)((MapItemHeader *)list->items[i + 2])->max_level <= g_next_level_id[0]) {
-                Gool_ObjectSpawn(list, i);
+            if ((u32)RAM_AT(MapItemHeader, list->items[i + 2])->max_level <= g_next_level_id[0]) {
+                Gool_ObjectSpawn(RAM_AT(struct ZoneEntryView, list_address), i);
             }
         }
     }
@@ -307,13 +313,13 @@ s32 Title_LoadState(void) {
 void Title_KillObjectsAndEntries(void)
 {
     Gool_ForEachObjectHandle(Gool_ObjectHandleTraverseTreePostorder, Gool_ObjectTerminate, NULL);
-    if(gp_title->word359C != 0)
-        Title_LoadEntries(gp_title->word35D0, 0, -1);
+    if(TITLE->word359C != 0)
+        Title_LoadEntries(TITLE->word35D0, 0, -1);
 }
 
 s32 Title_Kill(void)
 {
-    if(gp_title != NULL) LIBC_Free(gp_title);
+    if(gp_title != 0) LIBC_Free(RAM_AT(State, gp_title));
     gp_pbak_mode = 0;
     return 0;
 }
@@ -325,13 +331,9 @@ s32 Title_Kill(void)
 #include "engine_externs.h"
 #undef CRASH_EXT_ENGINE_STATE_4
 
-typedef struct EngineGpuRect {
-    s16 x, y, w, h;
-} EngineGpuRect;
-
 s32 Title_Loading(s32 level, u8 *image, NsDirectory *dir)
 {
-    EngineGpuRect rect;
+    GpuRect rect;
     u16 *buf;
     u16 *clut;
     s32 pass;
@@ -355,8 +357,8 @@ s32 Title_Loading(s32 level, u8 *image, NsDirectory *dir)
             Gpu_FillDisplay();
             strip = 0;
             dx = dir->word410 / 2 - 0x100;
-            x = g_db_prev->drawing.env.clip.x - dx;
-            y = g_db_prev->drawing.env.clip.y - dir->word414 / 2 + 0x6C;
+            x = RAM_AT(RenderBuffer, g_db_prev)->drawing.env.clip.x - dx;
+            y = RAM_AT(RenderBuffer, g_db_prev)->drawing.env.clip.y - dir->word414 / 2 + 0x6C;
             for (; strip < dir->word414 / 8; strip++) {
                 dst = buf;
                 for (row = 0; row < 8; row++) {
@@ -380,23 +382,28 @@ s32 Title_Loading(s32 level, u8 *image, NsDirectory *dir)
     return -255;
 }
 
+/* The tile image for map column tx, row ty: the map's first item lists the
+ * per-column resource references from word 0x6C. */
+static __inline__ u8 *title_tile(s32 tx, s32 ty)
+{
+    u32 *header = RAM_AT(u32, RAM_AT(ResourceItemListView, Ns_Lookup(&TITLE->word00))->items[0]);
+
+    return RAM_AT(u8, RAM_AT(ResourceItemListView, Ns_Lookup(&header[tx + 0x6C]))->items[ty]);
+}
+
 /* Upload one 8x16 background tile cell and update its packed CLUT id. */
 void Title_LoadSingleTile(EngineTileCell *cell)
 {
-    EngineGpuRect rect;
+    GpuRect rect;
 
-    if (cell->tile_x >= 0 && cell->tile_x < gp_title->word0C
-        && cell->tile_y >= 0 && cell->tile_y < gp_title->word10) {
-        cell->clut = *(u32 *)Ns_Lookup(
-            &((u32 *)Ns_Lookup(&gp_title->word00)->items[0])[cell->tile_x + 0x6C]
-        )->items[cell->tile_y];
+    if (cell->tile_x >= 0 && cell->tile_x < TITLE->word0C
+        && cell->tile_y >= 0 && cell->tile_y < TITLE->word10) {
+        cell->clut = *(u32 *)title_tile(cell->tile_x, cell->tile_y);
         rect.x = 0x100 + (cell->page << 7) + (cell->x << 3);
         rect.y = (cell->y << 4) + 0x100;
         rect.w = 8;
         rect.h = 16;
-        LoadImage(&rect, Ns_Lookup(
-            &((u32 *)Ns_Lookup(&gp_title->word00)->items[0])[cell->tile_x + 0x6C]
-        )->items[cell->tile_y] + 4);
+        LoadImage(&rect, title_tile(cell->tile_x, cell->tile_y) + 4);
     }
 }
 #define CRASH_EXT_ENGINE_STATE_5
@@ -404,20 +411,20 @@ void Title_LoadSingleTile(EngineTileCell *cell)
 #undef CRASH_EXT_ENGINE_STATE_5
 
 /* Finish the pending object request before selecting the next mode. */
-__inline__ void Title_RequestState(s32 mode)
+void Title_RequestState(s32 mode)
 {
     s32 zero;
 
     if (gp_next_lid && g_title_tile_load_cnt[0]) {
         zero = 0;
-        Gool_ExecStateCode(0, g_title_tile_load_cnt[0], 0xC00, 1, &zero);
+        Gool_ExecStateCode(NULL, RAM_AT(struct GoolObjView, g_title_tile_load_cnt[0]), 0xC00, 1, &zero);
         gp_use_cd = -1;
         gp_next_lid = 0;
     }
     g_cam_rot_xz = -256;
     g_island_cam_state = mode;
-    gp_title->word35D4 = mode;
-    gp_title->word3598 = 5;
+    TITLE->word35D4 = mode;
+    TITLE->word3598 = 5;
 }
 typedef struct EngineSprt16 {
     GpuPacketHeader header;
@@ -435,63 +442,63 @@ s32 Title_Update(GpuPacketTag *ot)
     EngineSprt16 *sprt;
     EngineDrawModePacket *mode_pkt;
 
-    switch ((u32)gp_title->word3598) {
+    switch ((u32)TITLE->word3598) {
     case 0:
-        gp_title->word35A4 = 0;
-        gp_title->word35A0 = 0;
+        TITLE->word35A4 = 0;
+        TITLE->word35A0 = 0;
     case 1: {
 #define CRASH_EXT_ENGINE_STATE_6
 #include "engine_externs.h"
 #undef CRASH_EXT_ENGINE_STATE_6
         g_cam_rot_xz = 0x120;
         g_fade_counter[0] |= 0xC;
-        gp_title->word3598 = 6;
+        TITLE->word3598 = 6;
         if (g_fade_counter[0] & 0x20000) {
-            Title_CalcTiles(gp_title, gp_title->word14, gp_title->word18);
-            Title_LoadImages(gp_title, gp_title->word14, gp_title->word18);
+            Title_CalcTiles(TITLE, TITLE->word14, TITLE->word18);
+            Title_LoadImages(TITLE, TITLE->word14, TITLE->word18);
         }
     }
         g_cam_rot_xz = 0x120;
         break;
     case 2:
-        gp_title->word3598 = 6;
+        TITLE->word3598 = 6;
         g_cam_rot_xz = 0x120;
         break;
     }
-    if ((g_cur_lid_ro[0] & 0x20000) && gp_title->word359C) {
+    if ((g_cur_lid_ro[0] & 0x20000) && TITLE->word359C) {
         row = 0;
-        cell = gp_title->cells;
+        cell = TITLE->cells;
         do {
             col = 0;
             do {
-                sprt = (EngineSprt16 *)g_ot_cur->word78;
-                g_ot_cur->word78 = (s32)(sprt + 1);
+                sprt = RAM_AT(EngineSprt16, RAM_AT(RenderBuffer, g_ot_cur)->word78);
+                RAM_AT(RenderBuffer, g_ot_cur)->word78 = Ram_Addr(sprt + 1);
                 SetSprt16(&sprt->header);
-                sprt->x = (cell->tile_x << 4) - gp_title->word14 - 0x100;
-                sprt->y = (cell->tile_y << 4) - gp_title->word18 - 0x78;
+                sprt->x = (cell->tile_x << 4) - TITLE->word14 - 0x100;
+                sprt->y = (cell->tile_y << 4) - TITLE->word18 - 0x78;
                 sprt->u = cell->x << 4;
                 sprt->v = cell->y << 4;
                 sprt->header.color[0] = 0x80;
                 sprt->header.color[1] = 0x80;
                 sprt->header.color[2] = 0x80;
-                sprt->clut = gp_title->cluts[cell->clut];
+                sprt->clut = TITLE->cluts[cell->clut];
                 AddPrim(ot, (GpuPacketTag *)sprt);
                 col++;
-                mode_pkt = (EngineDrawModePacket *)g_ot_cur->word78;
-                g_ot_cur->word78 = (s32)(mode_pkt + 1);
-                *mode_pkt = gp_title->draw_modes[cell->page];
+                mode_pkt = RAM_AT(EngineDrawModePacket, RAM_AT(RenderBuffer, g_ot_cur)->word78);
+                RAM_AT(RenderBuffer, g_ot_cur)->word78 = Ram_Addr(mode_pkt + 1);
+                *mode_pkt = TITLE->draw_modes[cell->page];
                 cell++;
                 AddPrim(ot, (GpuPacketTag *)mode_pkt);
             } while (col < 33);
             row++;
         } while (row < 16);
     }
-    switch ((u32)gp_title->word3598) {
+    switch ((u32)TITLE->word3598) {
     case 3:
         break;
     case 5:
         if (g_cam_rot_xz == 0) {
-            gp_title->word3598 = 7;
+            TITLE->word3598 = 7;
             {
 #define CRASH_EXT_ENGINE_STATE_7
 #include "engine_externs.h"
@@ -503,21 +510,21 @@ s32 Title_Update(GpuPacketTag *ot)
         break;
     case 6:
         if (g_cam_rot_xz == 0) {
-            gp_title->word3598 = 3;
+            TITLE->word3598 = 3;
         }
         break;
     case 7:
         Gool_ForEachObjectHandle(Gool_ObjectHandleTraverseTreePostorder, Gool_ObjectTerminate, NULL);
-        if (gp_title->word359C != 0) {
-            Title_LoadEntries(gp_title->word35D0, 0, -1);
+        if (TITLE->word359C != 0) {
+            Title_LoadEntries(TITLE->word35D0, 0, -1);
         }
-        gp_title->word3598 = 1;
-        gp_title->word35D0 = gp_title->word35D4;
+        TITLE->word3598 = 1;
+        TITLE->word35D0 = TITLE->word35D4;
         Gpu_DrawOverlay(0xFF);
         Title_LoadState();
         return 0;
     }
-    if (g_island_cam_state != gp_title->word35D4) {
+    if (g_island_cam_state != TITLE->word35D4) {
         Title_RequestState(g_island_cam_state);
     }
     return 0;
@@ -561,7 +568,7 @@ next_column:
         byte_offset = index * 3;
         column += 1;
         byte_offset = byte_offset << 2;
-        entry = (EngineTileCoords *)(byte_offset + base_address);
+        entry = RAM_AT(EngineTileCoords, byte_offset + base_address);
         entry->x = x;
         entry->y = y;
         entry->page = page;
@@ -575,14 +582,14 @@ next_column:
 
 void Title_CalcTiles(EngineMode25State *state, s32 x, s32 y)
 {
-    EngineGpuRect rect;
+    GpuRect rect;
     s32 row;
     s32 col;
     EngineTileCell *cell;
     s32 tx;
     s32 ty;
 
-    Title_CalcUvs((u32)state->coords);
+    Title_CalcUvs(Ram_Addr(state->coords));
     state->word3560 = GetTPage(1, 1, 0x100, 0x100);
     state->word3562 = GetTPage(1, 1, 0x180, 0x100);
     state->word3564 = GetTPage(1, 1, 0x200, 0x100);
@@ -623,7 +630,7 @@ void Title_CalcTiles(EngineMode25State *state, s32 x, s32 y)
 
 void Title_LoadImages(EngineMode25State *state, s32 x, s32 y)
 {
-    EngineGpuRect rect;
+    GpuRect rect;
     s32 row;
     s32 col;
     EngineTileCell *cell;
@@ -633,23 +640,19 @@ void Title_LoadImages(EngineMode25State *state, s32 x, s32 y)
     DrawSync(0);
     for (row = 0; row < 16; row++) {
         for (col = 0; col < 33; col++) {
-            if ((x >> 4) + col < gp_title->word0C
-                && (y >> 4) + row < gp_title->word10) {
+            if ((x >> 4) + col < TITLE->word0C
+                && (y >> 4) + row < TITLE->word10) {
                 cell = &state->cells[(col << 4) + row];
                 cell->off_x = x + (col << 4);
                 cell->off_y = y + (row << 4);
-                cell->clut = *(u32 *)Ns_Lookup(
-                    &((u32 *)Ns_Lookup(&gp_title->word00)->items[0])[(x >> 4) + col + 0x6C]
-                )->items[(y >> 4) + row];
+                cell->clut = *(u32 *)title_tile((x >> 4) + col, (y >> 4) + row);
                 coord_x = state->coords[(col << 4) + row].x;
                 coord_y = state->coords[(col << 4) + row].y;
                 rect.w = 8;
                 rect.h = 16;
                 rect.x = (coord_x << 3) + 0x100;
                 rect.y = (coord_y << 4) + 0x100;
-                LoadImage(&rect, Ns_Lookup(
-                    &((u32 *)Ns_Lookup(&gp_title->word00)->items[0])[(x >> 4) + col + 0x6C]
-                )->items[(y >> 4) + row] + 4);
+                LoadImage(&rect, title_tile((x >> 4) + col, (y >> 4) + row) + 4);
             }
         }
     }
@@ -678,9 +681,9 @@ static __inline__ s32 engine_resource_adjust(s32 *resource, s32 argument, s32 co
 {
     if (*resource != 0x6396347F) {
         if (count > 0) {
-            return Ns_Open(resource, argument, count);
+            return Ns_Open((u32 *)resource, argument, count);
         } else {
-            Ns_Close(resource, -count);
+            Ns_Close((u32 *)resource, -count);
         }
     }
     return 0;
@@ -709,14 +712,14 @@ void Title_LoadEntries(s32 mode, s32 arg1, s32 count)
     s32 end;
     s32 page_idx;
     u8 *clut_data;
-    EngineState *entry;
+    s32 entry;
 
     *(EngineByteRecord *)name = *(EngineByteRecord *)gp_mdat_default_name;
     name[0] = Ns_AlphaNumChar(mode);
     ref = Ns_StringToEID((u8 *)name);
     engine_resource_adjust(&ref, arg1, count);
-    list = Ns_Lookup((u32 *)&ref);
-    header = (EngineMapHeader *)list->items[0];
+    list = RAM_AT(ResourceItemListView, Ns_Lookup((u32 *)&ref));
+    header = RAM_AT(EngineMapHeader, list->items[0]);
     if (count > 0) {
         span = header->spans;
         span_offset = 0;
@@ -731,12 +734,13 @@ void Title_LoadEntries(s32 mode, s32 arg1, s32 count)
             }
             for (; i < end; i++, span_offset++) {
                 page_idx = i / 120;
-                clut_data = Ns_Lookup((u32 *)&((EngineMapHeader *)list->items[0])->pages[page_idx][0])->items[i % 120];
+                clut_data = RAM_AT(u8, RAM_AT(ResourceItemListView,
+                    Ns_Lookup((u32 *)&RAM_AT(EngineMapHeader, list->items[0])->pages[page_idx][0]))->items[i % 120]);
                 if (span_offset >= span->count) {
                     span++;
                     span_offset = 0;
                 }
-                gp_title->cluts[i] = LoadClut(clut_data, span->x, span_offset + span->y);
+                TITLE->cluts[i] = LoadClut(clut_data, span->x, span_offset + span->y);
             }
             engine_resource_adjust(&ref, arg1, -count);
         }
@@ -754,9 +758,9 @@ void Title_LoadEntries(s32 mode, s32 arg1, s32 count)
         engine_resource_adjust(&header->words1B0[i], arg1, count);
     }
     for (i = 0; i < header->count14; i++) {
-        entry = (EngineState *)engine_resource_adjust(&header->words130[i], arg1, count);
-        if (arg1 != 0 && count > 0 && entry->word08 == 2) {
-            Gfx_TgeoOnLoad(entry);
+        entry = engine_resource_adjust(&header->words130[i], arg1, count);
+        if (arg1 != 0 && count > 0 && RAM_AT(EngineState, entry)->word08 == 2) {
+            Gfx_TgeoOnLoad(RAM_AT(struct RenderEntry, entry));
         }
     }
 }

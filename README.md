@@ -34,7 +34,8 @@ extracted game executable.
 ```sh
 git clone https://github.com/khasinski/crash-bandicoot-pc
 cd crash-bandicoot-pc
-git submodule update --init third_party/psyz third_party/psyz/external/SDL
+git submodule update --init third_party/psyz
+git -C third_party/psyz submodule update --init external/SDL
 cmake -S . -B build -DBUILD_TESTING=ON
 cmake --build build --parallel
 ctest --test-dir build --output-on-failure --no-tests=error

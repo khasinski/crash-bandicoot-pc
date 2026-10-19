@@ -16,7 +16,9 @@ jobs:
         with:
           submodules: false
       - name: Fetch PsyZ and SDL
-        run: git submodule update --init third_party/psyz third_party/psyz/external/SDL
+        run: |
+          git submodule update --init third_party/psyz
+          git -C third_party/psyz submodule update --init external/SDL
       - name: Build and test the native target
         run: |
           cmake -S . -B build -DBUILD_TESTING=ON

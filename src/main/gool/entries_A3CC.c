@@ -1,7 +1,4 @@
-/* GCC_VERSION: 2.6.3 */
-/* GNU_AS_G: 8 */
 #include "common.h"
-
 
 typedef struct ZoneFogHeader {
     u8 reserved_00[0x2E8];
@@ -22,7 +19,6 @@ typedef struct NsdHeader {
 #define CRASH_EXT_GOOL_ENTRIES_A3CC
 #include "gool_externs.h"
 #undef CRASH_EXT_GOOL_ENTRIES_A3CC
-
 
 static __inline__ void Gfx_GetFar(u32 *arg0, s32 *arg1)
 {

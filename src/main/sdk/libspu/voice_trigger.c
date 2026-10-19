@@ -1,12 +1,8 @@
-/* GCC_VERSION: 2.5.7 */
-/* GCC_CPU: r4000 */
 #include "common.h"
 
 #define CRASH_EXT_SDK_LIBSPU_VOICE_TRIGGER
 #include "sdk_externs.h"
 #undef CRASH_EXT_SDK_LIBSPU_VOICE_TRIGGER
-
-
 
 /* Retail caller passes a byte in a0 and the pitch in a1; a0 is unused here. */
 void SpuVmKeyOnNow(u8 arg0, u16 arg1) {

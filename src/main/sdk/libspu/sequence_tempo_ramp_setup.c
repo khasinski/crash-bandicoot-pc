@@ -1,6 +1,3 @@
-/* GCC_VERSION: 2.5.7 */
-/* GCC_CPU: r4000 */
-/* ASPSX_VERSION: 2.34 */
 #include "common.h"
 void _SsSndSetVolData(s32 arg0, s16 arg1, s16 arg2, u32 arg3) {
     s32 var_v1;

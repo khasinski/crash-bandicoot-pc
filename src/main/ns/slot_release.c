@@ -1,4 +1,3 @@
-/* GCC_VERSION: 2.6.3 */
 #include "resource.h"
 typedef ResourceSlotStateView Slot;
 

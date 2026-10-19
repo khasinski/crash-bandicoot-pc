@@ -1,10 +1,7 @@
 #include "object_links.h"
 #include "zone.h"
 
-/* GCC_VERSION: 2.6.3 */
-
 /* Call the object cleanup routine with its recursive/event flag enabled. */
-
 
 s32 Gool_ObjectTerminate(Node *obj, void *context)
 {
@@ -17,7 +14,6 @@ typedef struct ObjectRoot {
     s32 kind;
     Node *word04;
 } ObjectRoot;
-
 
 void Gool_ZoneObjectsTerminate(void *object)
 {

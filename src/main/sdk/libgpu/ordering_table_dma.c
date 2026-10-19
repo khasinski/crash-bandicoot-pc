@@ -1,7 +1,6 @@
 #include "common.h"
 #include "gpu.h"
 
-/* GCC_VERSION: 2.6.3 */
 #define CRASH_EXT_SDK_LIBGPU_ORDERING_TABLE_DMA
 #include "sdk_externs.h"
 #undef CRASH_EXT_SDK_LIBGPU_ORDERING_TABLE_DMA

@@ -1,6 +1,3 @@
-/* GNU_AS_NO_GP: gp_level_unused_1 */
-/* GCC_VERSION: 2.6.3 */
-/* GNU_AS_G: 4 */
 #include "common.h"
 #include "zone.h"
 
@@ -71,7 +68,6 @@ s32 gp_checkpoint_zone_id = 0;
 #include "level_externs.h"
 #undef CRASH_EXT_LEVEL_CHECKPOINT_2
 
-
 void Level_SaveState(SaveObj *obj, LevelSave *save, s32 flag)
 {
     ZoneHeader *header;
@@ -133,7 +129,7 @@ void Level_Restart(LevelSave *save)
                 n_header->display_flags &= ~3;
             }
         }
-        Ns_ZoneUnload(&header->load, 0);
+        Ns_ZoneUnload(&header->load);
     }
     level_position.zone = NULL;
     SetGeomScreen(g_view_proj);

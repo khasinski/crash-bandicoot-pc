@@ -1,8 +1,5 @@
-/* GCC_VERSION: 2.6.3 */
-/* GCC_CPU: 3000 */
 #include "common.h"
 #include "audio_channels.h"
-/* GNU_AS_G: 8 */
 
 void Midi_ResetSeqVol(s16 gain) {
     s16 channel;

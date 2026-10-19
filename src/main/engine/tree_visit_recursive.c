@@ -1,8 +1,5 @@
 #include "object_links.h"
 
-/* GCC_VERSION: 2.6.3 */
-
-
 #define NODE_CHILDREN(n) ((n)->kind == 2 ? (n)->word04 : (n)->children)
 #define NODE_CHILDREN_PTR(n) ((n)->kind == 2 ? &(n)->word04 : &(n)->children)
 

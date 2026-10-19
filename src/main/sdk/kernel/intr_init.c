@@ -1,8 +1,6 @@
 #include "common.h"
 #include "gpu.h"
 
-/* GCC_VERSION: 2.6.3 */
-
 /* --- startIntr --- */
 
 typedef void (*Callback)(void);
@@ -35,7 +33,6 @@ typedef struct {
 #define CRASH_EXT_SDK_KERNEL_INTR_INIT_1
 #include "sdk_externs.h"
 #undef CRASH_EXT_SDK_KERNEL_INTR_INIT_1
-
 
 void *startIntr(void) {
     void *result;

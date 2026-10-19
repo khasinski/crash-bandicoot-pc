@@ -1,9 +1,6 @@
 #include "common.h"
 
-/* GCC_VERSION: 2.6.3 */
-
 /* Set the wait flag and service pending resource operations until the counter reaches zero. */
-
 
 void Ns_Update2(void)
 {

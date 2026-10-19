@@ -1,8 +1,6 @@
-/* GCC_VERSION: 2.6.3 */
 #include "common.h"
 #include "ns.h"
 
-/* GCC_VERSION: 2.6.3 */
 #include "common.h"
 #include "vector.h"
 
@@ -19,7 +17,6 @@ typedef struct {
     s32 x, y, z, reserved;
 } LVector;
 
-
 #define CRASH_EXT_GOOL_PROJECT
 #include "gool_externs.h"
 #undef CRASH_EXT_GOOL_PROJECT
@@ -34,8 +31,8 @@ void Gool_Transform(Vec3 *arg0, Vec3 *arg1, Vec3 *arg2, Vec3 *arg3, Vec3 *arg4)
     s16 s2, c2;
     s16 s3, c3;
 
-    s1 = sin(arg2->z & 0xFFF);
-    c1 = cos(arg2->z & 0xFFF);
+    s1 = Math_Sin(arg2->z & 0xFFF);
+    c1 = Math_Cos(arg2->z & 0xFFF);
     m1.m[0][0] = c1;
     m1.m[0][1] = 0;
     m1.m[0][2] = s1;
@@ -46,8 +43,8 @@ void Gool_Transform(Vec3 *arg0, Vec3 *arg1, Vec3 *arg2, Vec3 *arg3, Vec3 *arg4)
     m1.m[2][1] = 0;
     m1.m[2][2] = c1;
 
-    s2 = sin(arg2->x);
-    c2 = cos(arg2->x);
+    s2 = Math_Sin(arg2->x);
+    c2 = Math_Cos(arg2->x);
     m2.m[0][0] = 0x1000;
     m2.m[0][1] = 0;
     m2.m[0][2] = 0;
@@ -59,8 +56,8 @@ void Gool_Transform(Vec3 *arg0, Vec3 *arg1, Vec3 *arg2, Vec3 *arg3, Vec3 *arg4)
     m2.m[2][2] = c2;
     MulMatrix(&m1, &m2);
 
-    s3 = sin(-((arg2->z - arg2->y) & 0xFFF));
-    c3 = cos(-((arg2->z - arg2->y) & 0xFFF));
+    s3 = Math_Sin(-((arg2->z - arg2->y) & 0xFFF));
+    c3 = Math_Cos(-((arg2->z - arg2->y) & 0xFFF));
     m2.m[0][0] = c3;
     m2.m[0][1] = 0;
     m2.m[0][2] = s3;

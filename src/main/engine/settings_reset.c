@@ -1,16 +1,11 @@
 #include "common.h"
 
-/* GCC_VERSION: 2.6.3 */
                                  /* extern */
                       /* extern */
                                 /* extern */
 #define CRASH_EXT_ENGINE_SETTINGS_RESET
 #include "engine_externs.h"
 #undef CRASH_EXT_ENGINE_SETTINGS_RESET
-
-
-
-
 
 void Level_InitGlobals(void) {
     g_saved_level_id[0] = 0x63;

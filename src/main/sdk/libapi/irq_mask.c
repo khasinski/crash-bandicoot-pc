@@ -1,7 +1,5 @@
 #include "common.h"
 
-/* GCC_VERSION: 2.6.3 */
-
 /* Exchange the hardware interrupt mask. */
 
 s32 SetIntrMask(s32 arg0) {

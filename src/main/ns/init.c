@@ -1,4 +1,3 @@
-/* GCC_VERSION: 2.6.3 */
 #include "common.h"
 #include "ns.h"
 
@@ -7,7 +6,6 @@
 s32 gp_pause_B_pressed = 1;
 
      /* "Inited and Allocated %d pages\n" */
-
 
 /* The entry search of Ns_ProbeSafe, expanded inline at both uses. */
 static __inline__ ResourceBucket *ns_lookup(u32 id)
@@ -225,7 +223,6 @@ s32 Ns_Init(NsState *ns, s32 level)
     }
     return -0xFF;
 }
-
 
 /* Shut down subsystem tables, release all physical pages and free paging buffers. */
 s32 Ns_Kill(NsState *ns)

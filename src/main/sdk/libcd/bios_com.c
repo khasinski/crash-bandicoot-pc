@@ -1,6 +1,3 @@
-/* GCC_VERSION: 2.6.3 */
-/* ASPSX_VERSION: 2.21 */
-/* GNU_AS_G: 0 */
 #include "common.h"
 
 typedef void (*CdCallback)(s32, u8 *);
@@ -18,12 +15,9 @@ typedef struct {
     s32 param_count[32];
 } CdCmdTable;
 
-
-
 #define CRASH_EXT_SDK_LIBCD_BIOS_COM
 #include "sdk_externs.h"
 #undef CRASH_EXT_SDK_LIBCD_BIOS_COM
-
 
 static inline void cd_set_timeout(const char *name)
 {

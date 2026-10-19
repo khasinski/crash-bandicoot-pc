@@ -1,6 +1,4 @@
-/* GCC_VERSION: 2.6.3 */
 #include "render.h"
-
 
 /* Preserve unknown projection modes; reset the GTE matrix and camera words. */
 void Gfx_InitMatrices(void)

@@ -1,8 +1,5 @@
-/* GCC_VERSION: 2.6.3 */
-/* GCC_CPU: 3000 */
 #include "common.h"
 #include "audio_channels.h"
-/* GNU_AS_G: 8 */
 
 #define CRASH_EXT_ENGINE_AUDIO_MODE_UPDATE
 #include "engine_externs.h"

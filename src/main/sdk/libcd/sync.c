@@ -1,7 +1,5 @@
 #include "common.h"
 
-/* GCC_VERSION: 2.6.3 */
-
 /* Synchronise cached disc state while temporarily suppressing the callback. */
 
 void CD_flush(void) {

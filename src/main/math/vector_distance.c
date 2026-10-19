@@ -1,11 +1,8 @@
 #include "common.h"
 
-/* GCC_VERSION: 2.6.3 */
-
 /* Compute XYZ or XZ distance through the integer root helper, using 8-bit scaled deltas. */
 
 #include "vector.h"
-
 
 s32 Math_EucDist(Vec3 *a, Vec3 *b)
 {

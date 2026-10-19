@@ -1,6 +1,4 @@
-/* GCC_VERSION: 2.6.3 */
 #include "common.h"
-
 
 typedef void *va_list;
 #define va_start(ap, last) ((ap) = (void *)(&(last) + 1))

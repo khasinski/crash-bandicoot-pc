@@ -1,9 +1,4 @@
-/* GCC_VERSION: 2.5.7 */
-/* GCC_CPU: r4000 */
 #include "common.h"
-
-
-
 
 void _SsStart(s32 arg0) {
     s32 i;

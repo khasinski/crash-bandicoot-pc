@@ -1,7 +1,5 @@
 #include "object_links.h"
 
-/* GCC_VERSION: 2.6.3 */
-
 /* Partial linked-object layout; word04 is used when kind is two. */
 
 s32 Gool_ObjectHandleTraverseTreePostorder(Node *root, Visitor visitor, void *context)

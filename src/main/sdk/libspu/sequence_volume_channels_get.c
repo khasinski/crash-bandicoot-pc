@@ -1,5 +1,3 @@
-/* GCC_VERSION: 2.5.7 */
-/* GCC_CPU: r4000 */
 #include "common.h"
 s32 SpuVmGetSeqLVol(s32 selector) {
     s32 channel=(selector&0xFF00)>>8;

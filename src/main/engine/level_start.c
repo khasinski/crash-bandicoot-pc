@@ -1,4 +1,3 @@
-/* GCC_VERSION: 2.6.3 */
 #include "object_links.h"
       /* extern */
                            /* extern */

@@ -1,4 +1,3 @@
-/* GCC_VERSION: 2.6.3 */
 #include "common.h"
 #include "zone.h"
 
@@ -114,7 +113,6 @@ typedef struct CamGlobals {
 #define CRASH_EXT_CAM_CAMERA_1
 #include "cam_externs.h"
 #undef CRASH_EXT_CAM_CAMERA_1
-
 
 #define MIN(a, b) ((a) < (b) ? (a) : (b))
 #define MAX(a, b) ((a) > (b) ? (a) : (b))
@@ -239,8 +237,8 @@ s32 Cam_GetProgress2(CamVec *trans, ZonePath *path, CamCandidate *cam, s32 relat
     for (i = 0; i < path->length; i++) {
         diff1.x = (trans->x >> 8) - (path->points[i].x + rect->x);
         diff1.z = (trans->z >> 8) - (path->points[i].z + rect->z);
-        dir.x = sin(path->points[i].rot_y);
-        dir.z = cos(path->points[i].rot_y);
+        dir.x = Math_Sin(path->points[i].rot_y);
+        dir.z = Math_Cos(path->points[i].rot_y);
         dot = zoom_offset - (diff1.x * dir.x + diff1.z * dir.z);
         abs_dot = __builtin_abs(dot);
         if (path->direction_z > 0) {

@@ -1,7 +1,5 @@
 #include "common.h"
 
-/* GCC_VERSION: 2.6.3 */
-
 /* Clear callback state and install the CD interrupt handler. */
 
 #define CRASH_EXT_SDK_LIBCD_CALLBACKS

@@ -1,4 +1,3 @@
-/* GCC_VERSION: 2.6.3 */
 #include "common.h"
 
 #include "zone.h"
@@ -27,7 +26,6 @@ typedef struct ZqZoneRect {
     s16 max_depth_y;
     s16 max_depth_z;
 } ZqZoneRect;
-
 
 /* Whether v lies inside the zone's 8-bit shifted bounding box. */
 static __inline__ s32 zone_rect_contains(ZqZoneRect *rect, ZqVec *v)

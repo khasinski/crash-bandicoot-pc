@@ -1,9 +1,4 @@
-/* GCC_VERSION: 2.6.3 */
-/* GCC_CPU: r3000 */
 #include "common.h"
-
-
-
 
 /* Wait for this block, then account for the transfer quantum. */
 static __inline__ u32 finish_chunk(u32 remaining, s32 event) {

@@ -1,7 +1,5 @@
 #include "common.h"
 
-/* GCC_VERSION: 2.6.3 */
-
 /* Clear the two engine state words; their precise role is still unidentified. */
 
 #define CRASH_EXT_ENGINE_RESET

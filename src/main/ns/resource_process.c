@@ -1,4 +1,3 @@
-/* GCC_VERSION: 2.6.3 */
 #include "common.h"
 #include "gpu.h"
 #include "ns.h"
@@ -9,7 +8,6 @@ typedef ResourceSlot Slot;
 typedef ResourceBucket Bucket;
 typedef ResourceHandler Handler;
 GpuRect gp_ns_StringTable = { 0, 0, 0x100, 0x80 };
-
 
 u8 *Ns_PageUpdateEntries(s32 index) {
     Slot *request = &g_ns.physical[index], *slot;

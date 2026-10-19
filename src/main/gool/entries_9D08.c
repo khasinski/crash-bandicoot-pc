@@ -1,8 +1,5 @@
 #include "common.h"
 
-/* GCC_VERSION: 2.6.3 */
-
-
 #define CRASH_EXT_GOOL_ENTRIES_9D08
 #include "gool_externs.h"
 #undef CRASH_EXT_GOOL_ENTRIES_9D08

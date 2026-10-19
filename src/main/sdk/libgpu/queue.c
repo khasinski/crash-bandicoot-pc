@@ -1,8 +1,6 @@
 #include "common.h"
 #include "gpu.h"
 
-/* GCC_VERSION: 2.6.3 */
-
 typedef struct {
     u8 version;
     volatile u8 mode;
@@ -36,7 +34,6 @@ typedef struct {
 #define CRASH_EXT_SDK_LIBGPU_QUEUE_1
 #include "sdk_externs.h"
 #undef CRASH_EXT_SDK_LIBGPU_QUEUE_1
-
 
 s32 _addque2(void (*func)(void *, s32), u32 *buf, s32 size, s32 arg)
 {

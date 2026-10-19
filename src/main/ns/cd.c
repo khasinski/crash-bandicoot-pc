@@ -1,10 +1,7 @@
 #include "common.h"
 #include "resource.h"
 
-/* GCC_VERSION: 2.6.3 */
-
 /* Call the CD routine with the inverted flag; report success only for a zero result. */
-
 
 s32 Ns_ReadSync(s32 enabled)
 {
@@ -41,7 +38,6 @@ typedef struct CdResourceSlot {
     s32 word20;
     CdResourceEntry *word24;
 } CdResourceSlot;
-
 
 s32 Ns_ReadSectorAsync(CdResourceSlot *slot, s32 count)
 {

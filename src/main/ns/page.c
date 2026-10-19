@@ -1,8 +1,5 @@
-/* GCC_VERSION: 2.6.3 */
-/* GNU_AS_G: 8 */
 #include "common.h"
 #include "ns.h"
-
 
 /* Return an item span from adjacent offsets in a nonempty resource page. */
 

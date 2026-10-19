@@ -1,7 +1,5 @@
 #include "common.h"
 
-/* GCC_VERSION: 2.6.3 */
-
 /* Update GPU debug and mode bytes, returning their previous values. */
 #define CRASH_EXT_SDK_LIBGPU_DEBUG_MODE_0
 #include "sdk_externs.h"
@@ -14,7 +12,6 @@ typedef struct {u8 reverse;u8 reserved_01[12];u8 drawing[92];u8 display[20];} Gp
 #define CRASH_EXT_SDK_LIBGPU_DEBUG_MODE_2
 #include "sdk_externs.h"
 #undef CRASH_EXT_SDK_LIBGPU_DEBUG_MODE_2
-
 
 u8 SetGraphReverse(s32 requested) {
     GpuReverseState *state = &g_gpu_reverse_flag;

@@ -1,10 +1,7 @@
 #include "common.h"
 #include "gpu.h"
 
-/* GCC_VERSION: 2.6.3 */
-
 /* Upload a 256- or 16-colour palette and return its CLUT ID. */
-
 
 u16 LoadClut(void *image, s32 x, s32 y)
 {

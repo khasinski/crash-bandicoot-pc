@@ -1,6 +1,5 @@
 #include "common.h"
 
-/* GCC_VERSION: 2.6.3 */
 #define CRASH_EXT_SDK_LIBGPU_PACKET_LINK
 #include "sdk_externs.h"
 #undef CRASH_EXT_SDK_LIBGPU_PACKET_LINK

@@ -1,8 +1,5 @@
 #include "resource.h"
 
-/* GCC_VERSION: 2.6.3 */
-/* CC1_FLAGS: -O1 */
-
 /* Hash buckets point into eight-byte resource entries. */
 typedef ResourceBucket Entry;
 typedef ResourceHashMetadata Metadata;

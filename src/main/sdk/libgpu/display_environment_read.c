@@ -1,7 +1,5 @@
 #include "common.h"
 
-/* GCC_VERSION: 2.6.3 */
-
 #define CRASH_EXT_SDK_LIBGPU_DISPLAY_ENVIRONMENT_READ
 #include "sdk_externs.h"
 #undef CRASH_EXT_SDK_LIBGPU_DISPLAY_ENVIRONMENT_READ

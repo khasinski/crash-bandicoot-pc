@@ -1,12 +1,8 @@
-/* GNU_AS_NO_GP: gp_next_lid gp_level_unused_1 gp_next_level_ldat_eid */
-/* GCC_VERSION: 2.6.3 */
-/* GNU_AS_G: 4 */
 #include "common.h"
 #include "object_links.h"
 #include "gool.h"
 #include "zone.h"
 #include "ns.h"
-
 
 s32 Gool_SendToColliders2(Node *arg0, Node *arg1, s32 arg2, s32 arg3, s32 arg4, s32 arg5)
 {
@@ -61,7 +57,6 @@ typedef struct GoolStackObj {
     u32 *fp;
 } GoolStackObj;
 
-
 s32 Gool_ObjectInterrupt(GoolStackObj *obj, u32 arg1, s32 argc, u32 *argv)
 {
     s32 i;
@@ -83,14 +78,12 @@ s32 Gool_ObjectInterrupt(GoolStackObj *obj, u32 arg1, s32 argc, u32 *argv)
     return GOOL_InterpretObject(obj, 3, 0);
 }
 
-
 typedef struct LevelDesc {
     s32 word_0;
     s32 word_4;
     u32 eid;
     s32 path_idx;
 } LevelDesc;
-
 
 #define CRASH_EXT_GOOL_BROADCAST_0
 #include "gool_externs.h"

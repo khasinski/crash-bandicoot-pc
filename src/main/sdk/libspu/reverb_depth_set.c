@@ -1,7 +1,4 @@
-/* GCC_VERSION: 2.5.7 */
-/* ASPSX_VERSION: 2.34 */
 #include "common.h"
-/* GCC_CPU: r4000 */
 typedef struct {u32 mask;s32 mode;s16 depth_left,depth_right;s32 delay,feedback;} ReverbAttributes;
 #define CRASH_EXT_SDK_LIBSPU_REVERB_DEPTH_SET
 #include "sdk_externs.h"

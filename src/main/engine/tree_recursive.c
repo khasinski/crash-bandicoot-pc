@@ -1,7 +1,5 @@
 #include "object_links.h"
 
-/* GCC_VERSION: 2.6.3 */
-
 s32 GOOL_TraverseObjectTreePostorder(Node *root, Visitor visitor, void *context)
 {
     Node *child = root->children;

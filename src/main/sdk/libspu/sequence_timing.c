@@ -1,7 +1,5 @@
 #include "common.h"
 
-/* GCC_VERSION: 2.5.7 */
-
 /* Select sequence timing using the mode returned by the video-mode query.
  * Flag 0x1000 is stored separately; values below six select preset timings.
  */

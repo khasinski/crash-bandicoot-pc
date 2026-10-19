@@ -1,13 +1,8 @@
 #include "common.h"
 
-/* GCC_VERSION: 2.6.3 */
-
-
 #define CRASH_EXT_GOOL_QUERY_NEAREST
 #include "gool_externs.h"
 #undef CRASH_EXT_GOOL_QUERY_NEAREST
-
-
 
 typedef struct GoolCodeHeader {
     s32 word_00;

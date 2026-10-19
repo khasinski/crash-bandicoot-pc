@@ -1,6 +1,5 @@
 #include "common.h"
 
-/* GCC_VERSION: 2.6.3 */
 typedef void (*Callback)(void);
 /* The interrupt tick counter can be read while callbacks are running. */
 void trapIntrVSync(void) {

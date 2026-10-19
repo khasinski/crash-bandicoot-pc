@@ -1,10 +1,6 @@
 #include "common.h"
 
-/* GCC_VERSION: 2.6.3 */
-
 /* Clamp transfer size, forward buffer and size, and update completion state. */
-
-
 
 u32 SpuWrite(s32 arg0,u32 arg1) {
     u32 var_s0;

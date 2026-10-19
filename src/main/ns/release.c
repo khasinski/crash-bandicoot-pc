@@ -1,7 +1,5 @@
 #include "common.h"
 
-/* GCC_VERSION: 2.6.3 */
-
 /* Mark a resource slot free and place the -0x12 sentinel in its ID-indexed table entry. */
 
 #include "resource.h"

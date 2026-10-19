@@ -1,9 +1,6 @@
-/* GCC_VERSION: 2.6.3 */
 #include "common.h"
 
 typedef void (*Callback)(void);
-
-
 
 void trapIntrDMA(void) {
     s32 i;

@@ -1,6 +1,3 @@
-/* GCC_VERSION: 2.6.3 */
-/* ASPSX_VERSION: 2.21 */
-/* GNU_AS_G: 0 */
 #include "common.h"
 typedef void (*CdCallback)(s32,void*);
 #define CRASH_EXT_SDK_LIBCD_INTERRUPT_CALLBACKS

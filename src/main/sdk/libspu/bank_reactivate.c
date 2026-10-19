@@ -1,5 +1,3 @@
-/* GCC_VERSION: 2.5.7 */
-/* GCC_CPU: r4000 */
 #include "common.h"
 
 s32 SsVabFakeBody(s32 requested)

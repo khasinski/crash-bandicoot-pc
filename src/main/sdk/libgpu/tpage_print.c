@@ -1,9 +1,6 @@
 #include "common.h"
 
-/* GCC_VERSION: 2.6.3 */
-
 /* Decode a texture-page value for the diagnostic callback. */
-
 
 void DumpTPage(s32 page) {
     u32 default_page;

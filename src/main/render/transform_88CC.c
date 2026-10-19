@@ -1,6 +1,3 @@
-/* GCC_VERSION: 2.6.3 */
-/* CC1_FLAGS: -O2 */
-/* GNU_AS_G: 8 */
 #include "common.h"
 
 typedef struct GoolVectors {
@@ -46,7 +43,6 @@ typedef struct ResourceEntry88CC {
 #define CRASH_EXT_RENDER_TRANSFORM_88CC
 #include "render_externs.h"
 #undef CRASH_EXT_RENDER_TRANSFORM_88CC
-
 
 typedef struct Matrix88CC {
     s16 m[3][3];

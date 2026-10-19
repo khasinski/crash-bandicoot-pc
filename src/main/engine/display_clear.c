@@ -1,4 +1,3 @@
-/* GCC_VERSION: 2.6.3 */
 #include "render.h"
 typedef GpuDrawing Drawing;
 typedef GpuTile Tile;
@@ -12,7 +11,6 @@ typedef struct {
 #define CRASH_EXT_ENGINE_DISPLAY_CLEAR
 #include "engine_externs.h"
 #undef CRASH_EXT_ENGINE_DISPLAY_CLEAR
-
 
 __inline__ void Gpu_ClearVRAM(void) {
     Drawing drawing;

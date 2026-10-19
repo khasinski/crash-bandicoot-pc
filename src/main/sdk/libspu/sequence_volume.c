@@ -1,5 +1,3 @@
-/* GCC_VERSION: 2.5.7 */
-/* GCC_CPU: r4000 */
 #include "common.h"
 
 /* Known fields and the 0xAC stride are recovered from retail loads/stores. */
@@ -13,7 +11,6 @@ typedef struct { u8 pan; u8 rest[51]; } PanVoice;
 #define CRASH_EXT_SDK_LIBSPU_SEQUENCE_VOLUME_1
 #include "sdk_externs.h"
 #undef CRASH_EXT_SDK_LIBSPU_SEQUENCE_VOLUME_1
-
 
 s16 SpuVmSetSeqVol(s16 arg0, u16 arg1, u16 arg2, s16 arg3) {
     s16 temp_a1_2;

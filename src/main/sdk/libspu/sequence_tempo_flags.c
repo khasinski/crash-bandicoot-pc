@@ -1,5 +1,3 @@
-/* GCC_VERSION: 2.5.7 */
-/* GCC_CPU: r4000 */
 #include "common.h"
 void _SsSndSetCres(s16 sequence,s16 channel,s16 value,u32 duration) {
     _SsSndSetVolData(sequence,channel,value,duration);

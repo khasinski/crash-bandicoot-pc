@@ -1,6 +1,5 @@
 #include "gpu.h"
 
-/* GCC_VERSION: 2.6.3 */
                 /* extern */
                         /* extern */
 

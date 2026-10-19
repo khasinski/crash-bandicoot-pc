@@ -1,10 +1,6 @@
-/* GCC_VERSION: 2.6.3 */
-/* GNU_AS_G: 8 */
 #include "common.h"
 #include "ns.h"
 #include "zone.h"
-
-
 
 typedef struct NsDirectoryExt {
     s32 bucket_offsets[0x100];

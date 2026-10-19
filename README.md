@@ -17,8 +17,11 @@ are judged by behavior, portability, readability and native builds.
 ## Status
 
 The port has just started. The native build compiles PsyZ and the original
-modules listed in `CMakeLists.txt`, and the tests in `tests/` exercise them.
-The original game entry does not run yet. See
+math modules, with `Math_Sin`/`Math_Cos` translated from the hand-written
+assembly, and `tests/original_math.c` checks them. Of the 155 engine
+translation units, 120 already compile natively, but most still assume 32-bit
+pointers and the PS1 data layout. The original game entry does not run yet,
+so there is no `crash-bandicoot-pc` executable yet. See
 [the port plan](docs/PC_PORT_PLAN.md) for the order in which subsystems join
 the build.
 
@@ -32,25 +35,19 @@ extracted game executable.
 git clone https://github.com/khasinski/crash-bandicoot-pc
 cd crash-bandicoot-pc
 git submodule update --init third_party/psyz third_party/psyz/external/SDL
-cmake -S . -B build -DBUILD_TESTING=OFF
-cmake --build build --parallel
-./build/crash-bandicoot-pc --disc "/path/to/Crash Bandicoot (USA).cue"
-```
-
-The game reads its data from a user-supplied CUE/BIN image. The image must be
-the USA release (redump 2250, track 1 SHA-1
-`61ff4c9e8dcfb9e5d94d37f66330b69d08d6c914`).
-
-Enable `BUILD_TESTING=ON` to build the tests of the original modules:
-
-```sh
 cmake -S . -B build -DBUILD_TESTING=ON
 cmake --build build --parallel
-CRASH_TEST_DISC="/path/to/Crash Bandicoot (USA).cue" \
 ctest --test-dir build --output-on-failure --no-tests=error
 ```
 
-Tests that need game data skip with code 77 when `CRASH_TEST_DISC` is unset.
+Once the boot milestone lands, the game will start with
+`./build/crash-bandicoot-pc --disc "/path/to/Crash Bandicoot (USA).cue"` and
+read its data from that user-supplied CUE/BIN image. The image must be the USA
+release (redump 2250, track 1 SHA-1
+`61ff4c9e8dcfb9e5d94d37f66330b69d08d6c914`).
+
+Tests that need game data will read the image named by `CRASH_TEST_DISC`
+and skip with code 77 when it is unset.
 
 `tools/scripts/gool_lisp.py` decompiles GOOL bytecode in NSF files to a Lisp
 form and assembles it back (see [docs/GOOL_LISP.md](docs/GOOL_LISP.md)).

@@ -1,7 +1,5 @@
 #include "common.h"
 
-/* GCC_VERSION: 2.6.3 */
-
 /* Replace or terminate the 24-bit packet link while preserving the high length byte. */
 
 void CatPrim(u32 *packet, u32 address)

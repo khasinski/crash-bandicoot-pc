@@ -1,5 +1,3 @@
-/* GCC_VERSION: 2.5.7 */
-/* GCC_CPU: r4000 */
 #include "common.h"
 typedef void (*SequenceCallback)(s16,s16,u8);
 void _SsContNrpn1(sequence,channel,value)

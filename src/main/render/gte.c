@@ -1,7 +1,5 @@
 #include "common.h"
 
-/* GCC_VERSION: 2.6.3 */
-
 /* Pass the matrix at g_m_rot to the two GTE setup routines. */
 
 #define CRASH_EXT_RENDER_GTE

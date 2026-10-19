@@ -1,0 +1,26 @@
+name: native-c
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  macos:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: false
+      - name: Fetch PsyZ and SDL
+        run: git submodule update --init third_party/psyz third_party/psyz/external/SDL
+      - name: Build and test the native target
+        run: |
+          cmake -S . -B build -DBUILD_TESTING=ON
+          cmake --build build --parallel
+          ctest --test-dir build --output-on-failure --no-tests=error
+      - name: GOOL Lisp tools
+        run: python3 -m unittest tests.test_gool_lisp

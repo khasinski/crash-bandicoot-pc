@@ -1,7 +1,5 @@
 #include "common.h"
 
-/* GCC_VERSION: 2.6.3 */
-
 /* Restore the saved interrupt context and hardware masks if callbacks are paused.
  * The partial state view begins at its flag and includes context bytes at 0x38.
  */

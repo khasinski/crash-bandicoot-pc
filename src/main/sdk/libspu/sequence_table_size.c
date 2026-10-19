@@ -1,9 +1,4 @@
-/* GCC_VERSION: 2.5.7 */
-/* GCC_CPU: r4000 */
-/* ASPSX_VERSION: 2.34 */
 #include "common.h"
-
-
 
 void SsSetTableSize(void *table, s16 s_max, s16 t_max) {
     s32 i;

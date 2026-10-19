@@ -1,7 +1,5 @@
 #include "object_links.h"
 
-/* GCC_VERSION: 2.6.3 */
-
 void Gool_ForEachObjectHandle(Traversal traversal, Visitor visitor, void *context)
 {
     s32 i = 0;

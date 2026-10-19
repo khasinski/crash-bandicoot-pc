@@ -1,9 +1,6 @@
 #include "common.h"
 
-/* GCC_VERSION: 2.6.3 */
-
 /* Read, set or clear a 24-bit mask across two SPU registers. */
-
 
 s32 _SpuSetAnyVoice(s32 mode, u32 mask, s32 low_index, s32 high_index) {
     s32 value;

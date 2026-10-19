@@ -1,6 +1,3 @@
-/* GCC_VERSION: 2.5.7 */
-/* GCC_CPU: r4000 */
-/* ASPSX_VERSION: 2.34 */
 #include "common.h"
 /* Retail passes 1; this callee does not consume incoming arguments. */
 #define CRASH_EXT_SDK_LIBSPU_VOICE_STATE_INIT

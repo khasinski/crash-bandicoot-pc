@@ -1,7 +1,5 @@
 #include "common.h"
 
-/* GCC_VERSION: 2.6.3 */
-
 static __inline__ s32 Ns_AlphaNumIndex(u8 ch)
 {
     s32 index;

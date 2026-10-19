@@ -1,5 +1,3 @@
-/* GCC_VERSION: 2.6.3 */
-/* GNU_AS_G: 8 */
 #include "common.h"
 #include "zone.h"
 
@@ -103,7 +101,6 @@ typedef struct SubWorkspace {
 #include "level_externs.h"
 #undef CRASH_EXT_LEVEL_OCTREE_0
 
-
 typedef struct SubBox {
     ZqBound bound;
     SubObj *obj;
@@ -117,7 +114,6 @@ typedef struct SubBoxList {
 #define CRASH_EXT_LEVEL_OCTREE_1
 #include "level_externs.h"
 #undef CRASH_EXT_LEVEL_OCTREE_1
-
 
 static __inline__ s32 zone_rect_overlaps(ZqBound *b, ZqRect *r)
 {
@@ -146,7 +142,6 @@ static __inline__ s32 Level_TestBoundInBound(ZqBound *a, ZqBound *b)
     }
     return 0;
 }
-
 
 static __inline__ void Solid_PlotWallB(s32 x1, s32 y1, s32 x2, s32 y2, s32 set)
 {
@@ -195,7 +190,6 @@ static __inline__ void Solid_PlotWallB(s32 x1, s32 y1, s32 x2, s32 y2, s32 set)
     }
 }
 
-
 static __inline__ void clamp_light(s16 *dst_f, s16 *src_f, s32 step)
 {
     if (step != 0) {
@@ -207,7 +201,6 @@ static __inline__ void clamp_light(s16 *dst_f, s16 *src_f, s32 step)
     }
     *dst_f = *src_f;
 }
-
 
 void Zone_ColorsScaleSeek(void *defaults, SubObj *obj, s32 idx, s32 flag)
 {
@@ -398,7 +391,6 @@ void * Zone_FindNearestObjectNode(SubObj *obj, ZqVec *va)
 done:
     return res;
 }
-
 
 static __inline__ s32 get_offset_base(SubObj *obj)
 {

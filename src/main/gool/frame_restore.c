@@ -1,6 +1,5 @@
 #include "gool.h"
 
-/* GCC_VERSION: 2.6.3 */
 /* Packed frame offsets are measured in bytes from object offset 0x60. */
 typedef GoolRuntimeObject Object;
 

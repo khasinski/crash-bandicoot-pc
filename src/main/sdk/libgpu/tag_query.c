@@ -1,7 +1,5 @@
 #include "common.h"
 
-/* GCC_VERSION: 2.6.3 */
-
 /* Read a packet link as a KSEG0 address, or test its 24-bit end-of-chain sentinel. */
 
 u32 NextPrim(u32 *packet)

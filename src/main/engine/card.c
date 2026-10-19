@@ -1,12 +1,9 @@
-/* GCC_VERSION: 2.6.3 */
-/* GNU_AS_G: 4 */
 #include "common.h"
 #include "engine_ticks.h"
 #include "engine_state.h"
 #include "resource.h"
 #include "gool.h"
 #include "object_links.h"
-
 
 typedef EngineFileRequest FileRequest;
 /* Both cached words are compared before dispatching the current card mode. */
@@ -36,7 +33,6 @@ void Card_Update(void)
     engine_flag_shadow[0] = Card_GetFlags();
     g_card_prev_state = gp_card->word08;
 }
-
 
 void Card_PollEvents(void)
 {
@@ -98,7 +94,6 @@ s32 Card_Check(void) {
     }
     return result;
 }
-
 
 s32 Card_Load(void)
 {
@@ -205,7 +200,6 @@ typedef struct {
 
 typedef struct { s32 v; } WordView;
 typedef struct { u32 v; } UWordView;
-
 
 #define ENGINE_CARD_SCAN_RETRY(io, request) ({ \
     s32 retries = 0, failed; \
@@ -338,7 +332,6 @@ void Card_PartReadImages(void)
     gp_card->word08 += blocks;
 }
 
-
 /* Convert a Shift-JIS memory-card block title in place to printable ASCII. */
 void Card_ShiftJisToAscii(u8 *header)
 {
@@ -436,7 +429,6 @@ void Card_AsciiToShiftJis(char *title, s32 len)
 #define CRASH_EXT_ENGINE_CARD_0
 #include "engine_externs.h"
 #undef CRASH_EXT_ENGINE_CARD_0
-
 
 static inline EngineDirectorySlot *engine_selected_file(void)
 {
@@ -620,7 +612,6 @@ inline s32 Card_LoadGlobals(EngineSaveRecord *record)
 
 #include "engine/checksum.c"
 
-
 /* Retry the I/O expression up to three times and release the event request
  * on failure. The expression is evaluated anew for each attempt. */
 #define ENGINE_CARD_RETRY(io, request) ({ \
@@ -793,7 +784,6 @@ s32 Card_EntryNameIs949(const char *arg0) {
     return BIOS_StrNCmp(g_str_card_bascus_94900, arg0, 0xC) == 0;
 }
 
-
 /* Append the search suffix, enumerate records, and cap the reported count. */
 s32 Card_CountFiles(const char *path, EngineDirectoryRecord *entries)
 {
@@ -813,7 +803,6 @@ s32 Card_CountFiles(const char *path, EngineDirectoryRecord *entries)
     if (count >= 16) count = 15;
     return count;
 }
-
 
 /* Sort Crash directory entries ahead of other saves and alphabetically. */
 void Card_SortEntries(EngineDirectoryRecord *entries, s32 count)
@@ -848,7 +837,6 @@ void Card_SortEntries(EngineDirectoryRecord *entries, s32 count)
         }
     }
 }
-
 
 void Card_Close(s32 *arg0) {
     s32 temp_a0;
@@ -908,7 +896,6 @@ s32 Card_ResetParts(s32 flags)
     Card_SetFlags(flags);
     return 0;
 }
-
 
 void Card_InitEmptyStrings(void)
 {
@@ -999,7 +986,6 @@ EnableEvent(gp_edesc_h_timeout);
 EnableEvent(gp_edesc_h_newdev);
 }
 
-
 s32 Card_Kill(void) {
     StartCARD();
     return 0;
@@ -1027,7 +1013,6 @@ typedef EngineByteRecord ByteRecord;
 #include "engine_externs.h"
 #undef CRASH_EXT_ENGINE_CARD_1
 
-
 s32 Card_Alloc(void)
 {
     EngineState *state = LIBC_Calloc(1, 0x6F4);
@@ -1052,7 +1037,6 @@ s32 Card_Free(void)
     }
     return 0;
 }
-
 
 /* Each event corresponds to one of the four native completion statuses. */
 static inline s32 engine_card_status(void)
@@ -1146,7 +1130,6 @@ s32 Card_InvalidateFilename(void) {
     g_card_filename = gp_str_card_invalid_tag;
     return 0;
 }
-
 
 s32 Card_CheckNewDevice(void)
 {

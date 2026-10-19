@@ -1,10 +1,5 @@
-/* GNU_AS_NO_GP: gp_pbak_mode */
-/* GCC_VERSION: 2.6.3 */
-/* GCC_CPU: 3000 */
-/* GNU_AS_G: 8 */
 #include "common.h"
 #include "audio_channels.h"
-
 
 void Midi_Init(void) {
     s16 channel;

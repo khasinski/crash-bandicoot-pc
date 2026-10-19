@@ -1,7 +1,5 @@
 #include "gpu.h"
 
-/* GCC_VERSION: 2.6.3 */
-
 typedef struct {u8 next[3]; u8 length; u32 word04, word08;} Packet;
 
 void SetDrawOffset(Packet *packet, s16 *offset)

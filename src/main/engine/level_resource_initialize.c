@@ -1,4 +1,3 @@
-/* GCC_VERSION: 2.6.3 */
 #include "gool.h"
 #include "resource.h"
 /* Only the cache word at +0x7C is established by this routine. */
@@ -10,7 +9,6 @@ typedef struct LevelCacheView {
 #define CRASH_EXT_ENGINE_LEVEL_RESOURCE_INITIALIZE
 #include "engine_externs.h"
 #undef CRASH_EXT_ENGINE_LEVEL_RESOURCE_INITIALIZE
-
 
 __inline__ void Pbak_Start(void)
 {

@@ -1,9 +1,6 @@
 #include "common.h"
 
-/* GCC_VERSION: 2.6.3 */
-
 /* For entries matching the high-bit group ID, set bit 3 in the indexed state table. */
-
 
 void GOOL_InitLevelSpawns(u32 group)
 {

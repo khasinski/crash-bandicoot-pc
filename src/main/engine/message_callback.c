@@ -1,4 +1,3 @@
-/* GCC_VERSION: 2.6.3 */
 #include "gool.h"
 typedef GoolActorView Actor;
 typedef GoolMessage Message;

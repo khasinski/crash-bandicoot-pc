@@ -1,7 +1,5 @@
 #include "common.h"
 
-/* GCC_VERSION: 2.6.3 */
-
 typedef void (*Callback)(void);
 
 typedef struct {
@@ -18,7 +16,6 @@ typedef struct {
 #define CRASH_EXT_SDK_LIBAPI_ROOT_INTERRUPT
 #include "sdk_externs.h"
 #undef CRASH_EXT_SDK_LIBAPI_ROOT_INTERRUPT
-
 
 void trapIntr(void)
 {

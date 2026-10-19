@@ -1,10 +1,6 @@
 #include "common.h"
 
-/* GCC_VERSION: 2.6.3 */
-/* GNU_AS_G: 8 */
-
 /* Set or clear the clipped rectangle in the 32-row grid. */
-
 
 void Solid_PlotWall(s32 x, s32 y) {
     s32 i;

@@ -1,6 +1,5 @@
 #include "common.h"
 
-/* GCC_VERSION: 2.6.3 */
 /* Retail tests and then reloads this shared completion callback slot. */
 
 void _spu_FiDMA(void) {

@@ -1,10 +1,7 @@
 #include "common.h"
 #include "gpu.h"
 
-/* GCC_VERSION: 2.6.3 */
-
 /* Initialise draw/display environments and pack the texture-page field for the active GPU mode. */
-
 
 GpuDrawEnv *SetDefDrawEnv(GpuDrawEnv *env, s32 x, s32 y, s32 w, s32 h)
 {

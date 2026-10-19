@@ -1,14 +1,8 @@
 #include "common.h"
 
-/* GCC_VERSION: 2.6.3 */
-
 /* Initialise SPU state and its 24 cached voice values. */
 
-
-
-
 /* Partial memory view: element zero precedes the 24 cached voice values. */
-
 
 void _SpuInit(s32 arg0) {
     u32 level;

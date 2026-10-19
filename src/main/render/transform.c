@@ -1,7 +1,5 @@
 #include "common.h"
 
-/* GCC_VERSION: 2.6.3 */
-
 /* Clear the first six transform words and initialise the three scales to 1.0 (12-bit fixed point). */
 
 void Gfx_ResetCam(s32 *transform)

@@ -1,10 +1,6 @@
 #include "common.h"
 
-/* GCC_VERSION: 2.6.3 */
-
 /* Align a byte address, convert to SPU units, optionally write a register. */
-
-
 
 u32 _spu_FsetRXXa(s32 reg,u32 address) {
     u32 units;

@@ -1,11 +1,8 @@
 #include "common.h"
 
-/* GCC_VERSION: 2.6.3 */
-
 /* Reset the buffer cursor and initialise its ordering table; expose the cursor word. */
 
 #include "render.h"
-
 
 void Gpu_ResetPrims(RenderBuffer *buffer)
 {

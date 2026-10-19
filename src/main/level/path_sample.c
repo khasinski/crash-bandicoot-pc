@@ -1,4 +1,3 @@
-/* GCC_VERSION: 2.6.3 */
 #include "common.h"
 #include "zone.h"
 
@@ -7,7 +6,6 @@ typedef struct {
     s32 rx, ry, rz;
     s32 sx, sy, sz;
 } CamSample;
-
 
 typedef struct {
     s32 x, y, z;

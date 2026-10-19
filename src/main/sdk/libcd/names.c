@@ -1,5 +1,3 @@
-/* GCC_VERSION: 2.6.3 */
-/* ASPSX_VERSION: 2.21 */
 #include "common.h"
 
 const char *CdComstr(s32 command)

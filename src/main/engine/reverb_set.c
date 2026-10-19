@@ -1,4 +1,3 @@
-/* GCC_VERSION: 2.6.3 */
 #include "common.h"
 typedef struct {u32 mask;s32 mode;s16 depth_left,depth_right;s32 delay,feedback;} ReverbAttributes;
 s32 Audio_SetReverbAttr(s32 mode,s16 left,s16 right,s32 delay,s32 feedback)

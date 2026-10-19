@@ -1,8 +1,5 @@
-/* GCC_VERSION: 2.6.3 */
-/* CC1_FLAGS: -O2 */
 #include "common.h"
 #include "gpu.h"
-
 
 typedef struct WgeoHeader {
     s32 x;
@@ -31,7 +28,6 @@ typedef struct ZoneHeader9A2C {
     ZoneWorld worlds[8];
 } ZoneHeader9A2C;
 
-
 typedef struct ResourceItem {
     u8 reserved_00[0x10];
     void *item0;
@@ -42,7 +38,6 @@ typedef struct ResourceItem {
 #define CRASH_EXT_RENDER_WORLD_SETUP
 #include "render_externs.h"
 #undef CRASH_EXT_RENDER_WORLD_SETUP
-
 
 void Gfx_LoadWorldsFog(ZoneHeader9A2C *arg0)
 {

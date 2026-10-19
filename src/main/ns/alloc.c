@@ -1,9 +1,6 @@
 #include "common.h"
 
-/* GCC_VERSION: 2.6.3 */
-
 /* Allocate a 64 KiB resource buffer; retain the original signed pointer/error test. */
-
 
 s32 Ns_MallocPage(void)
 {

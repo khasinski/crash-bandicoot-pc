@@ -1,6 +1,3 @@
-/* GCC_VERSION: 2.5.7 */
-/* GCC_CPU: r4000 */
-/* ASPSX_VERSION: 2.34 */
 #include "common.h"
 
 typedef struct {
@@ -36,8 +33,6 @@ typedef struct {
 #define CRASH_EXT_SDK_LIBSND_SVM_KON
 #include "sdk_externs.h"
 #undef CRASH_EXT_SDK_LIBSND_SVM_KON
-
-
 
 void SpuVmDoAllocate(void) {
     s32 var_t0;

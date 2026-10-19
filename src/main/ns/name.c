@@ -1,10 +1,6 @@
 #include "common.h"
 
-/* GCC_VERSION: 2.6.3 */
-
 /* Format an encoded resource ID, or encode five characters with the 64-character alphabet. */
-
-
 
 char *Ns_EIDValToString(s32 id)
 {

@@ -1,5 +1,3 @@
-/* GCC_VERSION: 2.5.7 */
-/* GCC_CPU: r4000 */
 #include "common.h"
 
 typedef struct { s16 value; u8 reserved[50]; } VoiceWord;
@@ -11,7 +9,6 @@ typedef struct { s16 left; s16 right; u8 reserved[12]; } VoiceVol;
 #define CRASH_EXT_SDK_LIBSPU_VOICE_UPDATE_1
 #include "sdk_externs.h"
 #undef CRASH_EXT_SDK_LIBSPU_VOICE_UPDATE_1
-
 
 s32 SpuVmSetVol(s16 arg0, s16 arg1, s16 arg2, s32 arg3, u16 arg4) {
     s16 temp_a0_2;

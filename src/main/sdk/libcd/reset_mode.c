@@ -1,6 +1,4 @@
-/* GCC_VERSION: 2.6.3 */
 #include "common.h"
-
 
 s32 CdReset(s32 mode) {
     if (mode == 2) {

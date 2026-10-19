@@ -1,7 +1,5 @@
 #include "object_links.h"
 
-/* GCC_VERSION: 2.6.3 */
-
  /* extern */
                          /* extern */
 

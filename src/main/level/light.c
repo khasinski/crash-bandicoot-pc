@@ -1,4 +1,3 @@
-/* GCC_VERSION: 2.6.3 */
 #include "common.h"
 #include "zone.h"
 
@@ -17,7 +16,6 @@ typedef struct LevelHeader {
 #define CRASH_EXT_LEVEL_LIGHT
 #include "level_externs.h"
 #undef CRASH_EXT_LEVEL_LIGHT
-
 
 void Zone_ColorsScale(LightMat *arg0, LightMat *arg1, s32 arg2, s32 arg3, s32 arg4)
 {

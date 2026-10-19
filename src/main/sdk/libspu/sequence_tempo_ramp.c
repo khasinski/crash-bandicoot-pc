@@ -1,8 +1,4 @@
-/* GCC_VERSION: 2.5.7 */
-/* GCC_CPU: r4000 */
-/* ASPSX_VERSION: 2.34 */
 #include "common.h"
-
 
 void _SsSndSetRit(s16 arg0, s16 arg1) {
     s32 temp_t0;

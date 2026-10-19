@@ -1,6 +1,3 @@
-/* GCC_VERSION: 2.6.3 */
-/* GCC_CPU: 3000 */
-/* GNU_AS_G: 8 */
 #include "common.h"
 
 /* =========================================================================
@@ -19,8 +16,6 @@ typedef struct {
 #define CRASH_EXT_ENGINE_CD_DIR
 #include "engine_externs.h"
 #undef CRASH_EXT_ENGINE_CD_DIR
-
-
 
 static __inline__ s32 cd_read_sectors(s32 sector_count, s32 first_sector, void *destination, u8 *position) {
     CdIntToPos(first_sector, position);

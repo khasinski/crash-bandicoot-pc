@@ -1,7 +1,4 @@
-/* GCC_VERSION: 2.5.7 */
-/* ASPSX_VERSION: 2.34 */
 #include "common.h"
-/* GCC_CPU: r4000 */
 s32 _SsReadDeltaValue(s16 sequence, s16 channel) {
     s32 ticks;
     s32 scaled;

@@ -1,8 +1,5 @@
-/* GCC_VERSION: 2.6.3 */
 #include "common.h"
 #include "ns.h"
-
-
 
 ResourceSlot *Ns_PageCreateVirtual(s32 id, s32 word18)
 {
@@ -34,7 +31,7 @@ void *Ns_PageCreatePhysical(ResourceSlot *slot, s32 id, s32 word18, s32 *count_p
     s32 i;
     s32 base_id;
 
-    index = Ns_PageAllocate(count_ptr, arg4);
+    index = Ns_PageAllocate(count_ptr);
     if (index == -1) {
         return (void *)-12;
     }

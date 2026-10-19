@@ -1,5 +1,3 @@
-/* GCC_VERSION: 2.5.7 */
-/* GCC_CPU: r4000 */
 #include "common.h"
 typedef void (*ControllerCallback)(s16,s16,u8);
 typedef void (*SeqResetCallback)(s16,s16);

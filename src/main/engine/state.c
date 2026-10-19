@@ -6,10 +6,6 @@
 #include "resource.h"
 #include "gool.h"
 
-/* GCC_VERSION: 2.6.3 */
-
-
-
 /* Mode request and the eight-byte name/format records at 0x80056500. */
 s32 gp_title_once = 1;
 char gp_game_over_zone_name[8] = "0b_pZ";
@@ -33,14 +29,12 @@ s32 gp_card_new_device = 1;
 s32 gp_prev_card_flags = -1;
 u32 gp_prev_card_state = 0xFFFFFFFF;
 
-
 /* File cleanup requests and lifecycle entry points. */
 typedef EngineFileRequest FileRequest;
 
 /* Traversal storage and lifecycle share the recovered engine globals. */
 #include "object_links.h"
 
-/* GCC_VERSION: 2.6.3 */
 typedef EngineMode25State State;
 /* Real zero-initialized storage at 0x80056678..0x800566C4.
  * Unidentified words retain address names; the two typed owners are shared
@@ -98,7 +92,6 @@ s32 Title_Init(void)
 #define CRASH_EXT_ENGINE_STATE_0
 #include "engine_externs.h"
 #undef CRASH_EXT_ENGINE_STATE_0
-
 
 /* Apply a pending mode request and initialise the recovered mode-state words. */
 s32 Title_LoadNextState(void)
@@ -331,7 +324,6 @@ s32 Title_Kill(void)
     return 0;
 }
 
-
 #include "ns.h"
 #include "render.h"
 
@@ -342,7 +334,6 @@ s32 Title_Kill(void)
 typedef struct EngineGpuRect {
     s16 x, y, w, h;
 } EngineGpuRect;
-
 
 s32 Title_Loading(s32 level, u8 *image, NsDirectory *dir)
 {
@@ -440,7 +431,6 @@ typedef struct EngineSprt16 {
     u8 u, v;
     u16 clut;
 } EngineSprt16;
-
 
 s32 Title_Update(GpuPacketTag *ot)
 {
@@ -589,7 +579,6 @@ next_column:
     } while (row < 0x10);
 }
 
-
 void Title_CalcTiles(EngineMode25State *state, s32 x, s32 y)
 {
     EngineGpuRect rect;
@@ -712,7 +701,6 @@ static __inline__ void engine_update_slot_state(s32 slot, s32 active)
         g_slst_buf1[slot].state = 1;
     }
 }
-
 
 void Title_LoadEntries(s32 mode, s32 arg1, s32 count)
 {

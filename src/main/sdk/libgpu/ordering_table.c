@@ -1,9 +1,7 @@
-/* GCC_VERSION: 2.6.3 */
 #include "gpu.h"
 #define CRASH_EXT_SDK_LIBGPU_ORDERING_TABLE
 #include "sdk_externs.h"
 #undef CRASH_EXT_SDK_LIBGPU_ORDERING_TABLE
-
 
 u32 *ClearOTag(u32 *ot,s32 count) {
     if (g_gpu_debug_level >= 2) g_gpu_ot_status(g_str_ordering_table_clearotag_08x_d_n,ot,count);

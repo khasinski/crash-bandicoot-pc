@@ -1,6 +1,3 @@
-/* GNU_AS_NO_GP: gp_pbak_frame_idx */
-/* GCC_VERSION: 2.6.3 */
-/* GNU_AS_G: 8 */
 #include "common.h"
 
 typedef struct GoolVectors {
@@ -223,7 +220,6 @@ typedef struct ZoneEntryView {
     ((e)->group == 3 && \
      ((e)->type == 0 || ((e)->id != 0 && (e)->id < 5) || \
       (((e)->type == 0x2C || (e)->type == 0x30) && (e)->subtype == 0)))
-
 
 void * Gool_ObjectSpawn(ZoneEntryView *zone, s32 idx) {
     GoolObj *prev_box;

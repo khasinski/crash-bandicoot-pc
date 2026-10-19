@@ -1,5 +1,3 @@
-/* GCC_VERSION: 2.6.3 */
-/* GNU_AS_G: 8 */
 #include "common.h"
 #include "zone.h"
 
@@ -98,8 +96,6 @@ typedef struct SubWorkspace {
     s32 word_104c;
 } SubWorkspace;
 
-
-
 typedef struct SubBox {
     ZqBound bound;
     SubObj *obj;
@@ -113,7 +109,6 @@ typedef struct SubBoxList {
 #define CRASH_EXT_LEVEL_GRID_WORKSPACE
 #include "level_externs.h"
 #undef CRASH_EXT_LEVEL_GRID_WORKSPACE
-
 
 static __inline__ s32 zone_rect_overlaps(ZqBound *b, ZqRect *r)
 {
@@ -142,7 +137,6 @@ static __inline__ s32 Level_TestBoundInBound(ZqBound *a, ZqBound *b)
     }
     return 0;
 }
-
 
 static __inline__ void Solid_PlotWallB(s32 x1, s32 y1, s32 x2, s32 y2, s32 set)
 {
@@ -190,7 +184,6 @@ static __inline__ void Solid_PlotWallB(s32 x1, s32 y1, s32 x2, s32 y2, s32 set)
         }
     }
 }
-
 
 void Solid_PlotObjWalls(ZqVec *v, SubObj *obj, SubWorkspace *ws, s32 flag)
 {

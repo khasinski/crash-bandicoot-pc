@@ -1,4 +1,3 @@
-/* GCC_VERSION: 2.6.3 */
 #include "common.h"
 
 typedef struct {
@@ -14,9 +13,6 @@ typedef struct {
     u32 mask;
     s16 values[32];
 } SpuReverbRegisters;
-
-
-
 
 #define CRASH_EXT_SDK_LIBSPU_REVERB_ATTR_SET
 #include "sdk_externs.h"

@@ -1,14 +1,9 @@
-/* GNU_AS_NO_GP: gp_next_lid */
-/* GCC_VERSION: 2.6.3 */
-/* GNU_AS_G: 8 */
 #include "common.h"
 #include "render.h"
-
 
 #define CRASH_EXT_GOOL_ENTRIES_A5E0
 #include "gool_externs.h"
 #undef CRASH_EXT_GOOL_ENTRIES_A5E0
-
 
 void Gfx_TransformWorldsRipple(s32 arg0)
 {

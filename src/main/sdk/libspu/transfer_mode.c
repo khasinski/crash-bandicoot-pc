@@ -1,9 +1,6 @@
 #include "common.h"
 
-/* GCC_VERSION: 2.6.3 */
-
 /* Dispatch the transfer through the configured mode. */
-
 
 s32 _spu_write(s32 arg0, s32 arg1) {
     if (g_spu_reverb_depth_l == 0) {

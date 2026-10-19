@@ -1,7 +1,4 @@
-/* GCC_VERSION: 2.6.3 */
-/* GNU_AS_G: 8 */
 #include "resource.h"
-
 
 /* Unsized storage views retain the native absolute addressing. Only the
  * mode word above is accessed through gp in this function. */

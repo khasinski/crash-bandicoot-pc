@@ -1,4 +1,3 @@
-/* GCC_VERSION: 2.6.3 */
 #include "gpu.h"
 #include "render.h"
 
@@ -17,7 +16,6 @@ typedef struct {
 #define CRASH_EXT_RENDER_TILE_FADE
 #include "render_externs.h"
 #undef CRASH_EXT_RENDER_TILE_FADE
-
 
 void Gpu_DrawRect(s32 x, s32 y, s32 w, s32 h, u8 r, u8 g, u8 b) {
     GpuTile *tile = (GpuTile *)g_db_cur[2]->word78;

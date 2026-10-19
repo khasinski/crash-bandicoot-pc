@@ -1,7 +1,5 @@
 #include "common.h"
 
-/* GCC_VERSION: 2.6.3 */
-
 /* Compare the end as a 32-bit PS1 address, as in the original routine. */
 u32 Card_Checksum(u8 *data, u32 size)
 {

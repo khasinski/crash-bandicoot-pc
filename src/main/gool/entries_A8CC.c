@@ -1,7 +1,4 @@
-/* GCC_VERSION: 2.6.3 */
-/* GNU_AS_G: 8 */
 #include "common.h"
-
 
 typedef struct ZoneFogHeader {
     s32 count;
@@ -28,7 +25,6 @@ typedef struct {
 #define CRASH_EXT_GOOL_ENTRIES_A8CC
 #include "gool_externs.h"
 #undef CRASH_EXT_GOOL_ENTRIES_A8CC
-
 
 void Gfx_TransformWorldsDark(s32 arg0)
 {

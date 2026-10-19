@@ -1,12 +1,9 @@
-/* GCC_VERSION: 2.6.3 */
-/* CC1_FLAGS: -O2 */
 #include "common.h"
 #include "gpu.h"
 
 #define CRASH_EXT_RENDER_CAMERA_MATRIX_0
 #include "render_externs.h"
 #undef CRASH_EXT_RENDER_CAMERA_MATRIX_0
-
 
 typedef struct Copy32 {
     s32 w[8];
@@ -50,7 +47,6 @@ typedef struct CamBlock {
 #include "render_externs.h"
 #undef CRASH_EXT_RENDER_CAMERA_MATRIX_2
 
-
 typedef struct WgeoHeader {
     s32 x;
     s32 y;
@@ -78,7 +74,6 @@ typedef struct ZoneHeader9A2C {
     ZoneWorld worlds[8];
 } ZoneHeader9A2C;
 
-
 void Gfx_UpdateMatrices(void)
 {
     s16 sp10[16];
@@ -91,9 +86,9 @@ void Gfx_UpdateMatrices(void)
     s32 *s0_5;
 
     Level_Noop();
-    s0_1 = sin(-g_cam_rot_z);
-    v0 = cos(-g_cam_rot_z);
-    KEEP_REGISTER_VALUE(cam, (Copy32 *)&g_cam_trans_x);
+    s0_1 = Math_Sin(-g_cam_rot_z);
+    v0 = Math_Cos(-g_cam_rot_z);
+    cam = (Copy32 *)&g_cam_trans_x;
     m = (s16 *)(cam - 5);
     *m = v0;
     g_m_cam_rot_01 = -s0_1;
@@ -105,8 +100,8 @@ void Gfx_UpdateMatrices(void)
     g_m_cam_rot_21 = 0;
     g_m_cam_rot_22 = 0x1000;
 
-    s0_2 = sin(-g_cam_rot_x);
-    v0_2 = cos(-g_cam_rot_x);
+    s0_2 = Math_Sin(-g_cam_rot_x);
+    v0_2 = Math_Cos(-g_cam_rot_x);
     sp10[0] = 0x1000;
     sp10[1] = 0;
     sp10[2] = 0;
@@ -118,8 +113,8 @@ void Gfx_UpdateMatrices(void)
     sp10[8] = v0_2;
     MulMatrix(m, sp10);
 
-    s0_3 = sin(-g_cam_rot_y);
-    v0_3 = cos(-g_cam_rot_y);
+    s0_3 = Math_Sin(-g_cam_rot_y);
+    v0_3 = Math_Cos(-g_cam_rot_y);
     sp10[0] = v0_3;
     sp10[1] = 0;
     sp10[2] = s0_3;
@@ -151,8 +146,8 @@ void Gfx_UpdateMatrices(void)
 
     if (g_m_light.z914->data->flags & 0x1000) {
         *(((s32 *)cam) + 10) = __builtin_abs(((g_draw_stamp[0] % 128) - 64) * 800) + 0xDC1E0;
-        s0_4 = sin(0x7D);
-        v0_4 = cos(0x7D);
+        s0_4 = Math_Sin(0x7D);
+        v0_4 = Math_Cos(0x7D);
         *(((s16 *)cam) - 0x20) = 0x1000;
         *(((s16 *)cam) - 0x1F) = 0;
         *(((s16 *)cam) - 0x1E) = 0;
@@ -207,8 +202,8 @@ void Gfx_UpdateMatrices(void)
 
     s0_5 = &g_cam_dir_rot_y.w[0];
     g_ticks_cur_frame = *s0_5;
-    g_cam_sin_rot_y = sin(*s0_5) >> 4;
+    g_cam_sin_rot_y = Math_Sin(*s0_5) >> 4;
     g_cam_dir_vec_y = 0;
-    g_cam_cos_rot_y = cos(*s0_5) >> 4;
+    g_cam_cos_rot_y = Math_Cos(*s0_5) >> 4;
     Gfx_LoadWorldsFog(*(ZoneHeader9A2C **)(void *)&g_m_light.z914->data);
 }

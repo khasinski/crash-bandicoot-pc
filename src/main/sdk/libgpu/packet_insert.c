@@ -1,7 +1,5 @@
 #include "gpu.h"
 
-/* GCC_VERSION: 2.6.3 */
-
 /* Insert destination after source, preserving both packet lengths. */
 void AddPrim(GpuPacketTag *source, GpuPacketTag *destination)
 {

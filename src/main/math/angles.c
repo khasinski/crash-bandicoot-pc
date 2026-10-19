@@ -1,9 +1,6 @@
 #include "common.h"
 
-/* GCC_VERSION: 2.6.3 */
-
 /* Compute 12-bit angles between two points in the XZ and XY planes. */
-
 
 s32 Math_AngDistXZ(s32 *origin, s32 *target)
 {

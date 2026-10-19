@@ -1,7 +1,4 @@
-/* GCC_VERSION: 2.5.7 */
-/* ASPSX_VERSION: 2.34 */
 #include "common.h"
-/* GCC_CPU: r4000 */
                           /* extern */
 
 s32 SsUtSetVagAtr(s16 bank, s16 program, s32 tone, const ToneAttributes *result) {

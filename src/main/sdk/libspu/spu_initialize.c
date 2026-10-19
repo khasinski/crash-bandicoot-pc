@@ -1,6 +1,3 @@
-/* GCC_VERSION: 2.5.7 */
-/* GCC_CPU: r4000 */
-/* CC1_FLAGS: -O2 -fno-strength-reduce */
 #include "common.h"
 
               /* extern */

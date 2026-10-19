@@ -1,11 +1,6 @@
-/* GCC_VERSION: 2.5.7 */
-/* GCC_CPU: r4000 */
-/* ASPSX_VERSION: 2.34 */
 #include "common.h"
 
 typedef void (*ContCallback)(s16, s16, u8, ToneAttributes, s16, u8);
-
-
 
 void _SsSetControlChange(s16 sequence, s16 channel, u8 value) {
     ProgramAttributes prog_attr;

@@ -1,5 +1,3 @@
-/* GCC_VERSION: 2.6.3 */
-/* CC1_FLAGS: -O2 */
 #include "common.h"
 #include "gpu.h"
 #include "gte.h"

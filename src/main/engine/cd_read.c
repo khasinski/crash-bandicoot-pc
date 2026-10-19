@@ -1,6 +1,4 @@
-/* GCC_VERSION: 2.6.3 */
 #include "common.h"
-
 
 s32 Cd_ReadSectors(s32 sector_count, s32 first_sector, void *destination)
 {

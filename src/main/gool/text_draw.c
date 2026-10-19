@@ -1,4 +1,3 @@
-/* GCC_VERSION: 2.6.3 */
 #include "common.h"
 #include "render.h"
 #include "ns.h"
@@ -126,7 +125,6 @@ typedef struct GoolFont {
     GoolGlyph glyphs[63];
     GoolGlyph backdrop;
 } GoolFont;
-
 
 #define ABS(x) ((x) < 0 ? -(x) : (x))
 

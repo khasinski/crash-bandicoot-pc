@@ -1,8 +1,6 @@
 #include "common.h"
 #include "gpu.h"
 
-/* GCC_VERSION: 2.6.3 */
-
 /* Set or clear the transparency and raw-texture command bits. */
 
 void SetSemiTrans(GpuPacketHeader *packet,s32 enabled)

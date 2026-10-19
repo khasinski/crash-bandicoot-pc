@@ -1,6 +1,5 @@
 #include "common.h"
 
-/* GCC_VERSION: 2.6.3 */
 s32 _spu_pitch2note(s32 base_note, s32 base_fine, s32 pitch) {
     s32 remaining;
     s32 note;

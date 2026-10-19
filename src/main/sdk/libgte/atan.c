@@ -1,7 +1,5 @@
 #include "common.h"
 
-/* GCC_VERSION: 2.6.3 */
-
 /* Compute a 12-bit signed angle with the retail lookup table and overflow-aware ratio scaling. */
 
 s32 ratan2(s32 x, s32 y) {

@@ -1,5 +1,3 @@
-/* GCC_VERSION: 2.6.3 */
-/* GNU_AS_G: 8 */
 #include "common.h"
 
 typedef struct GoolVectors {
@@ -111,7 +109,6 @@ typedef struct NsdTable {
 #include "gool_externs.h"
 #undef CRASH_EXT_GOOL_UPDATE_OBJECT_0
 
-
 #define NODE_CHILDREN(n) ((n)->kind == 2 ? (GoolObj *)(n)->word_04 : (n)->children)
 #define NODE_CHILDREN_PTR(n) ((n)->kind == 2 ? (GoolObj **)&(n)->word_04 : &(n)->children)
 
@@ -152,7 +149,6 @@ typedef struct ZoneEntryView {
     s32 word0C;
     void *items[1];
 } ZoneEntryView;
-
 
 #define CRASH_EXT_GOOL_UPDATE_OBJECT_1
 #include "gool_externs.h"
@@ -339,7 +335,6 @@ typedef struct ZoneDrawHeader {
 #include "gool_externs.h"
 #undef CRASH_EXT_GOOL_UPDATE_OBJECT_2
 
-
 #define ABS(x) ((x) < 0 ? -(x) : (x))
 
 void Gool_ObjectTransform(GoolObj *obj) {
@@ -442,7 +437,6 @@ typedef struct GoolFont {
     GoolGlyph glyphs[63];
     GoolGlyph backdrop;
 } GoolFont;
-
 
 s32 Gool_TextStringTransform(GoolObj *obj, u8 *str, s32 start_x, GoolFont *font, void *tex, s32 shift, u32 *ot) {
     GoolBound glyph_bound;

@@ -1,7 +1,5 @@
 #include "common.h"
 
-/* GCC_VERSION: 2.6.3 */
-
 /* These retail entry points return without changing state. */
 
 void Cd_Stub_01(void)

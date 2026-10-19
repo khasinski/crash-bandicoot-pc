@@ -1,8 +1,4 @@
-/* GCC_VERSION: 2.6.3 */
 #include "common.h"
-
-
-
 
 void SpuFree(u32 address)
 {

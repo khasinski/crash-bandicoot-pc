@@ -1,7 +1,5 @@
 #include "common.h"
 
-/* GCC_VERSION: 2.5.7 */
-
 void SpuSetKey(s32 arg0, u32 arg1) {
     u32 var_v0;
     u32 temp_a1;

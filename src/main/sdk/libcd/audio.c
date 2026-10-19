@@ -1,7 +1,5 @@
 #include "cd_audio.h"
 
-/* GCC_VERSION: 2.6.3 */
-
 /* Initialise SPU CD mixing and route CD stereo output. */
 
 s32 CD_initintr(void) {

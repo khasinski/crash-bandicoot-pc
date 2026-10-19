@@ -1,6 +1,5 @@
 #include "common.h"
 
-/* GCC_VERSION: 2.6.3 */
 /* Mask followed by the 32 halfwords written to SPU offsets 0x1C0..0x1FE. */
 typedef struct {
     s32 mask;

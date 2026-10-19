@@ -1,8 +1,5 @@
 #include "common.h"
 
-/* GCC_VERSION: 2.6.3 */
-
-
 /* The queue consumer callback also updates this index. */
 
 #define CRASH_EXT_SDK_LIBGPU_QUEUE_RESET

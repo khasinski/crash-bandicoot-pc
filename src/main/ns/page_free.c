@@ -1,9 +1,5 @@
-/* GNU_AS_G: 8 */
-/* GCC_VERSION: 2.6.3 */
 #include "common.h"
 #include "ns.h"
-
-
 
 s32 Ns_PageFree(ResourceSlot *request)
 {

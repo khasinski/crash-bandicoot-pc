@@ -1,9 +1,5 @@
 #include "gpu.h"
 
-/* GCC_VERSION: 2.6.3 */
-
-
-
 /* Print the draw environment and hardware-specific texture-page fields. */
 void DumpDrawEnv(GpuDrawEnv *arg0) {
     u16 temp_v0;

@@ -1,7 +1,5 @@
 #include "common.h"
 
-/* GCC_VERSION: 2.6.3 */
-
 /* Set length and command for flat, textured-flat and Gouraud-shaded triangles. */
 
 #include "gpu.h"

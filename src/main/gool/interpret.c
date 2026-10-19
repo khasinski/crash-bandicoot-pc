@@ -1,6 +1,3 @@
-/* GNU_AS_NO_GP: gp_pbak_frame_idx */
-/* GCC_VERSION: 2.6.3 */
-/* GNU_AS_G: 8 */
 #include "common.h"
 
 typedef struct Vec3 {
@@ -194,7 +191,6 @@ typedef struct PadStateView {
 #undef CRASH_EXT_GOOL_INTERPRET
 
 typedef s32 (*Visitor)(GoolObj *, void *);
-
 
 #define ABS(x) ((x) < 0 ? -(x) : (x))
 #define SCALE_DT(x) (((s32)((x) * (g_db_cur[0]->word_84 < 0x67U ? g_db_cur[0]->word_84 : 0x66))) / 1024)
@@ -786,7 +782,7 @@ next_ins:
                 d_ptr = TRANS_GOP_IN(obj, ins & 0xFFF);
                 phase = (*d_ptr << 11) / period;
                 shift = (period > 0xFFFF) << 1;
-                sin_val = (sin(phase - 0x400) + 0x1000) >> shift;
+                sin_val = (Math_Sin(phase - 0x400) + 0x1000) >> shift;
                 *obj->sp++ = (sin_val * period) >> (0xD - shift);
             }
             break;
@@ -1410,11 +1406,11 @@ next_ins:
                     break;
 
                 case 2:
-                    vec_dst->x = ((sin(obj->ang_vel.y & 0xFFF) >> 4) * *s_ptr) >> 8;
+                    vec_dst->x = ((Math_Sin(obj->ang_vel.y & 0xFFF) >> 4) * *s_ptr) >> 8;
                     if (!(obj->status_b & 0x200200)) {
-                        vec_dst->z = ((cos(obj->ang_vel.y & 0xFFF) >> 4) * *s_ptr) >> 8;
+                        vec_dst->z = ((Math_Cos(obj->ang_vel.y & 0xFFF) >> 4) * *s_ptr) >> 8;
                     } else {
-                        vec_dst->y = ((cos(obj->ang_vel.y & 0xFFF) >> 4) * *s_ptr) >> 8;
+                        vec_dst->y = ((Math_Cos(obj->ang_vel.y & 0xFFF) >> 4) * *s_ptr) >> 8;
                     }
                     obj->speed = *s_ptr;
                     break;

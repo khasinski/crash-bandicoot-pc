@@ -1,8 +1,6 @@
 #include "gool.h"
 #include "zone.h"
 
-/* GCC_VERSION: 2.6.3 */
-/* GNU_AS_G: 8 */
 typedef GoolDefaults Defaults;
 typedef ResourceEntry Entry;
 typedef GoolDefaultsObject Object;

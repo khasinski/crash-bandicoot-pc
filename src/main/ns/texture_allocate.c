@@ -1,8 +1,5 @@
-/* GCC_VERSION: 2.6.3 */
-/* CC1_FLAGS: -O2 -fno-cse-follow-jumps */
 #include "common.h"
 #include "resource.h"
-
 
 /* Prefer free or inactive slots; otherwise evict a texture absent from the
  * current zone load list. Odd references are IDs, even references are entries.

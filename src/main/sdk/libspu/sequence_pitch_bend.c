@@ -1,14 +1,8 @@
-/* GCC_VERSION: 2.5.7 */
-/* GCC_CPU: r4000 */
-/* ASPSX_VERSION: 2.34 */
 #include "common.h"
-
 
 #define CRASH_EXT_SDK_LIBSPU_SEQUENCE_PITCH_BEND
 #include "sdk_externs.h"
 #undef CRASH_EXT_SDK_LIBSPU_SEQUENCE_PITCH_BEND
-
-
 
 s16 SpuVmPBVoice(s16 voice, s16 arg1, s16 arg2, s16 arg3, u16 arg4) {
     s16 bend;

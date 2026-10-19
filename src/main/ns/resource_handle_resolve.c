@@ -1,5 +1,3 @@
-/* GCC_VERSION: 2.6.3 */
-/* GCC_CPU: 3000 */
 #include "common.h"
 #include "resource.h"
 NsItemList *Ns_Lookup(u32 *reference) {

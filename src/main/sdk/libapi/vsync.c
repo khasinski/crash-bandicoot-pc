@@ -1,9 +1,5 @@
 #include "common.h"
 
-/* GCC_VERSION: 2.6.3 */
-
-
-
 s32 VSync(s32 mode)
 {
     u32 status = *g_vsync_gpu_stat_reg;

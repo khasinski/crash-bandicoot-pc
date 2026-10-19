@@ -1,5 +1,3 @@
-/* GCC_VERSION: 2.6.3 */
-/* GCC_CPU: 3000 */
 #include "common.h"
 typedef struct {u16 registers[8];} VoiceRegisters;
 

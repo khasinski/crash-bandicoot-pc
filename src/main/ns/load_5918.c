@@ -1,8 +1,6 @@
-/* GCC_VERSION: 2.6.3 */
 #include "common.h"
 #include "ns.h"
 #include "zone.h"
-
 
 __inline__ s32 Ns_PageClose(s32 id, s32 count);
 

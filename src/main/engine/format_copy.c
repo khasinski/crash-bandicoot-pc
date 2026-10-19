@@ -1,4 +1,3 @@
-/* GCC_VERSION: 2.6.3 */
 #include "common.h"
 /* The formatter copies from its digit buffer or an input string.
  * Retail returns the advanced destination for forward copies and the

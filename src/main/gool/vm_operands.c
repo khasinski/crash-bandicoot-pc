@@ -1,5 +1,3 @@
-/* GCC_VERSION: 2.6.3 */
-/* GNU_AS_G: 8 */
 #include "common.h"
 
 static __inline__ s32 Gool_SignShift(s32 value, s32 bits)
@@ -7,7 +5,6 @@ static __inline__ s32 Gool_SignShift(s32 value, s32 bits)
     s32 shift = 0x20 - bits;
     return (s32)((u32)value << shift) >> shift;
 }
-
 
 typedef struct GoolExecView {
     u8 reserved_00[0x10];

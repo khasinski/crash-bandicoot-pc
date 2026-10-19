@@ -1,8 +1,5 @@
-/* GCC_VERSION: 2.6.3 */
-/* GNU_AS_G: 4 */
 #include "common.h"
 #include "render.h"
-
 
 #define CRASH_EXT_GOOL_ENTRIES_AAE0_0
 #include "gool_externs.h"
@@ -195,7 +192,6 @@ void Gfx_FormatCardString(u8 *arg0, s32 arg1, u8 *arg2, s32 arg3)
     }
 }
 
-
 void Gfx_BlitCardIcon(s32 arg0, u8 *arg1, s32 arg2, u8 *arg3, u8 *arg4)
 {
     u8 buf[0x200];
@@ -235,7 +231,6 @@ void Gfx_BlitCardIcon(s32 arg0, u8 *arg1, s32 arg2, u8 *arg3, u8 *arg4)
         }
     }
 }
-
 
 typedef struct GoolObj {
     s32 header;

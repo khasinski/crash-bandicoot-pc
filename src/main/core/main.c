@@ -2,10 +2,7 @@
 #include "render.h"
 #include "resource.h"
 
-/* GCC_VERSION: 2.6.3 */
-
 /* Initialise the runtime, run the game loop for initial level 0x19, then shut down. */
-
 
 s32 CORE_Main(void)
 {
@@ -59,7 +56,6 @@ typedef struct DrawStampView {
 #include "core_externs.h"
 #undef CRASH_EXT_CORE_MAIN_0
 
-
 /* Spawn default HUD objects and load the level's initial resource entries. */
 void Core_ObjectsCreate(void)
 {
@@ -98,7 +94,6 @@ void Core_ObjectsCreate(void)
 #include "core_externs.h"
 #undef CRASH_EXT_CORE_MAIN_1
 
-
 /* .sdata owned by this unit (gp-addressed only here). */
 s32 gp_cur_lid = 0;
 s32 gp_next_lid = 0;
@@ -110,7 +105,6 @@ s32 gp_use_cd = 0;
 asm(".globl gp_rcnt_event, gp_core_init_done");
 u32 gp_rcnt_event;
 u32 gp_core_init_done;
-
 
 /* Run levels until the exit flag is set: pause toggling, demo playback,
  * level transitions, per-frame update and zone-specific drawing. */

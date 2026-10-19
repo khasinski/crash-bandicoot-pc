@@ -1,5 +1,3 @@
-/* GCC_VERSION: 2.5.7 */
-/* GCC_CPU: r4000 */
 #include "common.h"
 void _SsContNrpn2(sequence,channel,value)
 s16 sequence,channel;

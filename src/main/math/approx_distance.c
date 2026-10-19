@@ -1,6 +1,5 @@
 #include "vector.h"
 
-/* GCC_VERSION: 2.6.3 */
 s32 Math_ApxDist(Vec3 *a, Vec3 *b) {
     Vec3 delta;
     s32 az;

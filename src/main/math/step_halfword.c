@@ -1,6 +1,5 @@
 #include "common.h"
 
-/* GCC_VERSION: 2.6.3 */
 void Zone_ColorSeek(s16 *current, s16 *target, s32 step) {
     s16 start;
     s16 result;

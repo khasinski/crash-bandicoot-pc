@@ -1,10 +1,6 @@
-/* GCC_VERSION: 2.5.7 */
-/* GCC_CPU: r4000 */
 #include "common.h"
 /* This unit registers addresses; callbacks have different parameter lists. */
 typedef void (*Callback)();
-
-
 
 s16 SsSepOpen(void *data_address, s16 mode, s16 channel_count) {
     s16 next_channel;

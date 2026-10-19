@@ -1,6 +1,5 @@
 #include "common.h"
 
-/* GCC_VERSION: 2.6.3 */
 typedef struct {u16 size,flags;u8 data[1];} Stream;
 void * Slst_Update(Stream *source,Stream *reference,Stream *destination,s32 mode) {
     if(!(source->flags&1)) {

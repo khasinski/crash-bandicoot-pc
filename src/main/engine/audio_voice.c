@@ -1,7 +1,3 @@
-/* GNU_AS_NO_GP: gp_use_cd */
-/* GCC_VERSION: 2.6.3 */
-/* GNU_AS_G: 4 */
-/* GCC_CPU: 3000 */
 #include "common.h"
 
 /* =========================================================================
@@ -112,8 +108,6 @@ typedef struct {
 #include "engine_externs.h"
 #undef CRASH_EXT_ENGINE_AUDIO_VOICE_2
 
-
-
 AudioVolume *Audio_Spatialize(Vec3 *pos, s32 vol) {
     s32 x, z, y, dist, pan, base_vol, left, right;
 
@@ -130,7 +124,7 @@ AudioVolume *Audio_Spatialize(Vec3 *pos, s32 vol) {
         gp_mus_vol = vol;
         gp_sfx_vol_scaled = vol;
     } else {
-        pan = cos(ratan2(z, x)) + 0x1000;
+        pan = Math_Cos(ratan2(z, x)) + 0x1000;
         base_vol = (vol << 15) / dist;
         if (g_stereo_disabled[0] == 0) {
             left = (base_vol + base_vol * (0x2000 - pan)) >> 11;

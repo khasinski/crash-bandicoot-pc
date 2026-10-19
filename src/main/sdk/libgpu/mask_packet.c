@@ -1,7 +1,5 @@
 #include "common.h"
 
-/* GCC_VERSION: 2.6.3 */
-
 /* GPU mask command followed by a zero padding word. */
 typedef struct {
     u8 link[3];

@@ -1,7 +1,5 @@
 #include "common.h"
 
-/* GCC_VERSION: 2.6.3 */
-
 s32 _version(s32 arg0) {
     *g_gpu_stat_reg = 0x10000007;
     if ((*g_gpu_gp0_reg & 0xFFFFFF) != 2) {

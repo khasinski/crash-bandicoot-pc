@@ -1,7 +1,5 @@
 #include "common.h"
 
-/* GCC_VERSION: 2.6.3 */
-
 /* Consume a completed sector, advance read state and dispatch completion. */
 #include "cd_read_state.h"
                                   /* extern */

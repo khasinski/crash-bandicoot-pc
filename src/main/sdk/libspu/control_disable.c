@@ -1,7 +1,5 @@
 #include "common.h"
 
-/* GCC_VERSION: 2.6.3 */
-
 s32 _spu_reset(void) {
     /* Retail stores and reloads both delay words on the stack. */
     volatile s32 delay_count;

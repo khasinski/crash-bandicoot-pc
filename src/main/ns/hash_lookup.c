@@ -1,7 +1,5 @@
 #include "resource.h"
 
-/* GCC_VERSION: 2.6.3 */
-
 /* Find an eight-byte entry in the ID hash bucket. */
 
 ResourceBucket *Ns_Probe(s32 id) {

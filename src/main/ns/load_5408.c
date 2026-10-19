@@ -1,10 +1,6 @@
-/* GCC_VERSION: 2.6.3 */
 #include "common.h"
 #include "ns.h"
 #include "zone.h"
-
-
-
 
 static __inline__ void ns_slot_unref(ResourceSlot *slot)
 {

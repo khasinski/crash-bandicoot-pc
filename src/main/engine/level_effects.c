@@ -1,4 +1,3 @@
-/* GCC_VERSION: 2.6.3 */
 #include "common.h"
 #include "zone.h"
 
@@ -53,7 +52,6 @@ typedef struct SaveObj {
 #include "engine_externs.h"
 #undef CRASH_EXT_ENGINE_LEVEL_EFFECTS_1
 
-
 s32 gp_shader_prev_mode = -1;
 s32 gp_octree_root = 0;
 
@@ -76,7 +74,6 @@ static s32 gp_shader_param_15;
 static s32 gp_shader_param_16;
 static s32 gp_shader_param_17;
 static s32 gp_shader_param_vec[2];
-
 
 void Shader_ParamsUpdateRipple(s32 arg0)
 {

@@ -1,9 +1,4 @@
-/* GCC_VERSION: 2.6.3 */
-/* GCC_CPU: 3000 */
-/* ASPSX_VERSION: 2.34 */
 #include "common.h"
-
-
 
 void _spu_gcSPU(void) {
     s32 i;

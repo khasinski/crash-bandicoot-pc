@@ -1,7 +1,5 @@
 #include "common.h"
 
-/* GCC_VERSION: 2.6.3 */
-
 /* Build a one-word draw-mode packet and return the word held in v0 on exit. */
 
 typedef struct {

@@ -1,11 +1,7 @@
-/* GCC_VERSION: 2.6.3 */
-/* GCC_CPU: 3000 */
-/* GNU_AS_G: 8 */
 #include "common.h"
 #define CRASH_EXT_ENGINE_ALLOCATE_BUFFERS
 #include "engine_externs.h"
 #undef CRASH_EXT_ENGINE_ALLOCATE_BUFFERS
-
 
 typedef struct DrawBuffer {
     s16 word_0;

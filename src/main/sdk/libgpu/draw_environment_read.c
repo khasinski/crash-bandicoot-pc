@@ -1,8 +1,5 @@
 #include "common.h"
 
-/* GCC_VERSION: 2.6.3 */
-
-
 /* Copy the complete cached environment into the caller's buffer. */
 void *GetDrawEnv(void *out)
 {

@@ -1,7 +1,3 @@
-/* GNU_AS_NO_GP: gp_pbak_mode */
-/* GCC_VERSION: 2.6.3 */
-/* GCC_CPU: 3000 */
-/* GNU_AS_G: 8 */
 #include "common.h"
 #include "audio_channels.h"
 
@@ -46,8 +42,6 @@ typedef struct {
 #define CRASH_EXT_ENGINE_AUDIO_RESET
 #include "engine_externs.h"
 #undef CRASH_EXT_ENGINE_AUDIO_RESET
-
-
 
 void Audio_Init(void) {
     s32 i;

@@ -1,6 +1,5 @@
 #include "common.h"
 
-/* GCC_VERSION: 2.6.3 */
 typedef struct { s32 x, y, z; } Point3;
 typedef struct { s32 x, y, z, width, height, depth; } Bounds3;
 typedef struct { u8 reserved_00[0x14]; Bounds3 *bounds; } BoundsView;

@@ -1,7 +1,3 @@
-/* GNU_AS_NO_GP: gp_next_lid */
-/* GCC_VERSION: 2.6.3 */
-/* CC1_FLAGS: -O2 */
-/* GNU_AS_G: 4 */
 #include "common.h"
 #include "gpu.h"
 
@@ -57,7 +53,6 @@ typedef struct ZoneEntry8214 {
 #define CRASH_EXT_RENDER_FRAME_UPDATE_2
 #include "render_externs.h"
 #undef CRASH_EXT_RENDER_FRAME_UPDATE_2
-
 
 static __inline__ BufferToken *Gpu_RoundTicks_inline(void)
 {

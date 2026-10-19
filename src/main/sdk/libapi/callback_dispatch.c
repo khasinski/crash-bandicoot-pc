@@ -1,7 +1,5 @@
 #include "common.h"
 
-/* GCC_VERSION: 2.6.3 */
-
 /* Dispatch through slots at the offsets observed in the retail table.
  * Results describe the word left in v0; argument meanings remain unidentified.
  */

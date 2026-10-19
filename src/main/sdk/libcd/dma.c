@@ -1,10 +1,6 @@
 #include "common.h"
 
-/* GCC_VERSION: 2.6.3 */
-
 /* Configure the CD DMA registers and poll the volatile hardware completion bit. */
-
-
 
 s32 CD_getsector(s32 arg0, s32 arg1) {
     *g_cd_reg0 = 0;

@@ -1,7 +1,5 @@
 #include "gpu.h"
 
-/* GCC_VERSION: 2.6.3 */
-
 /* Clear the cached display environment when disabling GPU output. */
 typedef struct {u8 debug;u8 reserved_01[13];u8 drawing[92];u8 display[20];} GpuState;
 #define CRASH_EXT_SDK_LIBGPU_DISPLAY_ENABLE

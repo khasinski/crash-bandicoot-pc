@@ -1,6 +1,3 @@
-/* GCC_VERSION: 2.5.7 */
-/* GCC_CPU: r4000 */
-/* ASPSX_VERSION: 2.34 */
 #include "common.h"
 
 s16 SpuVmGetSeqVol(s16 arg0, u16 *arg1, u16 *arg2) {

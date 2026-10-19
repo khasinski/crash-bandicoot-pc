@@ -1,10 +1,4 @@
-/* GCC_VERSION: 2.5.7 */
-/* GCC_CPU: r4000 */
-/* ASPSX_VERSION: 2.34 */
 #include "common.h"
-
-
-
 
 static __inline__ u32 clock_divisor(u32 ticks) {
     return ticks << 2;

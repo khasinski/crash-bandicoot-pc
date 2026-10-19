@@ -1,5 +1,3 @@
-/* GCC_VERSION: 2.6.3 */
-/* GNU_AS_G: 8 */
 #include "common.h"
 
 #include "engine_state.h"
@@ -7,7 +5,6 @@
 #define CRASH_EXT_ENGINE_BIOS_CTRL
 #include "engine_externs.h"
 #undef CRASH_EXT_ENGINE_BIOS_CTRL
-
 
 static __inline__ s32 Card_ClearFlag20_inline(void)
 {

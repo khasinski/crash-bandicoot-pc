@@ -1,5 +1,3 @@
-/* GCC_VERSION: 2.6.3 */
-/* GNU_AS_G: 8 */
 #include "common.h"
 
 typedef struct GoolVec3 {
@@ -338,7 +336,6 @@ typedef struct GoolTimeState {
 #include "gool_externs.h"
 #undef CRASH_EXT_GOOL_PHYSICS_3
 
-
 #define ABS(x) ((x) < 0 ? -(x) : (x))
 #define SCALE_DT(x) (((s32)((g_db_cur[0]->word_84 < 0x67U ? g_db_cur[0]->word_84 : 0x66) * (x))) / 1024)
 #define CLAMP(x, min, max) ((x) >= (max) ? (max) : ((x) < (min) ? (min) : (x)))
@@ -385,7 +382,7 @@ void Gool_ObjectPhysics(GoolObj *obj) {
                 diff = 0x1000 - diff;
             }
             if (state_flags & 8) {
-                cos_val = cos(diff);
+                cos_val = Math_Cos(diff);
                 obj->speed += (SCALE_DT(params->accel) * (cos_val >> 6)) >> 6;
                 if (obj->speed <= 0x100) {
                     obj->target_rot_y = target_rot;
@@ -413,8 +410,8 @@ void Gool_ObjectPhysics(GoolObj *obj) {
             }
         }
         speed_scale = (speed_scale * obj->speed) >> 8;
-        obj->vel_x = ((sin(obj->target_rot_y) >> 4) * speed_scale) >> 8;
-        obj->vel_z = ((cos(obj->target_rot_y) >> 4) * speed_scale) >> 8;
+        obj->vel_x = ((Math_Sin(obj->target_rot_y) >> 4) * speed_scale) >> 8;
+        obj->vel_z = ((Math_Cos(obj->target_rot_y) >> 4) * speed_scale) >> 8;
     }
     if ((obj->status_a & 1) && obj->event != 0x1200) {
         obj->status_a &= ~0x2000;

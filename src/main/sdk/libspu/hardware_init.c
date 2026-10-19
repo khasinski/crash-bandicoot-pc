@@ -1,9 +1,5 @@
 #include "common.h"
 
-/* GCC_VERSION: 2.6.3 */
-
-
-
 /* Preserve the driver reset write after enabling SPU control. */
 
 s32 _spu_init(s32 arg0) {

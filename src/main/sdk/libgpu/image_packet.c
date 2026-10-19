@@ -1,8 +1,6 @@
 #include "common.h"
 #include "gpu.h"
 
-/* GCC_VERSION: 2.6.3 */
-
 /* Prepare an image-upload packet; reject payloads outside its small inline capacity. */
 
 void SetDrawLoad(u32 *packet,GpuRect *rect)

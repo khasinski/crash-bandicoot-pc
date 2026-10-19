@@ -1,5 +1,3 @@
-/* GCC_VERSION: 2.6.3 */
-/* GCC_CPU: 3000 */
 #include "common.h"
 s32 SetRCnt(s32 counter,s32 target,s32 flags) {
     s32 index=counter&0xFFFF;

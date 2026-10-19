@@ -1,9 +1,5 @@
 #include "common.h"
 
-/* GCC_VERSION: 2.6.3 */
-/* GNU_AS_G: 4 */
-
-
 #define CRASH_EXT_GOOL_CHANGE_STATE_0
 #include "gool_externs.h"
 #undef CRASH_EXT_GOOL_CHANGE_STATE_0
@@ -152,7 +148,6 @@ void Gool_ObjectLocalBound(GoolObj *arg0, s32 *arg1)
 #include "gool_externs.h"
 #undef CRASH_EXT_GOOL_CHANGE_STATE_1
 
-
 typedef struct GoolUpdateGlobals {
     s32 db8[16];
     s32 df8;
@@ -183,7 +178,6 @@ void Gool_UpdateObjects(s32 arg0)
         } while (i < 8);
     }
 }
-
 
 s32 GOOL_ChangeObjectState(GoolObj *arg0, s32 arg1, s32 arg2, s32 *arg3)
 {

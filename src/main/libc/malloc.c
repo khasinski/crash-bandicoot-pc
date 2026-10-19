@@ -1,13 +1,9 @@
-/* GCC_VERSION: 2.5.7 */
-/* GCC_CPU: r4000 */
-/* ASPSX_VERSION: 2.21 */
 #include "common.h"
 
 /*
  * Heap allocator. Each block is preceded by a header word; LIBC_Free marks a
  * block free by setting that word's low bit.
  */
-
 
 s32 _ExpAllocArea(u32 amount) {
     u32 maximum;

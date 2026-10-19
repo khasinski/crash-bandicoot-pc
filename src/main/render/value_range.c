@@ -1,8 +1,6 @@
 #include "common.h"
 #include "resource.h"
 
-/* GCC_VERSION: 2.6.3 */
-
 /* Select 0x11, 0x22 or 0x33 for the observed input ranges. */
 s32 Gfx_TgeoGetTexinfoArray(s32 arg0)
 {
@@ -30,7 +28,6 @@ typedef struct {
     u8 reserved_00[0x10];
     RenderEntryData *data;
 } RenderEntry;
-
 
 s32 Gfx_TgeoLookupEntry(RenderEntry *entry)
 {

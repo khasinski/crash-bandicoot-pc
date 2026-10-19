@@ -1,6 +1,5 @@
 #include "common.h"
 
-/* GCC_VERSION: 2.6.3 */
 typedef struct {u8 reserved_00[4];u16 word04;} Context;
 typedef struct {u8 reserved_00[0x2FC];u32 flags;} Data;
 typedef struct {u8 reserved_00[0x10];Data *data;} Root;

@@ -1,6 +1,5 @@
 #include "common.h"
 
-/* GCC_VERSION: 2.6.3 */
 /* Attribute fields read at offsets 0x00, 0x08 and 0x0A. */
 typedef struct {
     u32 mask;

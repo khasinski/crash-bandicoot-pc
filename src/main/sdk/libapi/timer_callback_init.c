@@ -1,6 +1,5 @@
 #include "common.h"
 
-/* GCC_VERSION: 2.6.3 */
 typedef void (*Callback)(void);
 typedef Callback (*Registrar)(s32,Callback);
 void * startIntrVSync(void) {

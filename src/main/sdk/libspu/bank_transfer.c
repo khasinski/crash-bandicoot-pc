@@ -1,5 +1,3 @@
-/* GCC_VERSION: 2.5.7 */
-/* GCC_CPU: r4000 */
 #include "common.h"
 
 typedef struct {
@@ -31,8 +29,6 @@ typedef struct {
     u16 reserved2;
     u16 reserved3;
 } ProgAtr;
-
-
 
 #define CRASH_EXT_SDK_LIBSPU_BANK_TRANSFER
 #include "sdk_externs.h"

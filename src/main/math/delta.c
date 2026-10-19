@@ -1,8 +1,5 @@
 #include "common.h"
 
-/* GCC_VERSION: 2.6.3 */
-
-
 s32 Gool_AngDiff(s32 current,s32 target) {
     s32 delta;
     current &= 0xFFF;

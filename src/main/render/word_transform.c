@@ -1,6 +1,5 @@
 #include "render.h"
 
-/* GCC_VERSION: 2.6.3 */
 typedef RenderTransformWords TransformWords;
 void Gfx_ScreenProj(TransformWords *arg0, TransformWords *arg1) {
     arg0->word00 = (u16) arg1->word00;

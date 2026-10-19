@@ -1,4 +1,3 @@
-/* GCC_VERSION: 2.6.3 */
 #include "common.h"
 
 void _spu_FsetRXX(s32 reg,u32 address,s32 shift) {

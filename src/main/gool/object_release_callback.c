@@ -1,6 +1,5 @@
 #include "gool.h"
 
-/* GCC_VERSION: 2.6.3 */
 typedef GoolRuntimeObject Object;
 #define CRASH_EXT_GOOL_OBJECT_RELEASE_CALLBACK
 #include "gool_externs.h"

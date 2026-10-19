@@ -1,9 +1,6 @@
 #include "common.h"
 
-/* GCC_VERSION: 2.6.3 */
-
 /* Free the two allocation tables and update the fixed-point value from the current resource. */
-
 
 #define CRASH_EXT_GOOL_ALLOC
 #include "gool_externs.h"

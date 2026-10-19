@@ -1,5 +1,3 @@
-/* GCC_VERSION: 2.6.3 */
-/* GCC_CPU: r3000 */
 #include "common.h"
 
 /* Input layout recovered from the retail register writes. */
@@ -13,7 +11,6 @@ typedef struct {
     u16 ext_left, ext_right;
     s32 ext_reverb, ext_mix;
 } CommonAttributes;
-
 
 void SpuSetCommonAttr(CommonAttributes *attr) {
     volatile u16 *control_registers;

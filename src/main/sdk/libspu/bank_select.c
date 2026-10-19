@@ -1,5 +1,3 @@
-/* GCC_VERSION: 2.5.7 */
-/* GCC_CPU: r4000 */
 #include "common.h"
 #define CRASH_EXT_SDK_LIBSPU_BANK_SELECT
 #include "sdk_externs.h"

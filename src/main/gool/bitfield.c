@@ -1,7 +1,5 @@
 #include "common.h"
 
-/* GCC_VERSION: 2.6.3 */
-
 /* Sign-extend the low bits of a GOOL operand. */
 
 s32 Gool_SignShift(s32 value, s32 bits)

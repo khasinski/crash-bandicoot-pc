@@ -1,5 +1,3 @@
-/* GCC_VERSION: 2.6.3 */
-/* GNU_AS_G: 0 */
 #include "common.h"
 typedef struct {u8 bytes[4];} BufferToken;
 #define CRASH_EXT_ENGINE_STATE_WORD_COPY

@@ -1,5 +1,3 @@
-/* GCC_VERSION: 2.6.3 */
-/* CC1_FLAGS: -O2 */
 #include "common.h"
 #include "gpu.h"
 #include "gte.h"
@@ -84,7 +82,6 @@ typedef struct PolyG3_9DCC {
 #define CRASH_EXT_RENDER_TRI_DRAW_2
 #include "render_externs.h"
 #undef CRASH_EXT_RENDER_TRI_DRAW_2
-
 
 void Gfx_UpdateCamMatrices(u32 *arg0)
 {

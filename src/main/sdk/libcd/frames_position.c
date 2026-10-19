@@ -1,6 +1,5 @@
 #include "common.h"
 
-/* GCC_VERSION: 2.6.3 */
 u8 *CdIntToPos(s32 frames,u8 *position) {
     s32 seconds,minutes;
     s32 frame_bcd,second_tens,minute_tens;

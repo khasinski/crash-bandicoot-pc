@@ -1,7 +1,5 @@
 #include "gpu.h"
 
-/* GCC_VERSION: 2.6.3 */
-
 /* Submit the drawing packet and retain its 92-byte environment snapshot. */
 typedef GpuDrawing Drawing;
 typedef struct {u8 debug;u8 reserved_01[13];u8 drawing[sizeof(Drawing)];} GpuState;

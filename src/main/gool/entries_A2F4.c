@@ -1,8 +1,5 @@
 #include "common.h"
 
-/* GCC_VERSION: 2.6.3 */
-
-
 typedef struct ZoneFogHeader {
     u8 reserved_00[0x2E8];
     s32 depth_offset;

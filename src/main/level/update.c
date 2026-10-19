@@ -1,5 +1,3 @@
-/* GCC_VERSION: 2.6.3 */
-/* GNU_AS_G: 8 */
 #include "common.h"
 #include "zone.h"
 #include "ns.h"
@@ -33,7 +31,6 @@ typedef struct LvlColorState {
 #define CRASH_EXT_LEVEL_UPDATE_1
 #include "level_externs.h"
 #undef CRASH_EXT_LEVEL_UPDATE_1
-
 
 /* Whether one of the header's neighbour links resolves to entry. */
 static __inline__ s32 zone_has_neighbor(ZoneHeader *header, ZoneEntry *entry)
@@ -195,7 +192,7 @@ void Level_Update(ResourceEntry *zone, ZonePath *path, s32 progress, u32 flags)
         level_position.zone = zone;
         level_position.path = path;
         level_position.progress = progress;
-        Ns_ZoneUnload(cur_header != NULL ? &cur_header->load : NULL, 0);
+        Ns_ZoneUnload(cur_header != NULL ? &cur_header->load : NULL);
         for (i = 0; i < header->load.entry_count; i++) {
             Ns_Open(&header->load.entries[i], 0, 1);
         }
@@ -244,6 +241,6 @@ void Level_UpdateMisc(void *arg0, u32 flags)
     lvl_color.target = gfx->color;
     g_game_state[0] = gfx->flags;
     if (!(flags & 4)) {
-        Midi_SetStateStopped(gfx->midi_seq_state);
+        Midi_SetStateStopped();
     }
 }

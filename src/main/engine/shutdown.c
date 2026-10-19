@@ -1,10 +1,6 @@
-/* GNU_AS_NO_GP: gp_pause_B_pressed */
-/* GCC_VERSION: 2.6.3 */
 #include "common.h"
 #include "ns.h"
-/* GNU_AS_G: 8 */
 /* External word view: this unit uses an absolute reference to the flag. */
-
 
 typedef struct {
     u32 word00;

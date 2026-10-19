@@ -1,11 +1,7 @@
 #include "common.h"
 #include "gpu.h"
 
-/* GCC_VERSION: 2.6.3 */
-
 /* --- PutDispEnv --- */
-
-
 
 typedef struct {
     u8 version;
@@ -37,7 +33,6 @@ typedef struct {
 #define CRASH_EXT_SDK_LIBGPU_PUT_DISP_ENV_2
 #include "sdk_externs.h"
 #undef CRASH_EXT_SDK_LIBGPU_PUT_DISP_ENV_2
-
 
 #define CLAMP(val, min, max) ((val) < (min) ? (min) : ((val) > (max) ? (max) : (val)))
 

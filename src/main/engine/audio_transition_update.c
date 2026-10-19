@@ -1,5 +1,3 @@
-/* GCC_VERSION: 2.6.3 */
-/* GNU_AS_G: 8 */
 #include "common.h"
 #include "audio_channels.h"
 
@@ -7,7 +5,6 @@
  * references contain an ID; resolved references point to a handle whose
  * second word is the ID. The fourth fade argument is retained as observed
  * at this call site, although the current callee consumes three words. */
-
 
 void Midi_Update(s32 *reference) {
  s16 countdown;

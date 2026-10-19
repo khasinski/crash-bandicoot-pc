@@ -1,7 +1,5 @@
 #include "common.h"
 
-/* GCC_VERSION: 2.6.3 */
-
 /* Combine packet lengths within the inline limit and clear the second tag. */
 
 #include "gpu.h"

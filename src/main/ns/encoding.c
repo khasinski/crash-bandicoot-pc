@@ -1,11 +1,6 @@
 #include "common.h"
 
-/* GCC_VERSION: 2.6.3 */
-/* GNU_AS_G: 8 */
-
 /* Character lookup and decoding for the 64-character resource-name alphabet. */
-
-
 
 u8 Ns_AlphaNumChar(s32 index)
 {

@@ -1,6 +1,4 @@
-/* GCC_VERSION: 2.6.3 */
 #include "common.h"
-
 
 s32 CdRead(s32 count, void *buffer, s32 mode)
 {

@@ -1,7 +1,5 @@
 #include "common.h"
 
-/* GCC_VERSION: 2.6.3 */
-
 /* Shared CD read state; retain the observed load after writing mode. */
                               /* extern */
                         /* extern */

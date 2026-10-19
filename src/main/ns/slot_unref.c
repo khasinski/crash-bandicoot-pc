@@ -1,7 +1,5 @@
 #include "resource.h"
 
-/* GCC_VERSION: 2.6.3 */
-
 /* The second resource pool has 38 slots, each 0x2C bytes long. */
 
 void Ns_PageDecRef(ResourceSlot *slot)

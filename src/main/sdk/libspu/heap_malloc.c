@@ -1,12 +1,4 @@
-/* GCC_VERSION: 2.6.3 */
-/* GCC_CPU: 3000 */
-/* ASPSX_VERSION: 2.34 */
 #include "common.h"
-
-
-
-
-
 
 s32 SpuMalloc(s32 size) {
     s32 i = 0;

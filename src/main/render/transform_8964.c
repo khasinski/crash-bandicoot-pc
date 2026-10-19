@@ -1,4 +1,3 @@
-/* GCC_VERSION: 2.6.3 */
 #include "common.h"
 
 typedef struct GoolVec3 {
@@ -126,7 +125,6 @@ typedef struct ZoneEntry8964 {
 #define CRASH_EXT_RENDER_TRANSFORM_8964
 #include "render_externs.h"
 #undef CRASH_EXT_RENDER_TRANSFORM_8964
-
 
 void Gfx_LoadWorlds(u8 *arg0, u32 *arg1, GoolObj *arg2) {
     ResourceEntry *res;

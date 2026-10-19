@@ -1,10 +1,4 @@
-/* GCC_VERSION: 2.5.7 */
-/* GCC_CPU: r4000 */
-/* ASPSX_VERSION: 2.34 */
 #include "common.h"
-
-
-
 
 void _SsClose(s16 arg0) {
     s32 i;

@@ -1,5 +1,3 @@
-/* GCC_VERSION: 2.6.3 */
-/* GCC_CPU: r3000 */
 #include "common.h"
 #include "voice_attributes.h"
 

@@ -1,7 +1,4 @@
-/* GCC_VERSION: 2.6.3 */
-/* GCC_CPU: 3000 */
 #include "common.h"
-
 
 s32 StartRCnt(s32 counter) {
     volatile u32 *registers=g_rcnt_i_stat_reg;

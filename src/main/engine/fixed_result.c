@@ -1,9 +1,5 @@
 #include "common.h"
 
-/* GCC_VERSION: 2.6.3 */
-/* GNU_AS_G: 8 */
-
-
 s32 Solid_BinfInit(void)
 {
     s32 i;

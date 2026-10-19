@@ -1,7 +1,5 @@
 #include "common.h"
 
-/* GCC_VERSION: 2.6.3 */
-
 /* Initialise resource state on first use; visit object roots and clear flags on release. */
 
 #include "gool.h"

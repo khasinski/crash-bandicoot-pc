@@ -1,4 +1,3 @@
-/* GCC_VERSION: 2.6.3 */
 #include "common.h"
 void _ctl(u32 command) {
     *g_gpu_stat_reg = command;

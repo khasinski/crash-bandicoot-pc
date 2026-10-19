@@ -1,9 +1,6 @@
 #include "common.h"
 
-/* GCC_VERSION: 2.6.3 */
-
 /* Acknowledge controller interrupts and reset CD status. */
-
 
 #define CRASH_EXT_SDK_LIBCD_RESET
 #include "sdk_externs.h"

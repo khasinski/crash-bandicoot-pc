@@ -1,5 +1,3 @@
-/* GCC_VERSION: 2.5.7 */
-/* GCC_CPU: r4000 */
 #include "common.h"
 /* This SDK call passes promoted words, including the packed selector. */
 void _SsContPortaTime(s16 sequence,s16 channel,u8 value) {

@@ -1,6 +1,4 @@
 #include "common.h"
-/* GCC_VERSION: 2.6.3 */
-
 
 s32 CdSyncCallback(s32 arg0) {
     s32 temp_v0;

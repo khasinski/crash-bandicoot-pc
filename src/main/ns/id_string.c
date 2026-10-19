@@ -1,4 +1,3 @@
-/* GCC_VERSION: 2.6.3 */
 #include "common.h"
 
 u8 *Ns_EIDToString(u32 id)

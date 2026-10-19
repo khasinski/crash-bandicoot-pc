@@ -2,8 +2,8 @@
 
 No open-source license has been selected for this release candidate.
 
-This source-only public-review tree excludes game data, proprietary SDK files,
-compiler binaries, generated split output and local experiments. Until a
+This source-only tree excludes game data, proprietary SDK files, compiler
+binaries, generated split output and local experiments. Until a
 project license is chosen, project-authored source remains under the default
 copyright of its authors.
 

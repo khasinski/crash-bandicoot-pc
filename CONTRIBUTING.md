@@ -1,36 +1,55 @@
 # Contributing
 
-Provide your own USA copy of Crash Bandicoot (`SCUS_949.00`). Follow the
-README setup, toolchain, staging and split steps before building.
+This is a native C11 project. Keep the intended game behavior and data formats,
+and improve the code for modern hosts. There is no byte-match requirement, no
+stock PS1 compiler requirement, no PS1 checksum gate and no decompilation
+progress ratchet.
 
-Keep C under `src/main/<subsystem>/`, shared declarations under `include/`,
-and target symbols, relocations and split boundaries under `configs/USA/`.
-Use names supported by strings, call graphs or other evidence; retain address
-names when the purpose is uncertain. Translation-unit boundaries are provisional.
-Recovered layouts and the stock-profile search tool are described in
-[docs/STRUCTURES.md](docs/STRUCTURES.md), assembly/GTE and progress reporting
-conventions in [docs/ASM_AND_GTE_POLICY.md](docs/ASM_AND_GTE_POLICY.md),
-verified symbol names in [docs/names.md](docs/names.md), and the GOOL Lisp
-bytecode decompiler/assembler in [docs/GOOL_LISP.md](docs/GOOL_LISP.md).
+## Development workflow
 
-Score candidates with `make probe FILE=src/main/<subsystem>/<unit>.c`.
-Instruction Levenshtein distance is the matching metric; relocation fields are
-masked. A zero-distance probe alone does not verify the linked addresses.
-Run `make verify` to build, verify the retail SHA-1 and run integration tests,
-and `make audit-code` to ensure C scaffolding debt does not increase.
-After changing split boundaries, first run `make split`. Run `make report`
-and commit updated `docs/badges/` when progress changes.
+1. Put shared declarations in subsystem headers, using ordinary C types and
+   functions.
+2. Remove or simplify PS1 APIs the game does not need. Use native C or our
+   PsyZ fork where needed, and keep gameplay behavior unchanged.
+3. Add a ported module to the native CMake target once its dependencies work.
+4. Build with `cmake -S . -B build` and `cmake --build build --parallel`.
+5. Validate changed behavior with focused native tests and, as modules become
+   runnable, with reproducible gameplay scenarios.
 
-Use the stock GCC → maspsx → GNU assembler pipeline. Per-file compiler and
-assembler profiles must describe real stock options. Do not patch compiler
-output or objects to manufacture a match. Keep unsuccessful candidates in
-ignored `scratch/`; retained handwritten assembly uses `HANDWRITTEN_ASM`.
-Register pins, dummy temporaries and single-iteration loop tricks require
-explicit review and must not be silently presented as finished semantic
-reconstruction.
+Port the existing modules in place. Do not write a parallel engine, and do not
+extract functions into new files only to make them compile. Repair the original
+module for host pointers, memory, PsyZ and disc access.
 
-Never commit retail inputs, extracted assets, SDK or compiler binaries,
-generated assembly, build output, or local experiments. `make test-source`
-checks instruction scoring, report/debt auditing, GOOL Lisp round-trip logic,
-and shell syntax without game data; public CI runs this subset. Full build and
-integration validation require local retail inputs.
+Do not preserve register assignments, instruction scheduling, padding, linker
+order or code addresses that existed only to make the compiler match. Assembly
+that does real work, including the 41 hand-written scratchpad routines in
+`src/main/engine/gte_render.c`, must be translated to C before its module is
+ported. Do not replace missing functionality with no-op stubs that report
+success.
+
+Serialized assets and save data keep their defined widths, offsets and
+endianness. Host pointers must use pointer types. Host structures can be
+redesigned independently of the original RAM layout. Check layout assertions
+against serialized formats, and never force host pointers into 32 bits.
+
+Use names supported by evidence: c1 function order and semantics, strings or
+the call graph. c1 and c1c have no license, so take facts from them, not code.
+
+See [architecture](docs/ARCHITECTURE.md), [conventions](docs/CONVENTIONS.md)
+and [the port plan](docs/PC_PORT_PLAN.md).
+
+PS1 hardware fidelity is not an acceptance requirement. Ordinary host buffers
+can replace scratchpad memory and fixed RAM regions. The asset layer reads the
+user-supplied CUE/BIN image and needs no physical CD drive. Keep logical asset
+identity, state and reset semantics, and the event ordering visible in
+gameplay.
+
+The PsyZ submodule points to
+[khasinski/parasite-eve-psyz](https://github.com/khasinski/parasite-eve-psyz),
+the fork shared with the Parasite Eve port. Generic runtime, render and audio
+features that are missing can be implemented there, with library tests and game
+regression tests. Pin an explicitly verified commit in this project, never a
+moving branch. Upstream is `Xeeynamo/psyz`; send reusable fixes there.
+
+Never commit retail inputs, extracted assets, SDK or compiler binaries, build
+output or local experiments.

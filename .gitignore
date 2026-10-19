@@ -5,45 +5,23 @@ assets/
 *.cue
 *.iso
 *.7z
+*.NSF
+*.NSD
 
 # Generated
-.venv/
 build/
-expected/
-asm/
-linkers/**/*.ld
-linkers/**/undefined_*_auto.*
-objdiff.json
-nonmatchings/
-*.o
-*.o.d
-*.elf
-*.map
+build-*/
 __pycache__/
 *.pyc
 .DS_Store
 
-# Local toolchains (fetched/built by tools/toolchain/setup.sh)
-tools/toolchain/*
-!tools/toolchain/setup.sh
-!tools/toolchain/build_oldgcc_macos.sh
-
 # Scratch
 scratch/
-debug_source.c
 
-# Local agent instructions, editor state, and compiler dumps
+# Local agent instructions and editor state
 CLAUDE.md
 AGENTS.md
 .aya/
 .claude/
 .idea/
 .vscode/
-.cache/
-local.mk
-*.a
-*.mcd
-*.lreg
-*.greg
-*.d
--.*

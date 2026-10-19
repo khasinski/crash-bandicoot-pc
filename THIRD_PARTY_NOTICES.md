@@ -1,17 +1,16 @@
-# Third-party tools and references
+# Third-party source and references
 
-External tools are installed locally, not vendored: splat/spimdisasm, m2c,
-decompals/old-gcc, maspsx, GNU binutils, objdiff, asm-differ and
-decomp-permuter. Their licenses remain with their upstream distributions.
-Python dependencies are listed in `requirements.txt`; tool sources and release
-URLs are recorded in `tools/toolchain/setup.sh` and
-`tools/toolchain/build_oldgcc_macos.sh`.
+[PsyZ](https://github.com/Xeeynamo/psyz) is included as a git submodule
+(`third_party/psyz`, our fork
+[khasinski/parasite-eve-psyz](https://github.com/khasinski/parasite-eve-psyz))
+together with [SDL](https://github.com/libsdl-org/SDL). Both keep their own
+licenses, which are found in their source trees.
 
 [c1](https://github.com/wurlyfox/c1) and
 [c1c](https://github.com/wurlyfox/c1c) provide naming and behavioral evidence.
 They have no declared license; their source is not copied into this project.
 [CrashEdit](https://github.com/cbhacks/CrashEdit) provides format references.
-Retail disassembly is generated only from the contributor's local game copy.
 
-PsyQ-compatible declarations and reconstructed library functions are part of
-the reverse-engineering work; no proprietary SDK archives are shipped.
+The PsyQ-compatible declarations and reconstructed library functions under
+`src/main/sdk/` come from the reverse-engineering work in the decompilation; no
+proprietary SDK archives are shipped.

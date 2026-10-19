@@ -1,4 +1,8 @@
-# Recovered structures and matching workflow
+# Recovered structures
+
+These notes were recovered in the matching decompilation. Offsets describe the
+PS1 memory image and on-disc records; native host structures may differ where
+they hold pointers. Instruction-matching remarks are historical.
 
 The shared headers describe observed layouts on the PS1 32-bit ABI. Padding
 marks unknown bytes. A partial view's `sizeof` is not the size of the complete
@@ -140,10 +144,6 @@ retain the native result without relying on a missing C return. This sector
 signature is distinct from the writer's `SC` file-header magic. Target ABI
 assertions cover the header, working union and corrected pathname pointer.
 
-`tests/layout_assertions.c` checks sizes and offsets using stock GCC 2.6.3,
-including pointer fields. Run `make test` after changing shared declarations.
-Host-compiler layout checks would incorrectly use 64-bit pointers on macOS.
-
 `func_80031D50` is the first new match using these shared layouts. The native
 function uses `EngineMode25State.word359C`, scans texture slot states 8..14
 with the recovered `0x2C` stride, and selects a resource item through the first
@@ -159,34 +159,6 @@ For the resource flag routines, the matching byte-pointer access is retained,
 with `CRASH_OFFSETOF(GoolResourceState, flags2DC)` deriving its offset from the
 shared structure instead of a duplicated constant. Do not add packing,
 `volatile`, or dummy fields merely to influence compilation.
-
-## Trying stock profiles
-
-```sh
-.venv/bin/python tools/scripts/probe_profiles.py scratch/candidate.c
-.venv/bin/python tools/scripts/probe_profiles.py scratch/candidate.c \
-    --profile engine --profile engine-gp --function func_80012345
-```
-
-Profiles are in `configs/compiler_profiles.json`. The tool regenerates the
-retail reference once, compiles each selected profile without changing source
-or production objects, and ranks the sum of instruction Levenshtein distances.
-Compilation failures and missing references cannot receive a score or match.
-Exit status is zero only if at least one valid profile has distance zero for
-all selected functions. This does not replace the linked executable checksum.
-
-`source` uses the file's current settings. Other profiles select known compiler,
-CPU, maspsx and GNU small-data settings; source optimization comments remain
-active unless the profile explicitly supplies `CRASH_CC1_FLAGS`. Ambient
-experimental overrides are cleared. The matrix is a starting set, not a claim
-that these are every compiler setting used by the game.
-
-When a profile matches, record its stock settings in the production source
-comments, run the normal probe, then `make build check`. The wrapper also
-accepts `CRASH_GNU_AS_G` for experiments; promote that setting through the
-existing `GNU_AS_G` source comment. Relocation masks cover actual relocation
-fields, including PC-relative branch targets, while ordinary branch offsets
-and instruction opcodes remain part of the Levenshtein comparison.
 
 `func_80034504` increments the word at `0x80034520` with seven matching
 instructions. The retained label `func_80034520` contains that writable

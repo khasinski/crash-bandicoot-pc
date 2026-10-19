@@ -1,5 +1,0 @@
-compiler_type = "gcc"
-compiler_command = "tools/scripts/cc.sh -I include -I src/main"
-assembler_command = "tools/scripts/as.sh -I include"
-asm_prelude_file = "tools/permuter_prelude.inc"
-objdump_command = "tools/scripts/objdump.sh -drz -m mips:3000"

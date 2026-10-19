@@ -56,6 +56,12 @@ static inline uint32_t Ram_Addr(const void *ptr)
 /* Typed view of a PS1 address. */
 #define RAM_AT(type, addr) ((type *)Ram_Ptr((uint32_t)(addr)))
 
+/* Dereference with the hardware's view of address 0: the PS1 has RAM there,
+ * so code that reads through a null link reads low RAM instead of faulting.
+ * Use where the original relies on that (GOOL links of absent objects). */
+#define RAM_DEREF(type, addr) \
+    ((uint32_t)(addr) ? RAM_AT(type, addr) : (type *)(void *)g_ps1_ram)
+
 /*
  * Host locals whose PS1 address the game passes on (the PS1 kept them on its
  * stack) are carved from a stack in the spare RAM above the PS1's 2 MiB. Its

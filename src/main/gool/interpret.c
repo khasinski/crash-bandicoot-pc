@@ -200,7 +200,9 @@ typedef s32 (*Visitor)(struct Node *, void *);
 #define NODE_CHILDREN_PTR(n) ((n)->kind == 2 ? (u32 *)&(n)->word_04 : &(n)->children)
 
 /* Object link i (self, parent, ..., interrupter). */
-#define OBJ_LINK(obj, i) RAM_AT(GoolObj, (&(obj)->self)[i])
+/* A link of an absent object is 0; the original then reads and writes
+ * low RAM, which RAM_DEREF reproduces. */
+#define OBJ_LINK(obj, i) RAM_DEREF(GoolObj, (&(obj)->self)[i])
 
 static __inline__ void GOOL_PUSH(GoolObj *obj, s32 value)
 {

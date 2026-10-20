@@ -64,7 +64,8 @@ crash_original_module(crash-original-gte-native
     src/main/render/world_transform_fx.c
     src/main/render/model_transform.c
     src/main/render/world_transform.c
-    src/main/level/solid_query.c)
+    src/main/level/solid_query.c
+    src/main/render/object_matrix.c)
 if(CRASH_GTE_ORACLE)
     target_compile_definitions(crash-original-gte-native PRIVATE GTE_NATIVE_IMPL)
     target_compile_options(crash-original-gte-native PRIVATE

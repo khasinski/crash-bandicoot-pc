@@ -13,8 +13,8 @@
  * (src/main/engine/gte_oracle.c).
  */
 
-/* #define GTE_NATIVE_Slst_RDecodeForward 1 */
-/* #define GTE_NATIVE_Slst_RDecodeBackward 1 */
+#define GTE_NATIVE_Slst_RDecodeForward 1
+#define GTE_NATIVE_Slst_RDecodeBackward 1
 #define GTE_NATIVE_RMemcpy 1
 #define GTE_NATIVE_Gpu_RResetOT 1
 #define GTE_NATIVE_RSqrMagnitude2 1

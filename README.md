@@ -101,7 +101,16 @@ also silences audio. Example:
     --pad-at 3000:0x40 --pad-at 3010:0 --dump-vram beach.bin
 ```
 
-`cmake -DBUILD_TESTING=ON` builds the tests in `tests/`.
+`cmake -DBUILD_TESTING=ON` builds the tests in `tests/`. With
+`CRASH_TEST_DISC` set to the USA `.cue`, `ctest` also runs two tests on real
+content (both are skipped without it):
+
+- `game-levels` (`tests/level_smoke.py`): every level that exists, 3, 5-10, 12,
+  14, 15 and 17-24, warps in, loads, has a player object and exits cleanly.
+  Passed on 2026-10-20 in 165 s.
+- `game-presentation` (`tests/presentation_smoke.py`): N. Sanity Beach with
+  walking input gives the same player trace with `--fps60`, `--scale 2` and
+  both as without them. Passed on 2026-10-20 in 80 s.
 
 `tools/scripts/gool_lisp.py` decompiles GOOL bytecode in NSF files to a Lisp
 form and assembles it back (see [docs/GOOL_LISP.md](docs/GOOL_LISP.md)).

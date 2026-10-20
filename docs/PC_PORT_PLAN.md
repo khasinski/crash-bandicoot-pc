@@ -21,9 +21,12 @@ Levels were checked by warping to each ID from the map and running 1200 frames
   Retail never loads it, and warping to it stops at the first missing entry
   (a null lookup in `Ns_EIDType`; the PS1 would read low RAM instead).
 
+Behavior tests on real content (`game-levels`, `game-presentation`, README)
+pass: every level that exists loads and runs, and `--fps60` and `--scale` do
+not change the simulation.
+
 Not done: complete music (PsyZ's libsnd sequencer), play-through of every level
-with saves, widescreen (see below), and behavior tests on real data in
-`tests/` (only `original_math.c` and the GOOL Lisp test exist).
+with saves, and widescreen (see below).
 
 ### Options at run time
 

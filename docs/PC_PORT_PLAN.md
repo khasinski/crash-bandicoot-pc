@@ -25,8 +25,13 @@ Behavior tests on real content (`game-levels`, `game-presentation`, README)
 pass: every level that exists loads and runs, and `--fps60` and `--scale` do
 not change the simulation.
 
-Not done: complete music (PsyZ's libsnd sequencer), play-through of every level
-with saves, and widescreen (see below).
+Music: `--dump-audio PATH` writes the SPU output once per presented frame. On
+every level that loads there is continuous sound (no silent half second in the
+last eight seconds, checked by `game-levels`), and levels 15 and 24 produce the
+same signal. Whether the notes and timing match the console is not verified.
+
+Not done: a comparison of the music with real hardware, play-through of every
+level with saves, and widescreen (see below).
 
 ### Options at run time
 

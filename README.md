@@ -20,8 +20,7 @@ The original game runs natively. From the user's disc image it boots
 through the Sony and Naughty Dog screens to the title menu and the island
 map, loads levels and plays them: N. Sanity Beach runs with Crash moving,
 the camera following and collisions working, rendered by PsyZ (SDL GPU, or
-its software rasterizer headless). Music is not complete yet: PsyZ's libsnd
-sequencer is still being filled in. See [the port plan](docs/PC_PORT_PLAN.md)
+its software rasterizer headless). See [the port plan](docs/PC_PORT_PLAN.md)
 for what is verified and what remains.
 
 How it works:
@@ -36,7 +35,9 @@ How it works:
 
 ## Known limits
 
-- Music is not complete yet: PsyZ's libsnd sequencer is still being filled in.
+- Music plays on every level that loads (measured: no silent half second in
+  the last eight seconds of any level, via `--dump-audio`), but it has not been
+  compared with the console, so wrong notes or timing would go unnoticed.
 - Only the levels that have been run are known to work; see
   [the port plan](docs/PC_PORT_PLAN.md) for the list. Level 4
   (`S0000004.NSD`) is an unused stub on the disc; the game never loads it.
@@ -93,7 +94,8 @@ Diagnostics for automated runs: `--headless` renders without a window,
 FRAME:BUTTONS` holds a PS1 button mask from a frame on (START 0x800, ✕ 0x40,
 up 0x1000), `--capture-seq DIR:FIRST:LAST` writes every presented frame in that range as a PPM
 (used to find flicker, e.g. with `--fps60`), and `--warp FRAME:LEVEL` requests a level change. `--headless`
-also silences audio. Example:
+also silences audio, and `--dump-audio PATH` (with `--frame-limit`) writes the
+sound as a WAV instead. Example:
 
 ```sh
 ./build/crash-bandicoot-pc --disc "Crash Bandicoot (USA).cue" --headless \

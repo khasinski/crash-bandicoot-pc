@@ -50,6 +50,12 @@ static int headless;
  * screen to PATH and carries on, for checking how it looks. */
 /* --menu-at FRAME opens the menu at FRAME; while it is open the --pad-at
  * schedule keeps advancing, one step per presented frame, to drive it. */
+/* --dump-audio PATH writes the sound as a 44.1 kHz stereo WAV, pulled from
+ * the SPU once per presented frame so that it follows game time. */
+static const char *audio_path;
+static FILE *audio_file;
+static u32 audio_frames;
+static double audio_due;
 static u32 menu_at;
 static u32 menu_ticks;
 static u32 menu_capture_frame;
@@ -215,6 +221,47 @@ static void menu_capture(void)
     capture_frame(menu_capture_path);
 }
 
+static void audio_pull(void)
+{
+    short buf[2 * 2048];
+    int want;
+
+    audio_due += 44100.0 / 59.94;
+    want = (int)audio_due;
+    audio_due -= want;
+    while (want > 0) {
+        int n = want > 2048 ? 2048 : want;
+        Psyz_SpuPullSamples(buf, n);
+        fwrite(buf, 4, (size_t)n, audio_file);
+        audio_frames += (u32)n;
+        want -= n;
+    }
+}
+
+static void audio_finish(void)
+{
+    unsigned char header[44];
+    u32 bytes = audio_frames * 4, riff = 36 + bytes, rate = 44100, byte_rate = 44100 * 4;
+    u16 fmt = 1, channels = 2, align = 4, bits = 16;
+    u32 sixteen = 16;
+
+    memcpy(header, "RIFF", 4);
+    memcpy(header + 4, &riff, 4);
+    memcpy(header + 8, "WAVEfmt ", 8);
+    memcpy(header + 16, &sixteen, 4);
+    memcpy(header + 20, &fmt, 2);
+    memcpy(header + 22, &channels, 2);
+    memcpy(header + 24, &rate, 4);
+    memcpy(header + 28, &byte_rate, 4);
+    memcpy(header + 32, &align, 2);
+    memcpy(header + 34, &bits, 2);
+    memcpy(header + 36, "data", 4);
+    memcpy(header + 40, &bytes, 4);
+    fseek(audio_file, 0, SEEK_SET);
+    fwrite(header, 1, sizeof(header), audio_file);
+    fclose(audio_file);
+}
+
 static void print_state(void)
 {
     const s32 *obj = gp_crash_obj ? RAM_AT(s32, gp_crash_obj) : NULL;
@@ -262,6 +309,8 @@ int Platform_VSync(int mode)
         Platform_Menu(NULL);
     if (mode == 0)
         frame_count++;
+    if (mode == 0 && audio_file != NULL)
+        audio_pull();
     if (mode == 0 && menu_at != 0 && frame_count == menu_at)
         Platform_Menu(NULL);
     if (mode == 0 && menu_capture_path != NULL && frame_count == menu_capture_frame)
@@ -279,6 +328,8 @@ int Platform_VSync(int mode)
             dump_vram(vram_path);
         if (capture_path != NULL)
             capture_frame(capture_path);
+        if (audio_file != NULL)
+            audio_finish();
         printf("{\"frames\": %u}\n", frame_count);
         exit(EXIT_SUCCESS);
     }
@@ -331,7 +382,7 @@ static void usage(const char *program)
 {
     printf("Usage: %s --disc <Crash Bandicoot (USA).cue> [--headless]"
            " [--frame-limit N] [--dump-vram PATH] [--pad-at FRAME:BUTTONS ...]"
-           " [--warp FRAME:LEVEL] [--capture-seq DIR:FIRST:LAST] [--scale N] [--fps60] [--widescreen]\n", program);
+           " [--warp FRAME:LEVEL] [--capture-seq DIR:FIRST:LAST] [--scale N] [--fps60] [--widescreen] [--dump-audio PATH]\n", program);
     printf("--scale renders at N times the PS1 resolution; --fps60 adds an interpolated frame between logic frames.\n");
     printf("--pad-at holds the PS1 button mask (pressed = 1, START = 0x800) from FRAME on.\n");
 }
@@ -394,6 +445,8 @@ int main(int argc, char **argv)
                 fprintf(stderr, "--scale takes 1 to 8\n");
                 return EXIT_FAILURE;
             }
+        } else if (!strcmp(argv[i], "--dump-audio") && i + 1 < argc) {
+            audio_path = argv[++i];
         } else if (!strcmp(argv[i], "--widescreen")) {
             g_widescreen_experimental = 1;
         } else if (!strcmp(argv[i], "--menu-at") && i + 1 < argc) {
@@ -438,6 +491,15 @@ int main(int argc, char **argv)
         return EXIT_FAILURE;
     }
     Psyz_SetTitle("Crash Bandicoot");
+    if (audio_path != NULL) {
+        audio_file = fopen(audio_path, "wb");
+        if (audio_file == NULL || frame_limit == 0) {
+            fprintf(stderr, "--dump-audio needs --frame-limit and a writable path\n");
+            return EXIT_FAILURE;
+        }
+        fseek(audio_file, 44, SEEK_SET);
+        SDL_SetEnvironmentVariable(SDL_GetEnvironment(), "PSYZ_AUDIO_NO_DEVICE", "1", true);
+    }
     /* Headless runs ignore and never write the settings file. */
     g_settings_persist = !headless;
     if (g_settings_persist)

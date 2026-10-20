@@ -346,7 +346,9 @@ s32 Title_Loading(s32 level, u8 *image, NsDirectory *dir)
     s32 row;
     s32 col;
 
+    /* Levels without a loading image have other data here. */
     if (dir->word40C && dir->word410 && dir->word414
+        && dir->word410 <= 512 && dir->word414 <= 240
         && g_game_substate != 0x600 && g_game_substate != 0x200 && g_game_substate != 0x500
         && (g_game_substate != 0 || level != 25)) {
         buf = LIBC_Malloc(0x4000);

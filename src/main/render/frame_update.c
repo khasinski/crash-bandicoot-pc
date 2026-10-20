@@ -63,10 +63,42 @@ static __inline__ BufferToken *Gpu_RoundTicks_inline(void)
     return &g_pbak_header_byte_0[0];
 }
 
+/* The overlay darkness drawn by the last three updates, newest first, so
+ * that an interpolated frame can fade by the midpoint. */
+static u32 fade_history[3];
+
+/* The level number at the start of g_ns (src/platform/interp.c reads it the
+ * same way); 25 is the title and map screen. */
+extern unsigned char g_ns[];
+#define LEVEL_TITLE 25
+static s32 current_level(void)
+{
+    return *(s32 *)(g_ns + 4);
+}
+
+/* Updates still to pass before interpolation resumes after a load: the
+ * screen shows the loading image for two logic frames after the scene
+ * behind it is ready. */
+static s32 load_settle;
+
+static void draw_fade(u32 fade)
+{
+    fade_history[0] = Gpu_FadeAlpha(fade);
+    Gpu_DrawOverlay(fade);
+}
+
 void Gpu_Update(void)
 {
     BufferToken *token;
     RenderBufferFull *swap;
+
+    fade_history[2] = fade_history[1];
+    fade_history[1] = fade_history[0];
+    fade_history[0] = 0;
+    if (g_ns_load_done_flag[0] != 0 || gp_next_lid != 0)
+        load_settle = 3;
+    else if (load_settle > 0)
+        load_settle--;
 
     token = Gpu_RoundTicks_inline();
     if (gp_next_lid == 0 && (g_cur_lid_ro[0] & 0x1000)) {
@@ -75,13 +107,13 @@ void Gpu_Update(void)
     if (g_cam_rot_xz[0] != 0) {
         if (g_cam_rot_xz[0] > 0) {
             g_cam_rot_xz[0] -= g_gpu_max_frame_ticks;
-            Gpu_DrawOverlay(g_cam_rot_xz[0]);
+            draw_fade(g_cam_rot_xz[0]);
         } else if (g_cam_rot_xz[0] >= -2) {
-            Gpu_DrawOverlay(0x100);
+            draw_fade(0x100);
             g_cam_rot_xz[0] = -1;
         } else {
             g_cam_rot_xz[0] += g_gpu_max_frame_ticks;
-            Gpu_DrawOverlay(g_cam_rot_xz[0] + 0x100);
+            draw_fade(g_cam_rot_xz[0] + 0x100);
             if (g_cam_rot_xz[0] == 0 && !(g_cur_lid_ro[0] & 0x200000)) {
                 g_cam_rot_xz[0] = -2;
             }
@@ -113,7 +145,7 @@ void Gpu_Update(void)
     if (Gpu_SecondBlankDue()) {
         /* --fps60 shows an interpolated frame during the second blank. */
         if (Platform_InterpolateFrames()) {
-            Platform_MidFrame(gp_next_lid == 0 && g_ns_load_done_flag[0] == 0);
+            Platform_MidFrame(gp_next_lid == 0 && g_ns_load_done_flag[0] == 0 && load_settle == 0);
         }
         VSync(0);
     }
@@ -145,7 +177,14 @@ void Gpu_Update(void)
     ExitCriticalSection();
     RAM_AT(RenderBufferFull, g_db_cur.buf)->word84 = Gfx_TgeoGetTexinfoArray(RAM_AT(RenderBufferFull, g_db_prev)->word7C - RAM_AT(RenderBufferFull, g_db_cur.buf)->word7C);
     PutDispEnv(&RAM_AT(RenderBufferFull, g_db_cur.buf)->display);
+    Platform_NoteDisplay(RAM_AT(RenderBufferFull, g_db_cur.buf)->display.display.x,
+                         RAM_AT(RenderBufferFull, g_db_cur.buf)->display.display.y,
+                         RAM_AT(RenderBufferFull, g_db_cur.buf)->display.display.w,
+                         RAM_AT(RenderBufferFull, g_db_cur.buf)->display.display.h);
     PutDrawEnv(&RAM_AT(RenderBufferFull, g_db_prev)->drawing);
+    /* 3D gameplay, not the title and map screen (level 25) or a load. */
+    Platform_SetWideActive(current_level() != LEVEL_TITLE && gp_next_lid == 0 && g_ns_load_done_flag[0] == 0
+                           && load_settle == 0);
     if (g_ns_load_done_flag[0] > 0) {
         g_ns_load_done_flag[0]--;
     }
@@ -171,6 +210,8 @@ void Gpu_DrawInterpolated(void)
 {
     RenderBufferFull *scratch = RAM_AT(RenderBufferFull, g_ot_cur);
 
+    /* The updates before this one built the two frames being blended. */
+    Gpu_DrawOverlayAlpha((fade_history[1] + fade_history[2]) / 2);
     DrawSync(0);
     PutDrawEnv(&RAM_AT(RenderBufferFull, g_db_prev)->drawing);
     DrawOTag(scratch->ordering_table);

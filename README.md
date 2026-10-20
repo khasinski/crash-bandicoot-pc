@@ -34,6 +34,19 @@ How it works:
   ([docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)).
 - GPU packets stay in PS1 format and reach PsyZ as GP0 commands.
 
+## Known limits
+
+- Music is not complete yet: PsyZ's libsnd sequencer is still being filled in.
+- Only the levels that have been run are known to work; see
+  [the port plan](docs/PC_PORT_PLAN.md) for the list. Level 4 (`S0000004.NSD`)
+  stops with a null lookup in the resource system.
+- Widescreen is not available. The levels' visible-polygon lists are baked for
+  4:3 camera views, so a wider view shows gaps at the sides until the engine
+  gets its own visibility pass. An unfinished version exists behind
+  `--widescreen`.
+- macOS and Linux only: the game runs on a stack inside its RAM image through
+  `ucontext`, which Windows does not have.
+
 ## Build and run
 
 Use a C11 compiler, CMake 3.21 or newer and Git. PsyZ and SDL are source
@@ -60,10 +73,17 @@ and an extra frame, with the camera and objects halfway between two logic
 frames, is drawn in between (src/platform/interp.c). Simulation, timing and
 animations are exactly those of 30 frames per second.
 
+Both can also be switched while playing: Escape (or closing the menu with ○ or
+START) opens a pause menu with **60 FPS** and **RESOLUTION**. The choices are
+saved to `crash-bandicoot-pc.ini` in the working directory; `--fps60` and
+`--scale` override the file for that run. Choose the menu entries with
+up/down and change them with left/right or ✕. QUIT GAME leaves the game, and
+closing the window still quits at any time.
+
 Controls (PsyZ defaults): arrow keys move, X is ✕ (jump), Z is □ (spin),
 D is ○, S is △, Enter is START, Backspace is SELECT, Q/R are L1/R1 and
 W/E are L2/R2. SDL game controllers work as a PlayStation pad. F4 toggles
-fullscreen; Escape or closing the window quits.
+fullscreen; Escape opens the menu.
 Memory card saves are written to the `bu00/` and `bu10/` directories in the
 working directory.
 

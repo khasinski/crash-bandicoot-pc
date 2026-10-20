@@ -33,19 +33,22 @@ void Gpu_DrawRect(s32 x, s32 y, s32 w, s32 h, u8 r, u8 g, u8 b) {
     AddPrim(buf->ordering_table, tile);
 }
 
-void Gpu_DrawOverlay(u32 fade) {
+/* How strongly the overlay darkens the screen (0 is not at all). */
+u32 Gpu_FadeAlpha(u32 fade) {
+    FadeTable table = g_tile_fade_alpha_table;
+    return fade != 0 ? table.bytes[fade >> 4] : 0;
+}
+
+void Gpu_DrawOverlayAlpha(u32 alpha) {
     void *mode_packet;
     GpuPolyF4 *poly;
-    FadeTable table;
     RenderBuffer *buf = RAM_AT(RenderBuffer, g_db_cur[2]);
 
     mode_packet = RAM_AT(void, buf->word78);
     buf->word78 = buf->word78 + 0xC;
     poly = RAM_AT(GpuPolyF4, buf->word78);
     buf->word78 = Ram_Addr(poly + 1);
-    table = g_tile_fade_alpha_table;
-    if (fade != 0) {
-        fade = table.bytes[fade >> 4];
+    if (alpha != 0) {
         poly->x0 = -256;
         poly->y0 = -120;
         poly->x1 = 256;
@@ -54,13 +57,17 @@ void Gpu_DrawOverlay(u32 fade) {
         poly->y2 = 120;
         poly->x3 = 256;
         poly->y3 = 120;
-        poly->header.color[0] = fade;
-        poly->header.color[1] = fade;
-        poly->header.color[2] = fade;
+        poly->header.color[0] = alpha;
+        poly->header.color[1] = alpha;
+        poly->header.color[2] = alpha;
         SetPolyF4(poly);
         SetSemiTrans(poly, 1);
         AddPrim(&buf->ordering_table[0x7FF], poly);
         SetDrawMode(mode_packet, 1, 0, GetTPage(0, 2, 0, 0), 0);
         AddPrim(&buf->ordering_table[0x7FF], mode_packet);
     }
+}
+
+void Gpu_DrawOverlay(u32 fade) {
+    Gpu_DrawOverlayAlpha(Gpu_FadeAlpha(fade));
 }

@@ -57,7 +57,7 @@ typedef struct FrameState {
     ObjectState objects[MAX_OBJECTS];
 } FrameState;
 
-static int enabled = -1;
+static int enabled;
 static int render_only;
 static int recorded; /* logic frames recorded, up to 2 */
 static FrameState older, newer;  /* k-1 and k */
@@ -67,16 +67,23 @@ static unsigned char newer_scratch[RAM_SCRATCH_SIZE], live_scratch[RAM_SCRATCH_S
 
 int Platform_InterpolateFrames(void)
 {
-    if (enabled < 0) {
-        const char *env = getenv("CRASH_FPS60");
-        enabled = env && env[0] == '1';
-        if (enabled) {
-            newer_ram = malloc(RAM_USED);
-            live_ram = malloc(RAM_USED);
-            enabled = newer_ram && live_ram;
+    return enabled;
+}
+
+void Platform_SetInterpolation(int on)
+{
+    if (on && newer_ram == NULL) {
+        newer_ram = malloc(RAM_USED);
+        live_ram = malloc(RAM_USED);
+        if (newer_ram == NULL || live_ram == NULL) {
+            free(newer_ram);
+            free(live_ram);
+            newer_ram = live_ram = NULL;
+            on = 0;
         }
     }
-    return enabled;
+    enabled = on != 0;
+    recorded = 0; /* the snapshots are stale after any gap */
 }
 
 int Platform_RenderOnly(void)
@@ -141,6 +148,15 @@ static void record(FrameState *state)
 static int32_t mid(int32_t a, int32_t b)
 {
     return a + (int32_t)(((int64_t)b - a) / 2);
+}
+
+/* A scale that changes sign mirrors the model (Crash turning round); halfway
+ * through it would collapse to a line, so the mirror just happens. */
+static int32_t mid_scale(int32_t a, int32_t b)
+{
+    if ((a < 0) != (b < 0))
+        return b;
+    return mid(a, b);
 }
 
 /* Angles are 12-bit; take the short way round. */
@@ -219,7 +235,7 @@ void Platform_MidFrame(int allowed)
         for (i = 0; i < 3; i++) {
             set_word(o->addr + OBJ_TRANS + 4 * i, mid(p->trans[i], o->trans[i]));
             set_word(o->addr + OBJ_ROT + 4 * i, mid_angle(p->rot[i], o->rot[i]));
-            set_word(o->addr + OBJ_SCALE + 4 * i, mid(p->scale[i], o->scale[i]));
+            set_word(o->addr + OBJ_SCALE + 4 * i, mid_scale(p->scale[i], o->scale[i]));
         }
     }
     Core_DrawRenderPasses();

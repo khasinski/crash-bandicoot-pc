@@ -42,7 +42,23 @@ static u32 frame_limit;
 static u32 frame_count;
 static const char *vram_path;
 static const char *capture_path;
-static unsigned render_scale = 1;
+static int cli_fps60 = -1; /* -1: not given on the command line */
+static unsigned cli_scale;
+static int headless;
+
+/* --menu-capture FRAME:PATH draws the Escape menu once at FRAME, captures the
+ * screen to PATH and carries on, for checking how it looks. */
+/* --menu-at FRAME opens the menu at FRAME; while it is open the --pad-at
+ * schedule keeps advancing, one step per presented frame, to drive it. */
+static u32 menu_at;
+static u32 menu_ticks;
+static u32 menu_capture_frame;
+static const char *menu_capture_path;
+
+/* --capture-seq DIR:FIRST:LAST writes every presented frame in the range as
+ * DIR/fNNNNN.ppm, for finding flicker. */
+static const char *seq_dir;
+static u32 seq_first, seq_last;
 
 /* --pad-at FRAME:MASK holds PS1 button bits (pressed = 1) from FRAME on. */
 typedef struct PadEvent {
@@ -187,6 +203,18 @@ static void capture_frame(const char *path)
     free(rgb);
 }
 
+static void capture_sequence_frame(void)
+{
+    char path[1024];
+    snprintf(path, sizeof(path), "%s/f%05u.ppm", seq_dir, frame_count);
+    capture_frame(path);
+}
+
+static void menu_capture(void)
+{
+    capture_frame(menu_capture_path);
+}
+
 static void print_state(void)
 {
     const s32 *obj = gp_crash_obj ? RAM_AT(s32, gp_crash_obj) : NULL;
@@ -230,8 +258,16 @@ int Platform_VSync(int mode)
     /* Escape or closing the window: the game loop itself never ends. */
     if (Psyz_QuitRequested())
         exit(EXIT_SUCCESS);
+    if (mode == 0 && Psyz_EscapePressed())
+        Platform_Menu(NULL);
     if (mode == 0)
         frame_count++;
+    if (mode == 0 && menu_at != 0 && frame_count == menu_at)
+        Platform_Menu(NULL);
+    if (mode == 0 && menu_capture_path != NULL && frame_count == menu_capture_frame)
+        Platform_Menu(menu_capture);
+    if (mode == 0 && seq_dir != NULL && frame_count >= seq_first && frame_count <= seq_last)
+        capture_sequence_frame();
     if (mode == 0 && trace_period && frame_count % trace_period == 0)
         print_state();
     if (mode == 0 && control_at && frame_count >= control_at && frame_count >= control_until)
@@ -249,12 +285,17 @@ int Platform_VSync(int mode)
     return result;
 }
 
+void Platform_MenuTick(int open)
+{
+    menu_ticks = open ? menu_ticks + 1 : 0;
+}
+
 unsigned int Platform_PadRead(int id)
 {
     unsigned int buttons = (unsigned int)(PadRead)(id); /* PsyZ */
     u32 scheduled = 0;
     int i;
-    for (i = 0; i < pad_event_count && pad_events[i].frame <= frame_count; i++)
+    for (i = 0; i < pad_event_count && pad_events[i].frame <= frame_count + menu_ticks; i++)
         scheduled = pad_events[i].buttons;
     if (control_at && frame_count >= control_at)
         scheduled = control_buttons;
@@ -290,7 +331,7 @@ static void usage(const char *program)
 {
     printf("Usage: %s --disc <Crash Bandicoot (USA).cue> [--headless]"
            " [--frame-limit N] [--dump-vram PATH] [--pad-at FRAME:BUTTONS ...]"
-           " [--warp FRAME:LEVEL] [--scale N] [--fps60]\n", program);
+           " [--warp FRAME:LEVEL] [--capture-seq DIR:FIRST:LAST] [--scale N] [--fps60] [--widescreen]\n", program);
     printf("--scale renders at N times the PS1 resolution; --fps60 adds an interpolated frame between logic frames.\n");
     printf("--pad-at holds the PS1 button mask (pressed = 1, START = 0x800) from FRAME on.\n");
 }
@@ -307,10 +348,13 @@ int main(int argc, char **argv)
         } else if (!strcmp(argv[i], "--disc") && i + 1 < argc) {
             disc = argv[++i];
         } else if (!strcmp(argv[i], "--headless")) {
+            headless = 1;
             SDL_SetEnvironmentVariable(SDL_GetEnvironment(), "PSYZ_HEADLESS", "1", true);
             /* Game time follows frames, so headless runs are deterministic
              * and run as fast as the host allows. */
             SDL_SetEnvironmentVariable(SDL_GetEnvironment(), "PSYZ_VIRTUAL_CLOCK", "1", true);
+            /* Automated runs must not play music on the host. */
+            SDL_SetEnvironmentVariable(SDL_GetEnvironment(), "SDL_AUDIODRIVER", "dummy", true);
         } else if (!strcmp(argv[i], "--frame-limit") && i + 1 < argc) {
             char *end;
             unsigned long limit;
@@ -343,13 +387,38 @@ int main(int argc, char **argv)
                 return EXIT_FAILURE;
             }
         } else if (!strcmp(argv[i], "--fps60")) {
-            setenv("CRASH_FPS60", "1", 1); /* read by src/platform/interp.c */
+            cli_fps60 = 1;
         } else if (!strcmp(argv[i], "--scale") && i + 1 < argc) {
-            render_scale = (unsigned)strtoul(argv[++i], NULL, 10);
-            if (render_scale < 1 || render_scale > 8) {
+            cli_scale = (unsigned)strtoul(argv[++i], NULL, 10);
+            if (cli_scale < 1 || cli_scale > 8) {
                 fprintf(stderr, "--scale takes 1 to 8\n");
                 return EXIT_FAILURE;
             }
+        } else if (!strcmp(argv[i], "--widescreen")) {
+            g_widescreen_experimental = 1;
+        } else if (!strcmp(argv[i], "--menu-at") && i + 1 < argc) {
+            menu_at = (u32)strtoul(argv[++i], NULL, 10);
+        } else if (!strcmp(argv[i], "--menu-capture") && i + 1 < argc) {
+            char *colon = strchr(argv[++i], ':');
+            if (colon == NULL) {
+                fprintf(stderr, "Invalid --menu-capture, expected FRAME:PATH\n");
+                return EXIT_FAILURE;
+            }
+            *colon = 0;
+            menu_capture_frame = (u32)strtoul(argv[i], NULL, 10);
+            menu_capture_path = colon + 1;
+        } else if (!strcmp(argv[i], "--capture-seq") && i + 1 < argc) {
+            char *spec = argv[++i];
+            char *last = strrchr(spec, ':');
+            char *first = last ? (*last = 0, strrchr(spec, ':')) : NULL;
+            if (first == NULL) {
+                fprintf(stderr, "Invalid --capture-seq, expected DIR:FIRST:LAST\n");
+                return EXIT_FAILURE;
+            }
+            *first = 0;
+            seq_dir = spec;
+            seq_first = (u32)strtoul(first + 1, NULL, 10);
+            seq_last = (u32)strtoul(last + 1, NULL, 10);
         } else if (!strcmp(argv[i], "--capture") && i + 1 < argc) {
             capture_path = argv[++i];
         } else if (!strcmp(argv[i], "--dump-vram") && i + 1 < argc) {
@@ -369,8 +438,17 @@ int main(int argc, char **argv)
         return EXIT_FAILURE;
     }
     Psyz_SetTitle("Crash Bandicoot");
-    if (render_scale > 1)
-        Psyz_VideoSetInternalResolution(render_scale);
+    /* Headless runs ignore and never write the settings file. */
+    g_settings_persist = !headless;
+    if (g_settings_persist)
+        Settings_Load();
+    if (cli_fps60 >= 0)
+        g_settings.fps60 = cli_fps60;
+    if (cli_scale != 0)
+        g_settings.scale = (int)cli_scale;
+    Settings_Apply();
+    if (!headless)
+        Psyz_EscapeIsMenu(1);
     if (Psyz_CdSetDiskPath(disc) != 0) {
         fprintf(stderr, "Cannot open disc image: %s\n", disc);
         return EXIT_FAILURE;

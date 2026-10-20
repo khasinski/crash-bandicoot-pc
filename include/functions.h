@@ -273,6 +273,8 @@ void Gool_ForEachObject(s32 (*visitor)(struct Node *, void *), void *context);
 s32 Gool_ZoneObjectTerminate(struct Node *node, void *context);
 void Gool_ZoneObjectsTerminate(void *object);
 void Gpu_DrawOverlay(u32 fade);
+u32 Gpu_FadeAlpha(u32 fade);
+void Gpu_DrawOverlayAlpha(u32 alpha);
 void Gpu_DrawRect(s32, s32, s32, s32, u8, u8, u8);
 void Gpu_FillDisplay(void);
 s32 *Gpu_GetCurPrimsTail(void);

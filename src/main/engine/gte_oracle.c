@@ -24,6 +24,20 @@
 /* Top of the game stack (src/platform/main.c: GAME_STACK_BASE + SIZE). */
 #define STACK_TOP 0x807C0000u
 
+/*
+ * Scratchpad ranges a routine writes and nothing reads: the original's
+ * register save areas. What they hold depends on the caller's registers (in
+ * the translation, its emulated ones), so the C ports do not write them and
+ * the check takes the C version's contents there.
+ */
+static const struct {
+    const char *name;
+    u32 start, end;
+} scratch_unread[] = {
+    {"Slst_RDecodeForward", 0x1F800000u, 0x1F800040u},
+    {"Slst_RDecodeBackward", 0x1F800000u, 0x1F800040u},
+};
+
 static int depth;
 static u32 stack_from, stack_size;
 static u8 *before_low, *before_stack, *mips_low, *mips_stack_copy;
@@ -152,6 +166,12 @@ void Oracle_End(const char *name, u32 mips_result, u32 native_result)
             counts[i].calls++;
             break;
         }
+    }
+    for (i = 0; i < (int)(sizeof(scratch_unread) / sizeof(scratch_unread[0])); i++) {
+        u32 offset = scratch_unread[i].start - RAM_SCRATCH_BASE;
+        if (strcmp(scratch_unread[i].name, name) == 0)
+            memcpy(mips_scratch + offset, g_ps1_scratch + offset,
+                scratch_unread[i].end - scratch_unread[i].start);
     }
     Psyz_GteSaveState(native_gte);
     if (mips_result != native_result || memcmp(mips_low, Ram_Ptr(LOW_START), LOW_SIZE) != 0 ||

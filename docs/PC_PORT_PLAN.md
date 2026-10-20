@@ -55,6 +55,16 @@ It needs a visibility pass of its own that culls the zone's polygons against
 the wide frustum and sorts them by depth (the draw loop assumes a
 back-to-front list, see `World_Link`).
 
+A first attempt at that pass (all polygons of the zone, culled by back-facing,
+near plane and screen box) reproduced 4:3 frames only partly and emitted 2 to 5
+times the baked count (about 2200 against 1100 on the beach). The primitive
+buffers (`Gpu_SetupPrims`, 0x16000 bytes per buffer) are sized for the baked
+lists: a list over about 1500 polygons overflows them and crashes, and
+doubling the buffers fails in the heap. The baked lists also drop far geometry
+(mountains) that the plain cull keeps. A real solution needs a tighter
+visibility test (distance and occlusion) and room for more primitives. It was
+dropped for the first release.
+
 ## Milestones
 
 Modules join the native target in dependency order. Each step must build

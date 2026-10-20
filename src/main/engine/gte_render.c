@@ -176,6 +176,12 @@ static u32 mips_call(u32 entry, int argc, const u32 *argv)
     return R(v0);
 }
 
+#include "gte_native.h"
+#ifdef CRASH_GTE_ORACLE
+int Oracle_Begin(void *frame);
+void Oracle_Swap(void);
+void Oracle_End(const char *name, u32 mips_result, u32 native_result);
+#endif
 #include "gte_render_mips.inc"
 
 /* Quarter-wave sine table: round(4096 * sin(i * pi / 2048)) for i = 0..1024.

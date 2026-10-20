@@ -24737,141 +24737,624 @@ L_8003A948:
 
 /* Entry points for C callers. */
 
-void Slst_RDecodeForward(void *source, void *reference, void *destination)
+#if !GTE_NATIVE_Slst_RDecodeForward || defined(CRASH_GTE_ORACLE)
+static void mips_Slst_RDecodeForward(void *source, void *reference, void *destination)
 {
     u32 args[3] = {Ram_Addr(source), Ram_Addr(reference), Ram_Addr(destination)};
     mips_call(0x800334A0u, 3, args);
 }
+#endif
+#if !GTE_NATIVE_Slst_RDecodeForward
+void Slst_RDecodeForward(void *source, void *reference, void *destination)
+{
+    mips_Slst_RDecodeForward(source, reference, destination);
+}
+#elif defined(CRASH_GTE_ORACLE)
+void Native_Slst_RDecodeForward(void *source, void *reference, void *destination);
+void Slst_RDecodeForward(void *source, void *reference, void *destination)
+{
+    if (!Oracle_Begin(__builtin_frame_address(0))) {
+        Native_Slst_RDecodeForward(source, reference, destination);
+        return;
+    }
+    mips_Slst_RDecodeForward(source, reference, destination);
+    Oracle_Swap();
+    Native_Slst_RDecodeForward(source, reference, destination);
+    Oracle_End("Slst_RDecodeForward", 0, 0);
+}
+#endif
 
-void Slst_RDecodeBackward(void *source, void *reference, void *destination)
+#if !GTE_NATIVE_Slst_RDecodeBackward || defined(CRASH_GTE_ORACLE)
+static void mips_Slst_RDecodeBackward(void *source, void *reference, void *destination)
 {
     u32 args[3] = {Ram_Addr(source), Ram_Addr(reference), Ram_Addr(destination)};
     mips_call(0x80033878u, 3, args);
 }
+#endif
+#if !GTE_NATIVE_Slst_RDecodeBackward
+void Slst_RDecodeBackward(void *source, void *reference, void *destination)
+{
+    mips_Slst_RDecodeBackward(source, reference, destination);
+}
+#elif defined(CRASH_GTE_ORACLE)
+void Native_Slst_RDecodeBackward(void *source, void *reference, void *destination);
+void Slst_RDecodeBackward(void *source, void *reference, void *destination)
+{
+    if (!Oracle_Begin(__builtin_frame_address(0))) {
+        Native_Slst_RDecodeBackward(source, reference, destination);
+        return;
+    }
+    mips_Slst_RDecodeBackward(source, reference, destination);
+    Oracle_Swap();
+    Native_Slst_RDecodeBackward(source, reference, destination);
+    Oracle_End("Slst_RDecodeBackward", 0, 0);
+}
+#endif
 
-void RMemcpy(const void *src, void *dst, s32 size)
+#if !GTE_NATIVE_RMemcpy || defined(CRASH_GTE_ORACLE)
+static void mips_RMemcpy(const void *src, void *dst, s32 size)
 {
     u32 args[3] = {Ram_Addr(src), Ram_Addr(dst), (u32)size};
     mips_call(0x80033FBCu, 3, args);
 }
+#endif
+#if !GTE_NATIVE_RMemcpy
+void RMemcpy(const void *src, void *dst, s32 size)
+{
+    mips_RMemcpy(src, dst, size);
+}
+#elif defined(CRASH_GTE_ORACLE)
+void Native_RMemcpy(const void *src, void *dst, s32 size);
+void RMemcpy(const void *src, void *dst, s32 size)
+{
+    if (!Oracle_Begin(__builtin_frame_address(0))) {
+        Native_RMemcpy(src, dst, size);
+        return;
+    }
+    mips_RMemcpy(src, dst, size);
+    Oracle_Swap();
+    Native_RMemcpy(src, dst, size);
+    Oracle_End("RMemcpy", 0, 0);
+}
+#endif
 
-void Gpu_RResetOT(u32 *ot, s32 count)
+#if !GTE_NATIVE_Gpu_RResetOT || defined(CRASH_GTE_ORACLE)
+static void mips_Gpu_RResetOT(u32 *ot, s32 count)
 {
     u32 args[2] = {Ram_Addr(ot), (u32)count};
     mips_call(0x800342D8u, 2, args);
 }
+#endif
+#if !GTE_NATIVE_Gpu_RResetOT
+void Gpu_RResetOT(u32 *ot, s32 count)
+{
+    mips_Gpu_RResetOT(ot, count);
+}
+#elif defined(CRASH_GTE_ORACLE)
+void Native_Gpu_RResetOT(u32 *ot, s32 count);
+void Gpu_RResetOT(u32 *ot, s32 count)
+{
+    if (!Oracle_Begin(__builtin_frame_address(0))) {
+        Native_Gpu_RResetOT(ot, count);
+        return;
+    }
+    mips_Gpu_RResetOT(ot, count);
+    Oracle_Swap();
+    Native_Gpu_RResetOT(ot, count);
+    Oracle_End("Gpu_RResetOT", 0, 0);
+}
+#endif
 
-s32 RSqrMagnitude2(s32 x, s32 y)
+#if !GTE_NATIVE_RSqrMagnitude2 || defined(CRASH_GTE_ORACLE)
+static s32 mips_RSqrMagnitude2(s32 x, s32 y)
 {
     u32 args[2] = {(u32)x, (u32)y};
     return (s32)mips_call(0x80034524u, 2, args);
 }
+#endif
+#if !GTE_NATIVE_RSqrMagnitude2
+s32 RSqrMagnitude2(s32 x, s32 y)
+{
+    return mips_RSqrMagnitude2(x, y);
+}
+#elif defined(CRASH_GTE_ORACLE)
+s32 Native_RSqrMagnitude2(s32 x, s32 y);
+s32 RSqrMagnitude2(s32 x, s32 y)
+{
+    s32 mips_result, native_result;
+    if (!Oracle_Begin(__builtin_frame_address(0)))
+        return Native_RSqrMagnitude2(x, y);
+    mips_result = mips_RSqrMagnitude2(x, y);
+    Oracle_Swap();
+    native_result = Native_RSqrMagnitude2(x, y);
+    Oracle_End("RSqrMagnitude2", (u32)mips_result, (u32)native_result);
+    return native_result;
+}
+#endif
 
-s32 RSqrMagnitude3(s32 x, s32 y, s32 z)
+#if !GTE_NATIVE_RSqrMagnitude3 || defined(CRASH_GTE_ORACLE)
+static s32 mips_RSqrMagnitude3(s32 x, s32 y, s32 z)
 {
     u32 args[3] = {(u32)x, (u32)y, (u32)z};
     return (s32)mips_call(0x80034580u, 3, args);
 }
+#endif
+#if !GTE_NATIVE_RSqrMagnitude3
+s32 RSqrMagnitude3(s32 x, s32 y, s32 z)
+{
+    return mips_RSqrMagnitude3(x, y, z);
+}
+#elif defined(CRASH_GTE_ORACLE)
+s32 Native_RSqrMagnitude3(s32 x, s32 y, s32 z);
+s32 RSqrMagnitude3(s32 x, s32 y, s32 z)
+{
+    s32 mips_result, native_result;
+    if (!Oracle_Begin(__builtin_frame_address(0)))
+        return Native_RSqrMagnitude3(x, y, z);
+    mips_result = mips_RSqrMagnitude3(x, y, z);
+    Oracle_Swap();
+    native_result = Native_RSqrMagnitude3(x, y, z);
+    Oracle_End("RSqrMagnitude3", (u32)mips_result, (u32)native_result);
+    return native_result;
+}
+#endif
 
-void Gte_RTransformSvtx(u8 *frame, u32 *ot, void *tex, void *model, s32 scale, s32 far, s32 *prims_tail, u8 *tex_anim_masks, s32 shade)
+#if !GTE_NATIVE_Gte_RTransformSvtx || defined(CRASH_GTE_ORACLE)
+static void mips_Gte_RTransformSvtx(u8 *frame, u32 *ot, void *tex, void *model, s32 scale, s32 far, s32 *prims_tail, u8 *tex_anim_masks, s32 shade)
 {
     u32 args[9] = {Ram_Addr(frame), Ram_Addr(ot), Ram_Addr(tex), Ram_Addr(model), (u32)scale, (u32)far, Ram_Addr(prims_tail), Ram_Addr(tex_anim_masks), (u32)shade};
     mips_call(0x8003460Cu, 9, args);
 }
+#endif
+#if !GTE_NATIVE_Gte_RTransformSvtx
+void Gte_RTransformSvtx(u8 *frame, u32 *ot, void *tex, void *model, s32 scale, s32 far, s32 *prims_tail, u8 *tex_anim_masks, s32 shade)
+{
+    mips_Gte_RTransformSvtx(frame, ot, tex, model, scale, far, prims_tail, tex_anim_masks, shade);
+}
+#elif defined(CRASH_GTE_ORACLE)
+void Native_Gte_RTransformSvtx(u8 *frame, u32 *ot, void *tex, void *model, s32 scale, s32 far, s32 *prims_tail, u8 *tex_anim_masks, s32 shade);
+void Gte_RTransformSvtx(u8 *frame, u32 *ot, void *tex, void *model, s32 scale, s32 far, s32 *prims_tail, u8 *tex_anim_masks, s32 shade)
+{
+    if (!Oracle_Begin(__builtin_frame_address(0))) {
+        Native_Gte_RTransformSvtx(frame, ot, tex, model, scale, far, prims_tail, tex_anim_masks, shade);
+        return;
+    }
+    mips_Gte_RTransformSvtx(frame, ot, tex, model, scale, far, prims_tail, tex_anim_masks, shade);
+    Oracle_Swap();
+    Native_Gte_RTransformSvtx(frame, ot, tex, model, scale, far, prims_tail, tex_anim_masks, shade);
+    Oracle_End("Gte_RTransformSvtx", 0, 0);
+}
+#endif
 
-void Gte_RTransformCvtx(u8 *frame, u32 *ot, void *tex, void *model, s32 scale, s32 far, s32 *prims_tail, u8 *tex_anim_masks, s32 shade)
+#if !GTE_NATIVE_Gte_RTransformCvtx || defined(CRASH_GTE_ORACLE)
+static void mips_Gte_RTransformCvtx(u8 *frame, u32 *ot, void *tex, void *model, s32 scale, s32 far, s32 *prims_tail, u8 *tex_anim_masks, s32 shade)
 {
     u32 args[9] = {Ram_Addr(frame), Ram_Addr(ot), Ram_Addr(tex), Ram_Addr(model), (u32)scale, (u32)far, Ram_Addr(prims_tail), Ram_Addr(tex_anim_masks), (u32)shade};
     mips_call(0x80034B08u, 9, args);
 }
+#endif
+#if !GTE_NATIVE_Gte_RTransformCvtx
+void Gte_RTransformCvtx(u8 *frame, u32 *ot, void *tex, void *model, s32 scale, s32 far, s32 *prims_tail, u8 *tex_anim_masks, s32 shade)
+{
+    mips_Gte_RTransformCvtx(frame, ot, tex, model, scale, far, prims_tail, tex_anim_masks, shade);
+}
+#elif defined(CRASH_GTE_ORACLE)
+void Native_Gte_RTransformCvtx(u8 *frame, u32 *ot, void *tex, void *model, s32 scale, s32 far, s32 *prims_tail, u8 *tex_anim_masks, s32 shade);
+void Gte_RTransformCvtx(u8 *frame, u32 *ot, void *tex, void *model, s32 scale, s32 far, s32 *prims_tail, u8 *tex_anim_masks, s32 shade)
+{
+    if (!Oracle_Begin(__builtin_frame_address(0))) {
+        Native_Gte_RTransformCvtx(frame, ot, tex, model, scale, far, prims_tail, tex_anim_masks, shade);
+        return;
+    }
+    mips_Gte_RTransformCvtx(frame, ot, tex, model, scale, far, prims_tail, tex_anim_masks, shade);
+    Oracle_Swap();
+    Native_Gte_RTransformCvtx(frame, ot, tex, model, scale, far, prims_tail, tex_anim_masks, shade);
+    Oracle_End("Gte_RTransformCvtx", 0, 0);
+}
+#endif
 
-void Gte_RProjectBound(s32 *bound, void *offset, void *vectors, void *view)
+#if !GTE_NATIVE_Gte_RProjectBound || defined(CRASH_GTE_ORACLE)
+static void mips_Gte_RProjectBound(s32 *bound, void *offset, void *vectors, void *view)
 {
     u32 args[4] = {Ram_Addr(bound), Ram_Addr(offset), Ram_Addr(vectors), Ram_Addr(view)};
     mips_call(0x800351C8u, 4, args);
 }
+#endif
+#if !GTE_NATIVE_Gte_RProjectBound
+void Gte_RProjectBound(s32 *bound, void *offset, void *vectors, void *view)
+{
+    mips_Gte_RProjectBound(bound, offset, vectors, view);
+}
+#elif defined(CRASH_GTE_ORACLE)
+void Native_Gte_RProjectBound(s32 *bound, void *offset, void *vectors, void *view);
+void Gte_RProjectBound(s32 *bound, void *offset, void *vectors, void *view)
+{
+    if (!Oracle_Begin(__builtin_frame_address(0))) {
+        Native_Gte_RProjectBound(bound, offset, vectors, view);
+        return;
+    }
+    mips_Gte_RProjectBound(bound, offset, vectors, view);
+    Oracle_Swap();
+    Native_Gte_RProjectBound(bound, offset, vectors, view);
+    Oracle_End("Gte_RProjectBound", 0, 0);
+}
+#endif
 
-void Gte_RTransformWorlds(void *worlds, s32 flag, s32 far, s32 stamp, s32 *prims_tail, u8 *tex_anim_masks)
+#if !GTE_NATIVE_Gte_RTransformWorlds || defined(CRASH_GTE_ORACLE)
+static void mips_Gte_RTransformWorlds(void *worlds, s32 flag, s32 far, s32 stamp, s32 *prims_tail, u8 *tex_anim_masks)
 {
     u32 args[6] = {Ram_Addr(worlds), (u32)flag, (u32)far, (u32)stamp, Ram_Addr(prims_tail), Ram_Addr(tex_anim_masks)};
     mips_call(0x80035438u, 6, args);
 }
+#endif
+#if !GTE_NATIVE_Gte_RTransformWorlds
+void Gte_RTransformWorlds(void *worlds, s32 flag, s32 far, s32 stamp, s32 *prims_tail, u8 *tex_anim_masks)
+{
+    mips_Gte_RTransformWorlds(worlds, flag, far, stamp, prims_tail, tex_anim_masks);
+}
+#elif defined(CRASH_GTE_ORACLE)
+void Native_Gte_RTransformWorlds(void *worlds, s32 flag, s32 far, s32 stamp, s32 *prims_tail, u8 *tex_anim_masks);
+void Gte_RTransformWorlds(void *worlds, s32 flag, s32 far, s32 stamp, s32 *prims_tail, u8 *tex_anim_masks)
+{
+    if (!Oracle_Begin(__builtin_frame_address(0))) {
+        Native_Gte_RTransformWorlds(worlds, flag, far, stamp, prims_tail, tex_anim_masks);
+        return;
+    }
+    mips_Gte_RTransformWorlds(worlds, flag, far, stamp, prims_tail, tex_anim_masks);
+    Oracle_Swap();
+    Native_Gte_RTransformWorlds(worlds, flag, far, stamp, prims_tail, tex_anim_masks);
+    Oracle_End("Gte_RTransformWorlds", 0, 0);
+}
+#endif
 
-void Gte_RTransformWorldsFog(void *worlds, s32 flag, s32 far, s32 stamp, s32 *prims_tail, u8 *tex_anim_masks)
+#if !GTE_NATIVE_Gte_RTransformWorldsFog || defined(CRASH_GTE_ORACLE)
+static void mips_Gte_RTransformWorldsFog(void *worlds, s32 flag, s32 far, s32 stamp, s32 *prims_tail, u8 *tex_anim_masks)
 {
     u32 args[6] = {Ram_Addr(worlds), (u32)flag, (u32)far, (u32)stamp, Ram_Addr(prims_tail), Ram_Addr(tex_anim_masks)};
     mips_call(0x80035898u, 6, args);
 }
+#endif
+#if !GTE_NATIVE_Gte_RTransformWorldsFog
+void Gte_RTransformWorldsFog(void *worlds, s32 flag, s32 far, s32 stamp, s32 *prims_tail, u8 *tex_anim_masks)
+{
+    mips_Gte_RTransformWorldsFog(worlds, flag, far, stamp, prims_tail, tex_anim_masks);
+}
+#elif defined(CRASH_GTE_ORACLE)
+void Native_Gte_RTransformWorldsFog(void *worlds, s32 flag, s32 far, s32 stamp, s32 *prims_tail, u8 *tex_anim_masks);
+void Gte_RTransformWorldsFog(void *worlds, s32 flag, s32 far, s32 stamp, s32 *prims_tail, u8 *tex_anim_masks)
+{
+    if (!Oracle_Begin(__builtin_frame_address(0))) {
+        Native_Gte_RTransformWorldsFog(worlds, flag, far, stamp, prims_tail, tex_anim_masks);
+        return;
+    }
+    mips_Gte_RTransformWorldsFog(worlds, flag, far, stamp, prims_tail, tex_anim_masks);
+    Oracle_Swap();
+    Native_Gte_RTransformWorldsFog(worlds, flag, far, stamp, prims_tail, tex_anim_masks);
+    Oracle_End("Gte_RTransformWorldsFog", 0, 0);
+}
+#endif
 
-void Gte_RTransformWorldsRipple(void *worlds, s32 flag, s32 far, s32 stamp, s32 *prims_tail, u8 *tex_anim_masks)
+#if !GTE_NATIVE_Gte_RTransformWorldsRipple || defined(CRASH_GTE_ORACLE)
+static void mips_Gte_RTransformWorldsRipple(void *worlds, s32 flag, s32 far, s32 stamp, s32 *prims_tail, u8 *tex_anim_masks)
 {
     u32 args[6] = {Ram_Addr(worlds), (u32)flag, (u32)far, (u32)stamp, Ram_Addr(prims_tail), Ram_Addr(tex_anim_masks)};
     mips_call(0x80035E10u, 6, args);
 }
+#endif
+#if !GTE_NATIVE_Gte_RTransformWorldsRipple
+void Gte_RTransformWorldsRipple(void *worlds, s32 flag, s32 far, s32 stamp, s32 *prims_tail, u8 *tex_anim_masks)
+{
+    mips_Gte_RTransformWorldsRipple(worlds, flag, far, stamp, prims_tail, tex_anim_masks);
+}
+#elif defined(CRASH_GTE_ORACLE)
+void Native_Gte_RTransformWorldsRipple(void *worlds, s32 flag, s32 far, s32 stamp, s32 *prims_tail, u8 *tex_anim_masks);
+void Gte_RTransformWorldsRipple(void *worlds, s32 flag, s32 far, s32 stamp, s32 *prims_tail, u8 *tex_anim_masks)
+{
+    if (!Oracle_Begin(__builtin_frame_address(0))) {
+        Native_Gte_RTransformWorldsRipple(worlds, flag, far, stamp, prims_tail, tex_anim_masks);
+        return;
+    }
+    mips_Gte_RTransformWorldsRipple(worlds, flag, far, stamp, prims_tail, tex_anim_masks);
+    Oracle_Swap();
+    Native_Gte_RTransformWorldsRipple(worlds, flag, far, stamp, prims_tail, tex_anim_masks);
+    Oracle_End("Gte_RTransformWorldsRipple", 0, 0);
+}
+#endif
 
-void Gte_RTransformWorldsLightning(void *worlds, s32 flag, s32 far, s32 stamp, s32 *prims_tail, u8 *tex_anim_masks)
+#if !GTE_NATIVE_Gte_RTransformWorldsLightning || defined(CRASH_GTE_ORACLE)
+static void mips_Gte_RTransformWorldsLightning(void *worlds, s32 flag, s32 far, s32 stamp, s32 *prims_tail, u8 *tex_anim_masks)
 {
     u32 args[6] = {Ram_Addr(worlds), (u32)flag, (u32)far, (u32)stamp, Ram_Addr(prims_tail), Ram_Addr(tex_anim_masks)};
     mips_call(0x80036340u, 6, args);
 }
+#endif
+#if !GTE_NATIVE_Gte_RTransformWorldsLightning
+void Gte_RTransformWorldsLightning(void *worlds, s32 flag, s32 far, s32 stamp, s32 *prims_tail, u8 *tex_anim_masks)
+{
+    mips_Gte_RTransformWorldsLightning(worlds, flag, far, stamp, prims_tail, tex_anim_masks);
+}
+#elif defined(CRASH_GTE_ORACLE)
+void Native_Gte_RTransformWorldsLightning(void *worlds, s32 flag, s32 far, s32 stamp, s32 *prims_tail, u8 *tex_anim_masks);
+void Gte_RTransformWorldsLightning(void *worlds, s32 flag, s32 far, s32 stamp, s32 *prims_tail, u8 *tex_anim_masks)
+{
+    if (!Oracle_Begin(__builtin_frame_address(0))) {
+        Native_Gte_RTransformWorldsLightning(worlds, flag, far, stamp, prims_tail, tex_anim_masks);
+        return;
+    }
+    mips_Gte_RTransformWorldsLightning(worlds, flag, far, stamp, prims_tail, tex_anim_masks);
+    Oracle_Swap();
+    Native_Gte_RTransformWorldsLightning(worlds, flag, far, stamp, prims_tail, tex_anim_masks);
+    Oracle_End("Gte_RTransformWorldsLightning", 0, 0);
+}
+#endif
 
-void Gte_RTransformWorldsDark(void *worlds, s32 flag, s32 far, s32 stamp, s32 *prims_tail, u8 *tex_anim_masks, u32 fog_far, s32 fog_mode)
+#if !GTE_NATIVE_Gte_RTransformWorldsDark || defined(CRASH_GTE_ORACLE)
+static void mips_Gte_RTransformWorldsDark(void *worlds, s32 flag, s32 far, s32 stamp, s32 *prims_tail, u8 *tex_anim_masks, u32 fog_far, s32 fog_mode)
 {
     u32 args[8] = {Ram_Addr(worlds), (u32)flag, (u32)far, (u32)stamp, Ram_Addr(prims_tail), Ram_Addr(tex_anim_masks), (u32)fog_far, (u32)fog_mode};
     mips_call(0x80036BF4u, 8, args);
 }
+#endif
+#if !GTE_NATIVE_Gte_RTransformWorldsDark
+void Gte_RTransformWorldsDark(void *worlds, s32 flag, s32 far, s32 stamp, s32 *prims_tail, u8 *tex_anim_masks, u32 fog_far, s32 fog_mode)
+{
+    mips_Gte_RTransformWorldsDark(worlds, flag, far, stamp, prims_tail, tex_anim_masks, fog_far, fog_mode);
+}
+#elif defined(CRASH_GTE_ORACLE)
+void Native_Gte_RTransformWorldsDark(void *worlds, s32 flag, s32 far, s32 stamp, s32 *prims_tail, u8 *tex_anim_masks, u32 fog_far, s32 fog_mode);
+void Gte_RTransformWorldsDark(void *worlds, s32 flag, s32 far, s32 stamp, s32 *prims_tail, u8 *tex_anim_masks, u32 fog_far, s32 fog_mode)
+{
+    if (!Oracle_Begin(__builtin_frame_address(0))) {
+        Native_Gte_RTransformWorldsDark(worlds, flag, far, stamp, prims_tail, tex_anim_masks, fog_far, fog_mode);
+        return;
+    }
+    mips_Gte_RTransformWorldsDark(worlds, flag, far, stamp, prims_tail, tex_anim_masks, fog_far, fog_mode);
+    Oracle_Swap();
+    Native_Gte_RTransformWorldsDark(worlds, flag, far, stamp, prims_tail, tex_anim_masks, fog_far, fog_mode);
+    Oracle_End("Gte_RTransformWorldsDark", 0, 0);
+}
+#endif
 
-void Gte_RTransformWorldsDark2(void *worlds, s32 flag, s32 far, s32 stamp, s32 *prims_tail, u8 *tex_anim_masks)
+#if !GTE_NATIVE_Gte_RTransformWorldsDark2 || defined(CRASH_GTE_ORACLE)
+static void mips_Gte_RTransformWorldsDark2(void *worlds, s32 flag, s32 far, s32 stamp, s32 *prims_tail, u8 *tex_anim_masks)
 {
     u32 args[6] = {Ram_Addr(worlds), (u32)flag, (u32)far, (u32)stamp, Ram_Addr(prims_tail), Ram_Addr(tex_anim_masks)};
     mips_call(0x800375ECu, 6, args);
 }
+#endif
+#if !GTE_NATIVE_Gte_RTransformWorldsDark2
+void Gte_RTransformWorldsDark2(void *worlds, s32 flag, s32 far, s32 stamp, s32 *prims_tail, u8 *tex_anim_masks)
+{
+    mips_Gte_RTransformWorldsDark2(worlds, flag, far, stamp, prims_tail, tex_anim_masks);
+}
+#elif defined(CRASH_GTE_ORACLE)
+void Native_Gte_RTransformWorldsDark2(void *worlds, s32 flag, s32 far, s32 stamp, s32 *prims_tail, u8 *tex_anim_masks);
+void Gte_RTransformWorldsDark2(void *worlds, s32 flag, s32 far, s32 stamp, s32 *prims_tail, u8 *tex_anim_masks)
+{
+    if (!Oracle_Begin(__builtin_frame_address(0))) {
+        Native_Gte_RTransformWorldsDark2(worlds, flag, far, stamp, prims_tail, tex_anim_masks);
+        return;
+    }
+    mips_Gte_RTransformWorldsDark2(worlds, flag, far, stamp, prims_tail, tex_anim_masks);
+    Oracle_Swap();
+    Native_Gte_RTransformWorldsDark2(worlds, flag, far, stamp, prims_tail, tex_anim_masks);
+    Oracle_End("Gte_RTransformWorldsDark2", 0, 0);
+}
+#endif
 
-s32 Solid_RZoneQueryOctree(struct ZqZoneRect *rect, struct ZqBound *query, struct SubWsNode *nodes, s32 count)
+#if !GTE_NATIVE_Solid_RZoneQueryOctree || defined(CRASH_GTE_ORACLE)
+static s32 mips_Solid_RZoneQueryOctree(struct ZqZoneRect *rect, struct ZqBound *query, struct SubWsNode *nodes, s32 count)
 {
     u32 args[4] = {Ram_Addr(rect), Ram_Addr(query), Ram_Addr(nodes), (u32)count};
     return (s32)mips_call(0x80037D50u, 4, args);
 }
+#endif
+#if !GTE_NATIVE_Solid_RZoneQueryOctree
+s32 Solid_RZoneQueryOctree(struct ZqZoneRect *rect, struct ZqBound *query, struct SubWsNode *nodes, s32 count)
+{
+    return mips_Solid_RZoneQueryOctree(rect, query, nodes, count);
+}
+#elif defined(CRASH_GTE_ORACLE)
+s32 Native_Solid_RZoneQueryOctree(struct ZqZoneRect *rect, struct ZqBound *query, struct SubWsNode *nodes, s32 count);
+s32 Solid_RZoneQueryOctree(struct ZqZoneRect *rect, struct ZqBound *query, struct SubWsNode *nodes, s32 count)
+{
+    s32 mips_result, native_result;
+    if (!Oracle_Begin(__builtin_frame_address(0)))
+        return Native_Solid_RZoneQueryOctree(rect, query, nodes, count);
+    mips_result = mips_Solid_RZoneQueryOctree(rect, query, nodes, count);
+    Oracle_Swap();
+    native_result = Native_Solid_RZoneQueryOctree(rect, query, nodes, count);
+    Oracle_End("Solid_RZoneQueryOctree", (u32)mips_result, (u32)native_result);
+    return native_result;
+}
+#endif
 
-void Solid_RPlotQueryWalls(struct SubWorkspace *ws, struct ZqBound *query, s32 mode, s32 y_min, s32 y_max, s32 y_top, s32 x, s32 z)
+#if !GTE_NATIVE_Solid_RPlotQueryWalls || defined(CRASH_GTE_ORACLE)
+static void mips_Solid_RPlotQueryWalls(struct SubWorkspace *ws, struct ZqBound *query, s32 mode, s32 y_min, s32 y_max, s32 y_top, s32 x, s32 z)
 {
     u32 args[8] = {Ram_Addr(ws), Ram_Addr(query), (u32)mode, (u32)y_min, (u32)y_max, (u32)y_top, (u32)x, (u32)z};
     mips_call(0x8003864Cu, 8, args);
 }
+#endif
+#if !GTE_NATIVE_Solid_RPlotQueryWalls
+void Solid_RPlotQueryWalls(struct SubWorkspace *ws, struct ZqBound *query, s32 mode, s32 y_min, s32 y_max, s32 y_top, s32 x, s32 z)
+{
+    mips_Solid_RPlotQueryWalls(ws, query, mode, y_min, y_max, y_top, x, z);
+}
+#elif defined(CRASH_GTE_ORACLE)
+void Native_Solid_RPlotQueryWalls(struct SubWorkspace *ws, struct ZqBound *query, s32 mode, s32 y_min, s32 y_max, s32 y_top, s32 x, s32 z);
+void Solid_RPlotQueryWalls(struct SubWorkspace *ws, struct ZqBound *query, s32 mode, s32 y_min, s32 y_max, s32 y_top, s32 x, s32 z)
+{
+    if (!Oracle_Begin(__builtin_frame_address(0))) {
+        Native_Solid_RPlotQueryWalls(ws, query, mode, y_min, y_max, y_top, x, z);
+        return;
+    }
+    mips_Solid_RPlotQueryWalls(ws, query, mode, y_min, y_max, y_top, x, z);
+    Oracle_Swap();
+    Native_Solid_RPlotQueryWalls(ws, query, mode, y_min, y_max, y_top, x, z);
+    Oracle_End("Solid_RPlotQueryWalls", 0, 0);
+}
+#endif
 
-void Solid_RFindFloorY(struct SubObj *obj, struct SubWorkspace *ws, struct ZqBound *query, struct ZqBound *bound, s32 max_y, s32 *out, s32 init, s32 (*node_fn)(struct SubObj *, u32))
+#if !GTE_NATIVE_Solid_RFindFloorY || defined(CRASH_GTE_ORACLE)
+static void mips_Solid_RFindFloorY(struct SubObj *obj, struct SubWorkspace *ws, struct ZqBound *query, struct ZqBound *bound, s32 max_y, s32 *out, s32 init, s32 (*node_fn)(struct SubObj *, u32))
 {
     u32 args[8] = {Ram_Addr(obj), Ram_Addr(ws), Ram_Addr(query), Ram_Addr(bound), (u32)max_y, Ram_Addr(out), (u32)init, Ram_FnAddr((const void *)node_fn)};
     mips_call(0x80038AC4u, 8, args);
 }
+#endif
+#if !GTE_NATIVE_Solid_RFindFloorY
+void Solid_RFindFloorY(struct SubObj *obj, struct SubWorkspace *ws, struct ZqBound *query, struct ZqBound *bound, s32 max_y, s32 *out, s32 init, s32 (*node_fn)(struct SubObj *, u32))
+{
+    mips_Solid_RFindFloorY(obj, ws, query, bound, max_y, out, init, node_fn);
+}
+#elif defined(CRASH_GTE_ORACLE)
+void Native_Solid_RFindFloorY(struct SubObj *obj, struct SubWorkspace *ws, struct ZqBound *query, struct ZqBound *bound, s32 max_y, s32 *out, s32 init, s32 (*node_fn)(struct SubObj *, u32));
+void Solid_RFindFloorY(struct SubObj *obj, struct SubWorkspace *ws, struct ZqBound *query, struct ZqBound *bound, s32 max_y, s32 *out, s32 init, s32 (*node_fn)(struct SubObj *, u32))
+{
+    if (!Oracle_Begin(__builtin_frame_address(0))) {
+        Native_Solid_RFindFloorY(obj, ws, query, bound, max_y, out, init, node_fn);
+        return;
+    }
+    mips_Solid_RFindFloorY(obj, ws, query, bound, max_y, out, init, node_fn);
+    Oracle_Swap();
+    Native_Solid_RFindFloorY(obj, ws, query, bound, max_y, out, init, node_fn);
+    Oracle_End("Solid_RFindFloorY", 0, 0);
+}
+#endif
 
-s32 Solid_RFindCeilY(struct SubObj *obj, struct SubWorkspace *ws, struct ZqBound *query, struct ZqBound *bound, s32 arg4, s32 arg5, s32 init)
+#if !GTE_NATIVE_Solid_RFindCeilY || defined(CRASH_GTE_ORACLE)
+static s32 mips_Solid_RFindCeilY(struct SubObj *obj, struct SubWorkspace *ws, struct ZqBound *query, struct ZqBound *bound, s32 arg4, s32 arg5, s32 init)
 {
     u32 args[7] = {Ram_Addr(obj), Ram_Addr(ws), Ram_Addr(query), Ram_Addr(bound), (u32)arg4, (u32)arg5, (u32)init};
     return (s32)mips_call(0x80038DF8u, 7, args);
 }
+#endif
+#if !GTE_NATIVE_Solid_RFindCeilY
+s32 Solid_RFindCeilY(struct SubObj *obj, struct SubWorkspace *ws, struct ZqBound *query, struct ZqBound *bound, s32 arg4, s32 arg5, s32 init)
+{
+    return mips_Solid_RFindCeilY(obj, ws, query, bound, arg4, arg5, init);
+}
+#elif defined(CRASH_GTE_ORACLE)
+s32 Native_Solid_RFindCeilY(struct SubObj *obj, struct SubWorkspace *ws, struct ZqBound *query, struct ZqBound *bound, s32 arg4, s32 arg5, s32 init);
+s32 Solid_RFindCeilY(struct SubObj *obj, struct SubWorkspace *ws, struct ZqBound *query, struct ZqBound *bound, s32 arg4, s32 arg5, s32 init)
+{
+    s32 mips_result, native_result;
+    if (!Oracle_Begin(__builtin_frame_address(0)))
+        return Native_Solid_RFindCeilY(obj, ws, query, bound, arg4, arg5, init);
+    mips_result = mips_Solid_RFindCeilY(obj, ws, query, bound, arg4, arg5, init);
+    Oracle_Swap();
+    native_result = Native_Solid_RFindCeilY(obj, ws, query, bound, arg4, arg5, init);
+    Oracle_End("Solid_RFindCeilY", (u32)mips_result, (u32)native_result);
+    return native_result;
+}
+#endif
 
-void Gte_RCalcObjectRotMatrix(void *matrix, void *model, void *vectors, void *light)
+#if !GTE_NATIVE_Gte_RCalcObjectRotMatrix || defined(CRASH_GTE_ORACLE)
+static void mips_Gte_RCalcObjectRotMatrix(void *matrix, void *model, void *vectors, void *light)
 {
     u32 args[4] = {Ram_Addr(matrix), Ram_Addr(model), Ram_Addr(vectors), Ram_Addr(light)};
     mips_call(0x8003913Cu, 4, args);
 }
+#endif
+#if !GTE_NATIVE_Gte_RCalcObjectRotMatrix
+void Gte_RCalcObjectRotMatrix(void *matrix, void *model, void *vectors, void *light)
+{
+    mips_Gte_RCalcObjectRotMatrix(matrix, model, vectors, light);
+}
+#elif defined(CRASH_GTE_ORACLE)
+void Native_Gte_RCalcObjectRotMatrix(void *matrix, void *model, void *vectors, void *light);
+void Gte_RCalcObjectRotMatrix(void *matrix, void *model, void *vectors, void *light)
+{
+    if (!Oracle_Begin(__builtin_frame_address(0))) {
+        Native_Gte_RCalcObjectRotMatrix(matrix, model, vectors, light);
+        return;
+    }
+    mips_Gte_RCalcObjectRotMatrix(matrix, model, vectors, light);
+    Oracle_Swap();
+    Native_Gte_RCalcObjectRotMatrix(matrix, model, vectors, light);
+    Oracle_End("Gte_RCalcObjectRotMatrix", 0, 0);
+}
+#endif
 
-void Gte_RCalcObjectMatrices(void *matrix, void *model, void *vectors, void *light)
+#if !GTE_NATIVE_Gte_RCalcObjectMatrices || defined(CRASH_GTE_ORACLE)
+static void mips_Gte_RCalcObjectMatrices(void *matrix, void *model, void *vectors, void *light)
 {
     u32 args[4] = {Ram_Addr(matrix), Ram_Addr(model), Ram_Addr(vectors), Ram_Addr(light)};
     mips_call(0x80039BD4u, 4, args);
 }
+#endif
+#if !GTE_NATIVE_Gte_RCalcObjectMatrices
+void Gte_RCalcObjectMatrices(void *matrix, void *model, void *vectors, void *light)
+{
+    mips_Gte_RCalcObjectMatrices(matrix, model, vectors, light);
+}
+#elif defined(CRASH_GTE_ORACLE)
+void Native_Gte_RCalcObjectMatrices(void *matrix, void *model, void *vectors, void *light);
+void Gte_RCalcObjectMatrices(void *matrix, void *model, void *vectors, void *light)
+{
+    if (!Oracle_Begin(__builtin_frame_address(0))) {
+        Native_Gte_RCalcObjectMatrices(matrix, model, vectors, light);
+        return;
+    }
+    mips_Gte_RCalcObjectMatrices(matrix, model, vectors, light);
+    Oracle_Swap();
+    Native_Gte_RCalcObjectMatrices(matrix, model, vectors, light);
+    Oracle_End("Gte_RCalcObjectMatrices", 0, 0);
+}
+#endif
 
-s32 Gte_RCalcSpriteRotMatrix(void *vectors, void *cam_trans, s32 flag, s32 shift, void *cam_rot, s32 proj, s32 far, s32 flip)
+#if !GTE_NATIVE_Gte_RCalcSpriteRotMatrix || defined(CRASH_GTE_ORACLE)
+static s32 mips_Gte_RCalcSpriteRotMatrix(void *vectors, void *cam_trans, s32 flag, s32 shift, void *cam_rot, s32 proj, s32 far, s32 flip)
 {
     u32 args[8] = {Ram_Addr(vectors), Ram_Addr(cam_trans), (u32)flag, (u32)shift, Ram_Addr(cam_rot), (u32)proj, (u32)far, (u32)flip};
     return (s32)mips_call(0x8003A144u, 8, args);
 }
+#endif
+#if !GTE_NATIVE_Gte_RCalcSpriteRotMatrix
+s32 Gte_RCalcSpriteRotMatrix(void *vectors, void *cam_trans, s32 flag, s32 shift, void *cam_rot, s32 proj, s32 far, s32 flip)
+{
+    return mips_Gte_RCalcSpriteRotMatrix(vectors, cam_trans, flag, shift, cam_rot, proj, far, flip);
+}
+#elif defined(CRASH_GTE_ORACLE)
+s32 Native_Gte_RCalcSpriteRotMatrix(void *vectors, void *cam_trans, s32 flag, s32 shift, void *cam_rot, s32 proj, s32 far, s32 flip);
+s32 Gte_RCalcSpriteRotMatrix(void *vectors, void *cam_trans, s32 flag, s32 shift, void *cam_rot, s32 proj, s32 far, s32 flip)
+{
+    s32 mips_result, native_result;
+    if (!Oracle_Begin(__builtin_frame_address(0)))
+        return Native_Gte_RCalcSpriteRotMatrix(vectors, cam_trans, flag, shift, cam_rot, proj, far, flip);
+    mips_result = mips_Gte_RCalcSpriteRotMatrix(vectors, cam_trans, flag, shift, cam_rot, proj, far, flip);
+    Oracle_Swap();
+    native_result = Native_Gte_RCalcSpriteRotMatrix(vectors, cam_trans, flag, shift, cam_rot, proj, far, flip);
+    Oracle_End("Gte_RCalcSpriteRotMatrix", (u32)mips_result, (u32)native_result);
+    return native_result;
+}
+#endif
 
-void Gte_RTransformSprite(void *ot, void *frame, u32 tex, s32 size, s32 far, s32 *prims_tail, u8 *tex_anim_masks)
+#if !GTE_NATIVE_Gte_RTransformSprite || defined(CRASH_GTE_ORACLE)
+static void mips_Gte_RTransformSprite(void *ot, void *frame, u32 tex, s32 size, s32 far, s32 *prims_tail, u8 *tex_anim_masks)
 {
     u32 args[7] = {Ram_Addr(ot), Ram_Addr(frame), (u32)tex, (u32)size, (u32)far, Ram_Addr(prims_tail), Ram_Addr(tex_anim_masks)};
     mips_call(0x8003A76Cu, 7, args);
 }
+#endif
+#if !GTE_NATIVE_Gte_RTransformSprite
+void Gte_RTransformSprite(void *ot, void *frame, u32 tex, s32 size, s32 far, s32 *prims_tail, u8 *tex_anim_masks)
+{
+    mips_Gte_RTransformSprite(ot, frame, tex, size, far, prims_tail, tex_anim_masks);
+}
+#elif defined(CRASH_GTE_ORACLE)
+void Native_Gte_RTransformSprite(void *ot, void *frame, u32 tex, s32 size, s32 far, s32 *prims_tail, u8 *tex_anim_masks);
+void Gte_RTransformSprite(void *ot, void *frame, u32 tex, s32 size, s32 far, s32 *prims_tail, u8 *tex_anim_masks)
+{
+    if (!Oracle_Begin(__builtin_frame_address(0))) {
+        Native_Gte_RTransformSprite(ot, frame, tex, size, far, prims_tail, tex_anim_masks);
+        return;
+    }
+    mips_Gte_RTransformSprite(ot, frame, tex, size, far, prims_tail, tex_anim_masks);
+    Oracle_Swap();
+    Native_Gte_RTransformSprite(ot, frame, tex, size, far, prims_tail, tex_anim_masks);
+    Oracle_End("Gte_RTransformSprite", 0, 0);
+}
+#endif
 

@@ -6,6 +6,7 @@ set(CMAKE_C_STANDARD_REQUIRED ON)
 set(CMAKE_C_EXTENSIONS OFF)
 
 option(BUILD_TESTING "Build original game tests" OFF)
+option(CRASH_GTE_ORACLE "Check the C ports of the hand-written MIPS routines against their translation" OFF)
 include(CTest)
 
 set(PSYZ_DIR ${CMAKE_CURRENT_SOURCE_DIR}/third_party/psyz)
@@ -26,6 +27,9 @@ function(crash_original_module target)
     target_include_directories(${target} PRIVATE include src/main)
     target_link_libraries(${target} PRIVATE psyz)
     target_compile_definitions(${target} PRIVATE __psyz)
+    if(CRASH_GTE_ORACLE)
+        target_compile_definitions(${target} PRIVATE CRASH_GTE_ORACLE)
+    endif()
     if(MSVC)
         target_compile_options(${target} PRIVATE /Gy /Gw /W3)
     else()
@@ -51,9 +55,21 @@ target_include_directories(crash-platform PRIVATE include)
 target_link_libraries(crash-platform PRIVATE psyz)
 target_compile_definitions(crash-platform PRIVATE __psyz)
 
+# C ports of the hand-written MIPS routines (src/main/engine/gte_native.h).
+# With CRASH_GTE_ORACLE they are compiled as Native_<name> and checked
+# against the translation on every call (src/main/engine/gte_oracle.c).
+crash_original_module(crash-original-gte-native
+    src/main/engine/r_util.c)
+if(CRASH_GTE_ORACLE)
+    target_compile_definitions(crash-original-gte-native PRIVATE GTE_NATIVE_IMPL)
+    target_compile_options(crash-original-gte-native PRIVATE
+        -include ${CMAKE_CURRENT_SOURCE_DIR}/src/main/engine/gte_native.h)
+endif()
+
 # Fixed-point math, angles, distances and trigonometry. Modules join as their
 # platform dependencies become portable; no duplicate game logic.
 crash_original_module(crash-original-math
+    src/main/engine/gte_oracle.c
     src/main/engine/gte_render.c
     src/main/math/angles.c
     src/main/math/approx_distance.c
@@ -232,6 +248,7 @@ add_executable(crash-bandicoot-pc
     src/platform/interp.c
     $<TARGET_OBJECTS:crash-platform>
     $<TARGET_OBJECTS:crash-original-math>
+    $<TARGET_OBJECTS:crash-original-gte-native>
     $<TARGET_OBJECTS:crash-original-camera>
     $<TARGET_OBJECTS:crash-original-core>
     $<TARGET_OBJECTS:crash-original-engine>
@@ -247,7 +264,8 @@ psyz_title(crash-bandicoot-pc "Crash Bandicoot")
 
 if(BUILD_TESTING)
     add_executable(test-original-math tests/original_math.c
-        $<TARGET_OBJECTS:crash-original-math> $<TARGET_OBJECTS:crash-platform>)
+        $<TARGET_OBJECTS:crash-original-math> $<TARGET_OBJECTS:crash-original-gte-native>
+        $<TARGET_OBJECTS:crash-platform>)
     target_include_directories(test-original-math PRIVATE include)
     target_compile_definitions(test-original-math PRIVATE __psyz)
     target_link_libraries(test-original-math PRIVATE psyz)

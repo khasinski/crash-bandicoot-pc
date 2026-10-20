@@ -26,6 +26,8 @@ ROOT = Path(__file__).resolve().parents[2]
 START, END = 0x800334A0, 0x8003A94C
 EXE_BASE = 0x80010000 - 0x800
 SENTINEL = 0xFFFFFFF0  # return address meaning "return to the C caller"
+# Entries defined in C with no translated counterpart (gte_render.c).
+NATIVE_ONLY = {"RIncTickCount"}
 
 REG = ["zero", "at", "v0", "v1", "a0", "a1", "a2", "a3",
        "t0", "t1", "t2", "t3", "t4", "t5", "t6", "t7",
@@ -354,20 +356,24 @@ def split_params(text):
 
 
 def wrappers(entries, functions_h):
-    """C wrappers for entries with a prototype: arguments become PS1 words."""
+    """C entry points for entries with a prototype.
+
+    mips_<name> runs the translated routine with its arguments as PS1 words.
+    The public <name> forwards to it until src/main/engine/gte_native.h
+    marks the routine as ported to C (GTE_NATIVE_<name>). With
+    CRASH_GTE_ORACLE the public <name> of a ported routine runs both
+    versions from the same state and compares the results (gte_oracle.c).
+    """
     out = []
-    defined = set()
-    for src in (ROOT / "src/main").rglob("*.c"):
-        defined.update(re.findall(r"^[A-Za-z_][\w \*]*?\b(\w+)\s*\([^;{}]*\)\s*\{", src.read_text(), re.M))
     for addr, name in sorted(entries.items()):
-        if name in defined:
+        if name in NATIVE_ONLY:
             continue
         m = re.search(r"^([\w \*]+?)\b" + name + r"\((.*)\);", functions_h, re.M)
         if not m or m.group(2).strip() == "":
             continue
         ret = m.group(1).strip()
         params = split_params(m.group(2))
-        args, decls = [], []
+        args, decls, names = [], [], []
         for k, p in enumerate(params):
             if "(*" in p:
                 pname = re.search(r"\(\s*\*\s*(\w+)\s*\)", p).group(1)
@@ -376,9 +382,12 @@ def wrappers(entries, functions_h):
                 pname = re.search(r"(\w+)\s*$", p).group(1)
                 args.append(f"Ram_Addr({pname})" if "*" in p else f"(u32){pname}")
             decls.append(p)
-        sig = f"{ret} {name}({', '.join(decls) or 'void'})"
+            names.append(pname)
+        plist = ", ".join(decls) or "void"
+        nlist = ", ".join(names)
         call = f"mips_call(0x{addr:08X}u, {len(args)}, args)"
-        out.append(sig)
+        out.append(f"#if !GTE_NATIVE_{name} || defined(CRASH_GTE_ORACLE)")
+        out.append(f"static {ret} mips_{name}({plist})")
         out.append("{")
         if args:
             out.append(f"    u32 args[{len(args)}] = {{{', '.join(args)}}};")
@@ -391,6 +400,37 @@ def wrappers(entries, functions_h):
         else:
             out.append(f"    return ({ret}){call};")
         out.append("}")
+        out.append("#endif")
+        out.append(f"#if !GTE_NATIVE_{name}")
+        out.append(f"{ret} {name}({plist})")
+        out.append("{")
+        out.append(f"    {'' if ret == 'void' else 'return '}mips_{name}({nlist});")
+        out.append("}")
+        out.append("#elif defined(CRASH_GTE_ORACLE)")
+        out.append(f"{ret} Native_{name}({plist});")
+        out.append(f"{ret} {name}({plist})")
+        out.append("{")
+        word = (lambda v: f"Ram_Addr({v})") if "*" in ret else (lambda v: f"(u32){v}")
+        if ret == "void":
+            out.append("    if (!Oracle_Begin(__builtin_frame_address(0))) {")
+            out.append(f"        Native_{name}({nlist});")
+            out.append("        return;")
+            out.append("    }")
+            out.append(f"    mips_{name}({nlist});")
+            out.append("    Oracle_Swap();")
+            out.append(f"    Native_{name}({nlist});")
+            out.append(f'    Oracle_End("{name}", 0, 0);')
+        else:
+            out.append(f"    {ret} mips_result, native_result;")
+            out.append("    if (!Oracle_Begin(__builtin_frame_address(0)))")
+            out.append(f"        return Native_{name}({nlist});")
+            out.append(f"    mips_result = mips_{name}({nlist});")
+            out.append("    Oracle_Swap();")
+            out.append(f"    native_result = Native_{name}({nlist});")
+            out.append(f'    Oracle_End("{name}", {word("mips_result")}, {word("native_result")});')
+            out.append("    return native_result;")
+        out.append("}")
+        out.append("#endif")
         out.append("")
     return out
 

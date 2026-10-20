@@ -181,22 +181,6 @@ static void Slst_Swap(u16 *items, s32 index, s32 span)
     items[index] = b;
 }
 
-/*
- * The original saves s0..s7, t8, t9, k0, k1, gp, sp, fp and ra in the first
- * 64 bytes of the scratchpad and restores them on return. Nothing reads the
- * copies, but the scratchpad is compared against the translation, so this
- * stores what the translation stores when called from C: zero registers, its
- * stack (0x807FFB00) and its return sentinel.
- */
-static void Slst_SaveRegisters(void)
-{
-    u32 *save = RAM_AT(u32, RAM_SCRATCH_BASE);
-
-    memset(save, 0, 16 * sizeof(u32));
-    save[13] = 0x807FFB00u;
-    save[15] = 0xFFFFFFF0u;
-}
-
 /* Applies `source`, a delta, to `reference` and writes the next list of the
  * path to `destination`. */
 void Slst_RDecodeForward(void *source, void *reference, void *destination)
@@ -207,7 +191,6 @@ void Slst_RDecodeForward(void *source, void *reference, void *destination)
     SlstRun removed, added;
     s32 count, at, index = 0, span;
 
-    Slst_SaveRegisters();
     Slst_RunInit(&removed, delta->runs, base + delta->removed_end);
     Slst_RunInit(&added, base + delta->removed_end, base + delta->swaps_start);
     count = Slst_Merge(&removed, &added, reference, dst, 0);
@@ -235,7 +218,6 @@ void Slst_RDecodeBackward(void *source, void *reference, void *destination)
     SlstRun removed, added;
     s32 at = delta->swaps_end - 1;
 
-    Slst_SaveRegisters();
     while (at >= delta->swaps_start) {
         u16 e = base[at--];
         s32 index, span;

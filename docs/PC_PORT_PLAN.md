@@ -70,7 +70,9 @@ lacks at the sides (facing the camera, on screen, no farther than the baked
 reach; `World_VisibleList`). It restores the trees and totem and fills part of
 the sides, but the primitive buffers hold about 1550 world polygons and the
 beach's baked list already has 1430, so the sides stay jagged. Larger buffers
-do not fit: the 2 MB heap is full (`LIBC_Malloc` fails). Still behind
+do not fit: the 2 MB heap is full (`LIBC_Malloc` fails). Raising the limit to 2000 polygons crashes, and keeping only the nearest
+1550 of the extra candidates (about 3800 on the beach) left the same gaps, so
+the sides need more primitives than the buffers can hold. Still behind
 `--widescreen`; only the plain world pass uses it, not the fog and lightning
 variants.
 

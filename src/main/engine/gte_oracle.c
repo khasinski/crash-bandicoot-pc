@@ -45,6 +45,10 @@ static const struct {
     {"Gte_RTransformWorlds", 0x1F800000u, 0x1F800040u},
     {"Gte_RTransformWorldsFog", 0x1F800000u, 0x1F800040u},
     {"Gte_RTransformWorldsRipple", 0x1F800000u, 0x1F800040u},
+    {"Solid_RZoneQueryOctree", 0x1F800000u, 0x1F800040u},
+    {"Solid_RPlotQueryWalls", 0x1F800000u, 0x1F800040u},
+    {"Solid_RFindFloorY", 0x1F800000u, 0x1F800040u},
+    {"Solid_RFindCeilY", 0x1F800000u, 0x1F800040u},
 };
 
 static int depth;

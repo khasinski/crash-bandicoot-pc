@@ -22,9 +22,9 @@
 /* #define GTE_NATIVE_Gte_RTransformSvtx 1 */
 /* #define GTE_NATIVE_Gte_RTransformCvtx 1 */
 /* #define GTE_NATIVE_Gte_RProjectBound 1 */
-/* #define GTE_NATIVE_Gte_RTransformWorlds 1 */
-/* #define GTE_NATIVE_Gte_RTransformWorldsFog 1 */
-/* #define GTE_NATIVE_Gte_RTransformWorldsRipple 1 */
+#define GTE_NATIVE_Gte_RTransformWorlds 1
+#define GTE_NATIVE_Gte_RTransformWorldsFog 1
+#define GTE_NATIVE_Gte_RTransformWorldsRipple 1
 /* #define GTE_NATIVE_Gte_RTransformWorldsLightning 1 */
 /* #define GTE_NATIVE_Gte_RTransformWorldsDark 1 */
 /* #define GTE_NATIVE_Gte_RTransformWorldsDark2 1 */

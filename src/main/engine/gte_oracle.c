@@ -36,6 +36,9 @@ static const struct {
 } scratch_unread[] = {
     {"Slst_RDecodeForward", 0x1F800000u, 0x1F800040u},
     {"Slst_RDecodeBackward", 0x1F800000u, 0x1F800040u},
+    {"Gte_RTransformWorldsLightning", 0x1F800000u, 0x1F800040u},
+    {"Gte_RTransformWorldsDark", 0x1F800000u, 0x1F800040u},
+    {"Gte_RTransformWorldsDark2", 0x1F800000u, 0x1F800040u},
 };
 
 static int depth;

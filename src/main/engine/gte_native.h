@@ -25,9 +25,9 @@
 /* #define GTE_NATIVE_Gte_RTransformWorlds 1 */
 /* #define GTE_NATIVE_Gte_RTransformWorldsFog 1 */
 /* #define GTE_NATIVE_Gte_RTransformWorldsRipple 1 */
-/* #define GTE_NATIVE_Gte_RTransformWorldsLightning 1 */
-/* #define GTE_NATIVE_Gte_RTransformWorldsDark 1 */
-/* #define GTE_NATIVE_Gte_RTransformWorldsDark2 1 */
+#define GTE_NATIVE_Gte_RTransformWorldsLightning 1
+#define GTE_NATIVE_Gte_RTransformWorldsDark 1
+#define GTE_NATIVE_Gte_RTransformWorldsDark2 1
 /* #define GTE_NATIVE_Solid_RZoneQueryOctree 1 */
 /* #define GTE_NATIVE_Solid_RPlotQueryWalls 1 */
 /* #define GTE_NATIVE_Solid_RFindFloorY 1 */

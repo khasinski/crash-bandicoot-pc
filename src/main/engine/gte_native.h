@@ -32,9 +32,9 @@
 /* #define GTE_NATIVE_Solid_RPlotQueryWalls 1 */
 /* #define GTE_NATIVE_Solid_RFindFloorY 1 */
 /* #define GTE_NATIVE_Solid_RFindCeilY 1 */
-/* #define GTE_NATIVE_Gte_RCalcObjectRotMatrix 1 */
-/* #define GTE_NATIVE_Gte_RCalcObjectMatrices 1 */
-/* #define GTE_NATIVE_Gte_RCalcSpriteRotMatrix 1 */
+#define GTE_NATIVE_Gte_RCalcObjectRotMatrix 1
+#define GTE_NATIVE_Gte_RCalcObjectMatrices 1
+#define GTE_NATIVE_Gte_RCalcSpriteRotMatrix 1
 /* #define GTE_NATIVE_Gte_RTransformSprite 1 */
 
 #if defined(CRASH_GTE_ORACLE) && defined(GTE_NATIVE_IMPL)

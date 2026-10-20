@@ -92,6 +92,11 @@ int Platform_WideWanted(void)
     return wide_wanted;
 }
 
+int Platform_WideShown(void)
+{
+    return wide_shown;
+}
+
 void Platform_SetWideActive(int active)
 {
     active = active && wide_wanted;

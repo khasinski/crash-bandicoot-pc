@@ -12,6 +12,8 @@ First release of the native PC port (macOS and Linux).
   stored in `crash-bandicoot-pc.ini`.
 - `--fps60` interpolates between logic frames; `--scale N` renders at N× the
   PS1 resolution. Neither changes the simulation (checked by tests).
+- `--fps60` no longer interpolates the title and map screen (level 25), where it
+  made static parts jitter by a pixel every other frame.
 - Headless mode (`--headless`, `--capture-seq`, `--dump-audio`) for tests.
 - Real-disc tests (`CRASH_TEST_DISC`): every level loads and has sound;
   presentation options leave the simulation identical.

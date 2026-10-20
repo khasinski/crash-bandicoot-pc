@@ -508,6 +508,8 @@ int main(int argc, char **argv)
         g_settings.fps60 = cli_fps60;
     if (cli_scale != 0)
         g_settings.scale = (int)cli_scale;
+    if (headless && g_widescreen_experimental)
+        g_settings.widescreen = 1; /* a headless run has no menu to ask */
     Settings_Apply();
     if (!headless)
         Psyz_EscapeIsMenu(1);

@@ -145,7 +145,10 @@ void Gpu_Update(void)
     if (Gpu_SecondBlankDue()) {
         /* --fps60 shows an interpolated frame during the second blank. */
         if (Platform_InterpolateFrames()) {
-            Platform_MidFrame(gp_next_lid == 0 && g_ns_load_done_flag[0] == 0 && load_settle == 0);
+            /* The title and map screen (level 25) move things the interpolation
+             * does not follow; a half-moved camera there only shakes the rest. */
+            Platform_MidFrame(current_level() != LEVEL_TITLE && gp_next_lid == 0
+                              && g_ns_load_done_flag[0] == 0 && load_settle == 0);
         }
         VSync(0);
     }

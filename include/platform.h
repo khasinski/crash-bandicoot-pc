@@ -36,6 +36,9 @@ int Platform_WideWanted(void);
 /* Whether the scene being drawn is shown in 16:9: the GTE squeezes X by 3/4
  * and the video is stretched to match. */
 void Platform_SetWideActive(int active);
+/* Whether the wide view is on now; the world then adds the polygons the baked
+ * 4:3 lists lack. */
+int Platform_WideShown(void);
 
 /* Escape: pause and show the options. Platform_NoteDisplay tells the menu
  * which VRAM rectangle the screen shows. */

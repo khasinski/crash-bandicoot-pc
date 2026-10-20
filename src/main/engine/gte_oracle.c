@@ -36,6 +36,10 @@ static const struct {
 } scratch_unread[] = {
     {"Slst_RDecodeForward", 0x1F800000u, 0x1F800040u},
     {"Slst_RDecodeBackward", 0x1F800000u, 0x1F800040u},
+    {"Solid_RZoneQueryOctree", 0x1F800000u, 0x1F800040u},
+    {"Solid_RPlotQueryWalls", 0x1F800000u, 0x1F800040u},
+    {"Solid_RFindFloorY", 0x1F800000u, 0x1F800040u},
+    {"Solid_RFindCeilY", 0x1F800000u, 0x1F800040u},
 };
 
 static int depth;

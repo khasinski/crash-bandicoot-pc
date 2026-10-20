@@ -19,9 +19,9 @@
 #define GTE_NATIVE_Gpu_RResetOT 1
 #define GTE_NATIVE_RSqrMagnitude2 1
 #define GTE_NATIVE_RSqrMagnitude3 1
-/* #define GTE_NATIVE_Gte_RTransformSvtx 1 */
-/* #define GTE_NATIVE_Gte_RTransformCvtx 1 */
-/* #define GTE_NATIVE_Gte_RProjectBound 1 */
+#define GTE_NATIVE_Gte_RTransformSvtx 1
+#define GTE_NATIVE_Gte_RTransformCvtx 1
+#define GTE_NATIVE_Gte_RProjectBound 1
 /* #define GTE_NATIVE_Gte_RTransformWorlds 1 */
 /* #define GTE_NATIVE_Gte_RTransformWorldsFog 1 */
 /* #define GTE_NATIVE_Gte_RTransformWorldsRipple 1 */
@@ -35,7 +35,7 @@
 /* #define GTE_NATIVE_Gte_RCalcObjectRotMatrix 1 */
 /* #define GTE_NATIVE_Gte_RCalcObjectMatrices 1 */
 /* #define GTE_NATIVE_Gte_RCalcSpriteRotMatrix 1 */
-/* #define GTE_NATIVE_Gte_RTransformSprite 1 */
+#define GTE_NATIVE_Gte_RTransformSprite 1
 
 #if defined(CRASH_GTE_ORACLE) && defined(GTE_NATIVE_IMPL)
 #if GTE_NATIVE_Slst_RDecodeForward

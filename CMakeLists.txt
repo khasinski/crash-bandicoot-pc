@@ -59,7 +59,8 @@ target_compile_definitions(crash-platform PRIVATE __psyz)
 # With CRASH_GTE_ORACLE they are compiled as Native_<name> and checked
 # against the translation on every call (src/main/engine/gte_oracle.c).
 crash_original_module(crash-original-gte-native
-    src/main/engine/r_util.c)
+    src/main/engine/r_util.c
+    src/main/render/model_transform.c)
 if(CRASH_GTE_ORACLE)
     target_compile_definitions(crash-original-gte-native PRIVATE GTE_NATIVE_IMPL)
     target_compile_options(crash-original-gte-native PRIVATE

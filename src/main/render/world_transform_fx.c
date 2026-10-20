@@ -300,6 +300,9 @@ static void emit_tri(WorldPass *pass, const WorldTri *tri)
     }
 }
 
+/* The wide view's list (world_transform.c), or the baked one. */
+void *World_VisibleListFor(void *baked, s32 far);
+
 /* The visible-triangle list: a count, then entries walked back to front. */
 static u32 tri_count(const void *worlds)
 {
@@ -320,6 +323,7 @@ void Gte_RTransformWorldsLightning(void *worlds, s32 flag, s32 far, s32 stamp, s
     WorldTri tri;
     u32 i;
 
+    worlds = World_VisibleListFor(worlds, far);
     *RAM_AT(s32, SCRATCH_STAMP) = stamp;
     pass_init(&pass, flag, far, (u32 *)prims_tail, tex_anim_masks);
     for (i = tri_count(worlds); i != 0; i--) {
@@ -356,6 +360,7 @@ void Gte_RTransformWorldsDark(void *worlds, s32 flag, s32 far, s32 stamp, s32 *p
     u32 i;
     s32 v;
 
+    worlds = World_VisibleListFor(worlds, far);
     *RAM_AT(s32, SCRATCH_STAMP) = stamp;
     gte_cfc2(fog_color[0], 21);
     gte_cfc2(fog_color[1], 22);
@@ -407,6 +412,7 @@ void Gte_RTransformWorldsDark2(void *worlds, s32 flag, s32 far, s32 stamp, s32 *
     u32 i;
     s32 v;
 
+    worlds = World_VisibleListFor(worlds, far);
     *RAM_AT(s32, SCRATCH_STAMP) = stamp;
     *RAM_AT(u32, SCRATCH_E4) = Ram_Addr(tex_anim_masks);
     pass_init(&pass, flag, far, (u32 *)prims_tail, tex_anim_masks);

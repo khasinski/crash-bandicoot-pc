@@ -42,8 +42,8 @@ How it works:
   [the port plan](docs/PC_PORT_PLAN.md) for the list. Level 4
   (`S0000004.NSD`) is an unused stub on the disc; the game never loads it.
 - Widescreen (ESC menu, ASPECT RATIO) is new: every loadable level runs in it,
-  but some views show a small wedge of background colour in a top corner, and
-  the fog and lightning world passes still use the 4:3 polygon lists.
+  but some views show a wedge of background colour in a top corner or a black
+  strip at a side.
 - macOS and Linux only: the game runs on a stack inside its RAM image through
   `ucontext`, which Windows does not have.
 

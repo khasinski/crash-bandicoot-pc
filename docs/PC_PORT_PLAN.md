@@ -70,8 +70,10 @@ Checked: every loadable level runs 3000 frames in 16:9 (`CRASH_LEVEL_ARGS=
 --widescreen` for `tests/level_smoke.py`), and the beach and several other
 levels show the whole screen. Known flaws: a small wedge of background colour
 in a top corner of some views (the sky and backdrop are drawn for the 4:3
-range), and only the plain world pass is widened, not the fog and lightning
-variants (`world_transform_fx.c`), which keep the baked list.
+range), and some views (a few indoor and cave levels) show black strips at a
+side where the zone has no more geometry or the extra polygons do not reach.
+The fog, lightning and dark world passes (`world_transform_fx.c`) take the same
+widened list.
 
 ## Milestones
 

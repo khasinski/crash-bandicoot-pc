@@ -39,6 +39,9 @@ static const struct {
     {"Gte_RTransformWorldsLightning", 0x1F800000u, 0x1F800040u},
     {"Gte_RTransformWorldsDark", 0x1F800000u, 0x1F800040u},
     {"Gte_RTransformWorldsDark2", 0x1F800000u, 0x1F800040u},
+    {"Gte_RTransformSvtx", 0x1F800000u, 0x1F800040u},
+    {"Gte_RTransformCvtx", 0x1F800000u, 0x1F800040u},
+    {"Gte_RProjectBound", 0x1F800000u, 0x1F800004u},
 };
 
 static int depth;

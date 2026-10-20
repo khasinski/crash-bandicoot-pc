@@ -100,11 +100,9 @@ def main():
     print(f"{len(data)} data symbols -> {args.output}")
 
     # Code addresses stored in game memory map to the native functions that
-    # the game sources define (not the PsyQ SDK, which PsyZ replaces).
+    # the game sources define.
     defined = set()
     for src in (ROOT / "src/main").rglob("*.c"):
-        if "sdk" in src.parts:
-            continue
         text = re.sub(r"/\*.*?\*/", "", src.read_text(), flags=re.S)
         defined.update(re.findall(r"^(?!static)[A-Za-z_][\w \*]*?\b(\w+)\s*\([^;{}]*\)\s*\{", text, re.M))
     code = sorted((addr, name) for name, addr in funcs.items() if name in defined)

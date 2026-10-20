@@ -86,8 +86,8 @@ form and assembles it back (see [docs/GOOL_LISP.md](docs/GOOL_LISP.md)).
 ## Layout
 
 - `src/main/` holds the original game modules, which are ported in place.
-  `sdk/` holds the reconstructed PsyQ libraries; PsyZ replaces them in the
-  native build, and they stay here as a behavioral reference.
+  PsyZ replaces the PsyQ libraries, so their reconstruction stays in the
+  matching decompilation.
 - `include/` holds game types, data formats and legacy platform interfaces.
 - `third_party/psyz/` is our PsyZ source fork with its SDL dependency.
 - `docs/` covers the native architecture, conventions, port plan and formats.

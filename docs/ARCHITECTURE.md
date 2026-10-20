@@ -36,8 +36,6 @@ the engine:
   collision.
 - `engine/`: audio (SPU voices, MIDI sequences, CD audio), memory card,
   CD reading, the frame state and assorted helpers.
-- `sdk/`: the reconstructed PsyQ libraries (libapi, libcd, libgpu, libgte,
-  libspu, libsnd, BIOS and kernel stubs).
 
 ## Native design
 
@@ -45,8 +43,10 @@ the engine:
 user's CUE/BIN image in PsyZ, loads `SCUS_949.00` into the game's memory,
 sets up the heap as crt0 does and calls the original `CORE_Main` on a stack
 inside game memory. PsyZ provides the PsyQ API surface (GPU, GTE, SPU, pads,
-memory card, CD) on top of SDL, so the reconstructed `sdk/` sources are not
-compiled. They stay in the tree as a behavioral reference.
+memory card, CD) on top of SDL. The reconstructed PsyQ libraries, BIOS veneers
+and crt0 of the matching decompilation are not part of this tree; they were
+written as MIPS inline assembly for byte-exact matching and have no native
+meaning. The decompilation remains their behavioral reference.
 
 The game reads the disc itself: `Cd_ReadFileSys` walks the ISO 9660
 directories and the NS system reads NSD and NSF pages with `CdRead`, which

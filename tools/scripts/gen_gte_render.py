@@ -358,8 +358,7 @@ def wrappers(entries, functions_h):
     out = []
     defined = set()
     for src in (ROOT / "src/main").rglob("*.c"):
-        if "sdk" not in src.parts:
-            defined.update(re.findall(r"^[A-Za-z_][\w \*]*?\b(\w+)\s*\([^;{}]*\)\s*\{", src.read_text(), re.M))
+        defined.update(re.findall(r"^[A-Za-z_][\w \*]*?\b(\w+)\s*\([^;{}]*\)\s*\{", src.read_text(), re.M))
     for addr, name in sorted(entries.items()):
         if name in defined:
             continue

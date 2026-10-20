@@ -303,6 +303,20 @@ if(BUILD_TESTING)
     target_compile_definitions(test-original-math PRIVATE __psyz)
     target_link_libraries(test-original-math PRIVATE psyz)
     add_test(NAME original-game-math COMMAND test-original-math)
+
+    # Every level that exists loads and runs on the real disc (CRASH_TEST_DISC
+    # names its .cue; skipped without it).
+    find_package(Python3 COMPONENTS Interpreter)
+    if(Python3_FOUND)
+        add_test(NAME game-levels
+            COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/tests/level_smoke.py
+                $<TARGET_FILE:crash-bandicoot-pc>)
+        set_tests_properties(game-levels PROPERTIES SKIP_RETURN_CODE 77 TIMEOUT 3600)
+        add_test(NAME game-presentation
+            COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/tests/presentation_smoke.py
+                $<TARGET_FILE:crash-bandicoot-pc>)
+        set_tests_properties(game-presentation PROPERTIES SKIP_RETURN_CODE 77 TIMEOUT 3600)
+    endif()
 endif()
 
 # Original-module tests run without creating a window or GPU device.

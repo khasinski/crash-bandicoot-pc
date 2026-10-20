@@ -16,8 +16,10 @@ Levels were checked by warping to each ID from the map and running 1200 frames
   were not played.
 - No file on the disc, so IDs that the game never requests: 0, 1, 2, 11, 13,
   16.
-- Level 4 (`S0000004.NSD`) exists but stops with a null lookup in `Ns_EIDType`;
-  open.
+- Level 4 (`S0000004.NSD`) is an unused stub: its directory is 0x870 bytes
+  where real levels have 0x10000 or more, and its entry table is empty.
+  Retail never loads it, and warping to it stops at the first missing entry
+  (a null lookup in `Ns_EIDType`; the PS1 would read low RAM instead).
 
 Not done: complete music (PsyZ's libsnd sequencer), play-through of every level
 with saves, widescreen (see below), and behavior tests on real data in

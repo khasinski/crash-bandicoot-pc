@@ -38,8 +38,8 @@ How it works:
 
 - Music is not complete yet: PsyZ's libsnd sequencer is still being filled in.
 - Only the levels that have been run are known to work; see
-  [the port plan](docs/PC_PORT_PLAN.md) for the list. Level 4 (`S0000004.NSD`)
-  stops with a null lookup in the resource system.
+  [the port plan](docs/PC_PORT_PLAN.md) for the list. Level 4
+  (`S0000004.NSD`) is an unused stub on the disc; the game never loads it.
 - Widescreen is not available. The levels' visible-polygon lists are baked for
   4:3 camera views, so a wider view shows gaps at the sides until the engine
   gets its own visibility pass. An unfinished version exists behind

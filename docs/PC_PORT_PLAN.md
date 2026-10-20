@@ -46,35 +46,32 @@ frame by frame (it must not change).
 
 ### Widescreen
 
-Not shippable yet. PsyZ can squeeze the projected X (`Psyz_GteSetXScale`) and
-force a 16:9 output (`Psyz_VideoSetAspectRatio`), which gives the wider view
-(`--widescreen`, experimental). The world, however, is drawn from polygon lists
-baked per camera-path point for the 4:3 view (`Slst_Update`,
-`src/main/level/update.c`), so the sides of a wider view are missing polygons.
-It needs a visibility pass of its own that culls the zone's polygons against
-the wide frustum and sorts them by depth (the draw loop assumes a
-back-to-front list, see `World_Link`).
+The ESC menu has ASPECT RATIO (4:3 or 16:9; `--widescreen` starts in 16:9). In
+16:9 PsyZ squeezes the projected X by 3/4 (`Psyz_GteSetXScale`) and stretches
+the output to 16:9 (`Psyz_VideoSetAspectRatio`), in 3D gameplay only; the
+title, map and loads stay 4:3.
 
-A first attempt at that pass (all polygons of the zone, culled by back-facing,
-near plane and screen box) reproduced 4:3 frames only partly and emitted 2 to 5
-times the baked count (about 2200 against 1100 on the beach). The primitive
-buffers (`Gpu_SetupPrims`, 0x16000 bytes per buffer) are sized for the baked
-lists: a list over about 1500 polygons overflows them and crashes, and
-doubling the buffers fails in the heap. The baked lists also drop far geometry
-(mountains) that the plain cull keeps. A real solution needs a tighter
-visibility test (distance and occlusion) and room for more primitives. It was
-dropped for the first release.
+The world is drawn from polygon lists baked per camera-path point for the 4:3
+view (`Slst_Update`, `src/main/level/update.c`), so a wider view lacks the
+polygons at the sides. `World_VisibleList` (`src/main/render/world_transform.c`)
+keeps the baked list in order (a polygon is never linked behind the previous
+one, so the order shapes the picture) and adds the zone's other polygons that
+face the camera, are on screen (the screen is 512 wide: x within 256) and no
+farther than the baked reach, merged by depth. The beach gains about 3800
+candidates over the 1400 baked ones.
 
-A second attempt keeps the baked list in order and adds only the polygons it
-lacks at the sides (facing the camera, on screen, no farther than the baked
-reach; `World_VisibleList`). It restores the trees and totem and fills part of
-the sides, but the primitive buffers hold about 1550 world polygons and the
-beach's baked list already has 1430, so the sides stay jagged. Larger buffers
-do not fit: the 2 MB heap is full (`LIBC_Malloc` fails). Raising the limit to 2000 polygons crashes, and keeping only the nearest
-1550 of the extra candidates (about 3800 on the beach) left the same gaps, so
-the sides need more primitives than the buffers can hold. Still behind
-`--widescreen`; only the plain world pass uses it, not the fog and lightning
-variants.
+The primitive pools (`Gpu_SetupPrims`) held 0x16000 bytes of heap each, about
+1550 polygons, and the 2 MB heap has no room for more. They now live in the
+host's spare RAM above the PS1's 2 MiB (0x80300000, 0x60000 bytes each;
+ordering-table links reach 8 MiB). The heap block is still taken so the rest of
+the game's memory stays where it was; 4:3 frames are bit-identical to before.
+
+Checked: every loadable level runs 3000 frames in 16:9 (`CRASH_LEVEL_ARGS=
+--widescreen` for `tests/level_smoke.py`), and the beach and several other
+levels show the whole screen. Known flaws: a small wedge of background colour
+in a top corner of some views (the sky and backdrop are drawn for the 4:3
+range), and only the plain world pass is widened, not the fog and lightning
+variants (`world_transform_fx.c`), which keep the baked list.
 
 ## Milestones
 

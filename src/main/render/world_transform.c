@@ -256,10 +256,10 @@ typedef struct ZoneDataView {
 
 #define WIDE_MAX_WORLDS 4 /* the callers copy four worlds to the scratchpad */
 #define WIDE_MAX_POLYS (WIDE_MAX_WORLDS * 0x1000)
-#define WIDE_MAX_EXTRA 900
-#define WIDE_MAX_TOTAL 1550 /* the primitive buffer also holds objects and effects */
+#define WIDE_MAX_EXTRA 6000
+#define WIDE_MAX_TOTAL 5000 /* the primitive buffer also holds objects and effects */
 #define WIDE_NEAR 0x40
-#define SCREEN_HALF_W 168
+#define SCREEN_HALF_W 256
 #define SCREEN_HALF_H 120
 
 static u32 wide_list[1 + WIDE_MAX_POLYS / 2 + 1];

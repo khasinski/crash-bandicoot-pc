@@ -16,7 +16,6 @@
 #define SETTINGS_FILE "crash-bandicoot-pc.ini"
 
 PlatformSettings g_settings = {0, 1, 0};
-extern int g_widescreen_experimental;
 int g_settings_persist;
 
 
@@ -81,7 +80,6 @@ static int wide_wanted, wide_shown;
 
 void Platform_SetWidescreen(int on)
 {
-    on = on && g_widescreen_experimental;
     wide_wanted = on;
     if (!on)
         Platform_SetWideActive(0);
@@ -214,9 +212,6 @@ static void put_text(Panel *p, int x, int y, const char *text, u16 color)
 
 enum { ITEM_FPS, ITEM_RESOLUTION, ITEM_WIDESCREEN, ITEM_RESUME, ITEM_QUIT, ITEM_COUNT };
 
-/* The rows shown: widescreen only when asked for (--widescreen), as the
- * level geometry is culled for 4:3 and a wider view shows gaps at the sides. */
-int g_widescreen_experimental;
 static int menu_item[ITEM_COUNT];
 static int menu_count;
 
@@ -226,8 +221,7 @@ static void build_items(void)
 
     menu_count = 0;
     for (i = 0; i < ITEM_COUNT; i++)
-        if (i != ITEM_WIDESCREEN || g_widescreen_experimental)
-            menu_item[menu_count++] = i;
+        menu_item[menu_count++] = i;
 }
 
 static const char *item_label[ITEM_COUNT] = {

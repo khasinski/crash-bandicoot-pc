@@ -41,10 +41,9 @@ How it works:
 - Only the levels that have been run are known to work; see
   [the port plan](docs/PC_PORT_PLAN.md) for the list. Level 4
   (`S0000004.NSD`) is an unused stub on the disc; the game never loads it.
-- Widescreen is not available. The levels' visible-polygon lists are baked for
-  4:3 camera views, so a wider view shows gaps at the sides until the engine
-  gets its own visibility pass. An unfinished version exists behind
-  `--widescreen`.
+- Widescreen (ESC menu, ASPECT RATIO) is new: every loadable level runs in it,
+  but some views show a small wedge of background colour in a top corner, and
+  the fog and lightning world passes still use the 4:3 polygon lists.
 - macOS and Linux only: the game runs on a stack inside its RAM image through
   `ucontext`, which Windows does not have.
 
@@ -75,7 +74,8 @@ frames, is drawn in between (src/platform/interp.c). Simulation, timing and
 animations are exactly those of 30 frames per second.
 
 Both can also be switched while playing: Escape (or closing the menu with ○ or
-START) opens a pause menu with **60 FPS** and **RESOLUTION**. The choices are
+START) opens a pause menu with **60 FPS**, **RESOLUTION** and **ASPECT RATIO** (4:3 or
+16:9; `--widescreen` starts in 16:9). The choices are
 saved to `crash-bandicoot-pc.ini` in the working directory; `--fps60` and
 `--scale` override the file for that run. Choose the menu entries with
 up/down and change them with left/right or ✕. QUIT GAME leaves the game, and

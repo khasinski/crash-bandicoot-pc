@@ -41,6 +41,7 @@ def run(game, disc, level, sound):
            "--dump-audio", sound,
            "--pad-at", f"{START_AT}:0x800", "--pad-at", f"{START_AT + 10}:0",
            "--warp", f"{WARP_AT}:{level}", "--trace", "300"]
+    cmd += os.environ.get("CRASH_LEVEL_ARGS", "").split()  # e.g. --widescreen
     done = subprocess.run(cmd, capture_output=True, text=True, timeout=600)
     states = []
     for line in done.stdout.splitlines():

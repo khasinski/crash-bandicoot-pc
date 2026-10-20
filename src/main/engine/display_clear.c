@@ -79,6 +79,15 @@ void Gpu_Init(void) {
     SetDispMask(1);
 }
 
+/* The primitive pools hold what a frame draws. The console had 0x16000 bytes
+ * of heap each; the wide view draws more, so they live in the host's spare
+ * RAM above the PS1's 2 MiB (ordering-table links reach 8 MiB). The heap
+ * block is still taken, so the rest of the game's memory stays where it was. */
+#define PRIM_POOL_BASE 0x80300000u
+#define PRIM_POOL_SIZE 0x60000u
+#define PRIM_POOL_MAX 2
+static void *prim_heap_block[PRIM_POOL_MAX];
+
 s32 Gpu_SetupPrims(void) {
     s32 i;
     RenderBuffer *buffer;
@@ -107,10 +116,11 @@ s32 Gpu_SetupPrims(void) {
             size = 0x16000;
             break;
         }
-        buffer->word74 = (s32)Ram_Addr(LIBC_Malloc(size));
-        if (!buffer->word74) {
+        prim_heap_block[i] = LIBC_Malloc(size);
+        if (prim_heap_block[i] == NULL || i >= PRIM_POOL_MAX) {
             BIOS_Abs(-15);
         }
+        buffer->word74 = (s32)(PRIM_POOL_BASE + (u32)i * PRIM_POOL_SIZE);
         Gpu_ResetPrims(buffer);
     }
     return -0xFF;
@@ -123,7 +133,8 @@ s32 Gpu_Kill(void) {
     DrawSync(0);
     for (i = 0; i < g_context.count; i++) {
         buffer = &g_context.buffers[i];
-        LIBC_Free(RAM_AT(void, buffer->word74));
+        (void)buffer;
+        LIBC_Free(prim_heap_block[i]);
     }
     switch (gp_pbak_mode) {
     case 0x19:

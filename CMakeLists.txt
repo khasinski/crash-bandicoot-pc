@@ -312,6 +312,11 @@ if(BUILD_TESTING)
             COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/tests/level_smoke.py
                 $<TARGET_FILE:crash-bandicoot-pc>)
         set_tests_properties(game-levels PROPERTIES SKIP_RETURN_CODE 77 TIMEOUT 3600)
+        add_test(NAME game-levels-wide
+            COMMAND ${CMAKE_COMMAND} -E env CRASH_LEVEL_ARGS=--widescreen
+                ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/tests/level_smoke.py
+                $<TARGET_FILE:crash-bandicoot-pc> 3 8 12 19 22)
+        set_tests_properties(game-levels-wide PROPERTIES SKIP_RETURN_CODE 77 TIMEOUT 3600)
         add_test(NAME game-presentation
             COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/tests/presentation_smoke.py
                 $<TARGET_FILE:crash-bandicoot-pc>)

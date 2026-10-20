@@ -18,6 +18,10 @@ First release of the native PC port (macOS and Linux).
 - Real-disc tests (`CRASH_TEST_DISC`): every level loads and has sound;
   presentation options leave the simulation identical.
 
-Known limits: widescreen is not available (experimental `--widescreen` shows
-gaps at the sides); music fidelity against the console is unverified; no full
+- Widescreen: ASPECT RATIO in the ESC menu (4:3 or 16:9, `--widescreen` starts in
+  16:9). The world adds the polygons the baked 4:3 lists lack, and the primitive
+  pools moved to spare RAM to hold them.
+
+Known limits: widescreen can show a small wedge of background colour in a top
+corner, and the fog and lightning world passes stay 4:3; music fidelity against the console is unverified; no full
 playthrough or save verification; Windows is not supported.

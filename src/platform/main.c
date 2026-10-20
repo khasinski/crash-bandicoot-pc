@@ -42,6 +42,7 @@ static u32 frame_limit;
 static u32 frame_count;
 static const char *vram_path;
 static const char *capture_path;
+static int cli_widescreen; /* --widescreen: start in 16:9 */
 static int cli_fps60 = -1; /* -1: not given on the command line */
 static unsigned cli_scale;
 static int headless;
@@ -448,7 +449,7 @@ int main(int argc, char **argv)
         } else if (!strcmp(argv[i], "--dump-audio") && i + 1 < argc) {
             audio_path = argv[++i];
         } else if (!strcmp(argv[i], "--widescreen")) {
-            g_widescreen_experimental = 1;
+            cli_widescreen = 1;
         } else if (!strcmp(argv[i], "--menu-at") && i + 1 < argc) {
             menu_at = (u32)strtoul(argv[++i], NULL, 10);
         } else if (!strcmp(argv[i], "--menu-capture") && i + 1 < argc) {
@@ -508,8 +509,8 @@ int main(int argc, char **argv)
         g_settings.fps60 = cli_fps60;
     if (cli_scale != 0)
         g_settings.scale = (int)cli_scale;
-    if (headless && g_widescreen_experimental)
-        g_settings.widescreen = 1; /* a headless run has no menu to ask */
+    if (cli_widescreen)
+        g_settings.widescreen = 1;
     Settings_Apply();
     if (!headless)
         Psyz_EscapeIsMenu(1);

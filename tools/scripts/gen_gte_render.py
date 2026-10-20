@@ -10,10 +10,11 @@ relies on: branch delay slots, load delay slots, and GTE (COP2) operations,
 which go to PsyZ's register-level GTE. Each routine is an entry point with a
 C wrapper whose signature is its prototype in include/functions.h.
 
-Input is the decompilation's staged executable and linked ELF, read once to
-generate src/main/engine/gte_render_mips.inc; the generated C is committed.
+The routines are ported to C; the translation only serves as the reference
+of the -DCRASH_GTE_ORACLE=ON check build, which runs this script on the
+decompilation's executable and linked ELF (needs pyelftools):
 
-    tools/scripts/gen_gte_render.py path/to/main.exe path/to/main.elf
+    tools/scripts/gen_gte_render.py path/to/main.exe path/to/main.elf --output OUT.inc
 """
 import argparse
 import re
@@ -359,10 +360,8 @@ def wrappers(entries, functions_h):
     """C entry points for entries with a prototype.
 
     mips_<name> runs the translated routine with its arguments as PS1 words.
-    The public <name> forwards to it until src/main/engine/gte_native.h
-    marks the routine as ported to C (GTE_NATIVE_<name>). With
-    CRASH_GTE_ORACLE the public <name> of a ported routine runs both
-    versions from the same state and compares the results (gte_oracle.c).
+    The public <name> runs it and the C port, Native_<name>, from the same
+    state and compares the results (src/main/engine/gte_oracle.c).
     """
     out = []
     for addr, name in sorted(entries.items()):
@@ -386,7 +385,6 @@ def wrappers(entries, functions_h):
         plist = ", ".join(decls) or "void"
         nlist = ", ".join(names)
         call = f"mips_call(0x{addr:08X}u, {len(args)}, args)"
-        out.append(f"#if !GTE_NATIVE_{name} || defined(CRASH_GTE_ORACLE)")
         out.append(f"static {ret} mips_{name}({plist})")
         out.append("{")
         if args:
@@ -400,13 +398,6 @@ def wrappers(entries, functions_h):
         else:
             out.append(f"    return ({ret}){call};")
         out.append("}")
-        out.append("#endif")
-        out.append(f"#if !GTE_NATIVE_{name}")
-        out.append(f"{ret} {name}({plist})")
-        out.append("{")
-        out.append(f"    {'' if ret == 'void' else 'return '}mips_{name}({nlist});")
-        out.append("}")
-        out.append("#elif defined(CRASH_GTE_ORACLE)")
         out.append(f"{ret} Native_{name}({plist});")
         out.append(f"{ret} {name}({plist})")
         out.append("{")
@@ -430,7 +421,6 @@ def wrappers(entries, functions_h):
             out.append(f'    Oracle_End("{name}", {word("mips_result")}, {word("native_result")});')
             out.append("    return native_result;")
         out.append("}")
-        out.append("#endif")
         out.append("")
     return out
 
@@ -439,7 +429,7 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__.split("\n")[0])
     parser.add_argument("exe")
     parser.add_argument("elf")
-    parser.add_argument("--output", default=str(ROOT / "src/main/engine/gte_render_mips.inc"))
+    parser.add_argument("--output", required=True)
     args = parser.parse_args()
 
     exe = Path(args.exe).read_bytes()

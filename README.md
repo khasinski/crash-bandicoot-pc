@@ -29,8 +29,9 @@ How it works:
 - Game data lives in a PS1 RAM image with every global at its original
   address; pointers stored in game memory stay PS1 addresses
   ([docs/MEMORY_MODEL.md](docs/MEMORY_MODEL.md)).
-- The engine's hand-written R3000 routines are translated to C by
-  `tools/scripts/gen_gte_render.py`.
+- The engine's hand-written R3000 routines are rewritten in C and checked
+  against a translation of the original by an opt-in oracle build
+  ([docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)).
 - GPU packets stay in PS1 format and reach PsyZ as GP0 commands.
 
 ## Build and run
@@ -70,7 +71,9 @@ Diagnostics for automated runs: `--headless` renders without a window,
 `--frame-limit N` stops after N frames and `--dump-vram PATH` then writes the
 1024×512 VRAM (convert with `tools/scripts/vram_to_png.py`). `--pad-at
 FRAME:BUTTONS` holds a PS1 button mask from a frame on (START 0x800, ✕ 0x40,
-up 0x1000), and `--warp FRAME:LEVEL` requests a level change, e.g.:
+up 0x1000), `--capture-seq DIR:FIRST:LAST` writes every presented frame in that range as a PPM
+(used to find flicker, e.g. with `--fps60`), and `--warp FRAME:LEVEL` requests a level change. `--headless`
+also silences audio. Example:
 
 ```sh
 ./build/crash-bandicoot-pc --disc "Crash Bandicoot (USA).cue" --headless \

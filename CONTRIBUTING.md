@@ -22,9 +22,10 @@ module for host pointers, memory, PsyZ and disc access.
 
 Do not preserve register assignments, instruction scheduling, padding, linker
 order or code addresses that existed only to make the compiler match. Assembly
-that does real work, including the 41 hand-written scratchpad routines in
-`src/main/engine/gte_render.c`, must be translated to C before its module is
-ported. Do not replace missing functionality with no-op stubs that report
+that does real work must be written as C before its module is ported. The
+hand-written scratchpad routines are; changes to them must keep
+`tools/scripts/gte_oracle_check.sh` free of mismatches on an oracle build
+(`-DCRASH_GTE_ORACLE=ON`). Do not replace missing functionality with no-op stubs that report
 success.
 
 Serialized assets and save data keep their defined widths, offsets and

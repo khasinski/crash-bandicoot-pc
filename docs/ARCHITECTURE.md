@@ -29,11 +29,12 @@ the engine:
   event handlers and state transitions from GOOL executables in the NSF.
 - `level/`: zones, paths, collision octrees, checkpoints and spawning.
 - `cam/`: camera follow along zone paths.
-- `render/` and `engine/gte_render.c`: transformation, projection and
-  primitive submission through the GTE and GPU ordering tables. The 41
-  hand-written routines in `gte_render.c` ran from the scratchpad. They
-  decode world vertex streams (SLST), transform models and sprites, and query
-  collision.
+- `render/`: transformation, projection and primitive submission through
+  the GTE and GPU ordering tables, including the former hand-written
+  scratchpad routines: SLST decoding (`slst_decode.c`), model and sprite
+  transforms (`model_transform.c`), world transforms (`world_transform.c`,
+  `world_transform_fx.c`) and object matrices (`object_matrix.c`).
+  `level/solid_query.c` holds their collision queries.
 - `engine/`: audio (SPU voices, MIDI sequences, CD audio), memory card,
   CD reading, the frame state and assorted helpers.
 
@@ -63,14 +64,21 @@ the conversions host code uses.
 
 ### Hand-written routines
 
-The engine's hand-written R3000 routines (SLST decoding, transformation,
-projection, collision queries) are translated to C as one block by
-`tools/scripts/gen_gte_render.py` (`src/main/engine/gte_render_mips.inc`).
-Every instruction has a label, so the routines' jumps into each other's
-unrolled code work unchanged; branch delay slots and the R3000 division
-results are reproduced, and GTE instructions go to PsyZ's register-level
-GTE. Each routine has a C entry point with its prototype from
-`include/functions.h`.
+The engine's hand-written R3000 routines (0x800334A0..0x8003A94C: SLST
+decoding, transformation, projection, collision queries, object matrices) are
+written in C with the GTE macros of `include/gte.h`, which drive PsyZ's
+register-level GTE. They keep the original's observable behaviour exactly:
+the same game memory and scratchpad writes, GTE register state and results,
+including the original's quirks (each is commented where it is kept).
+
+`-DCRASH_GTE_ORACLE=ON` builds a check of that. It translates the original
+instructions to C from the matching decompilation's build
+(`tools/scripts/gen_gte_render.py`, `CRASH_DECOMP_DIR`, needs pyelftools)
+and runs every call of a ported routine twice, translation first, from the
+same state, aborting on any difference (`src/main/engine/gte_oracle.c`).
+`tools/scripts/gte_oracle_check.sh` runs it over attract mode and every
+level. Register save areas in the scratchpad that nothing reads are the only
+exemption. The normal build contains no translation.
 
 ### Graphics
 

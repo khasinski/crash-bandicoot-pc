@@ -72,6 +72,29 @@ if(CRASH_GTE_ORACLE)
         -include ${CMAKE_CURRENT_SOURCE_DIR}/src/main/engine/gte_native.h)
 endif()
 
+# The oracle compares the ports with a translation of the original
+# instructions, generated from the matching decompilation's build
+# (build/USA/main.exe and main.elf) by tools/scripts/gen_gte_render.py.
+if(CRASH_GTE_ORACLE)
+    set(CRASH_DECOMP_DIR "${CMAKE_CURRENT_SOURCE_DIR}/../crash-pc" CACHE PATH
+        "Matching decompilation checkout with a finished build")
+    find_package(Python3 REQUIRED COMPONENTS Interpreter)
+    set(CRASH_ORACLE_PYTHON "${Python3_EXECUTABLE}" CACHE FILEPATH
+        "Python with pyelftools for tools/scripts/gen_gte_render.py")
+    set(CRASH_ORACLE_INC "${CMAKE_CURRENT_BINARY_DIR}/generated/gte_render_mips.inc")
+    add_custom_command(OUTPUT ${CRASH_ORACLE_INC}
+        COMMAND ${CMAKE_COMMAND} -E make_directory ${CMAKE_CURRENT_BINARY_DIR}/generated
+        COMMAND ${CRASH_ORACLE_PYTHON} ${CMAKE_CURRENT_SOURCE_DIR}/tools/scripts/gen_gte_render.py
+            ${CRASH_DECOMP_DIR}/build/USA/main.exe ${CRASH_DECOMP_DIR}/build/USA/main.elf
+            --output ${CRASH_ORACLE_INC}
+        DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/tools/scripts/gen_gte_render.py
+            ${CMAKE_CURRENT_SOURCE_DIR}/include/functions.h
+            ${CRASH_DECOMP_DIR}/build/USA/main.exe ${CRASH_DECOMP_DIR}/build/USA/main.elf
+        COMMENT "Translating the original MIPS routines for the oracle")
+    set_source_files_properties(src/main/engine/gte_oracle.c PROPERTIES
+        OBJECT_DEPENDS ${CRASH_ORACLE_INC})
+endif()
+
 # Fixed-point math, angles, distances and trigonometry. Modules join as their
 # platform dependencies become portable; no duplicate game logic.
 crash_original_module(crash-original-math
@@ -88,6 +111,9 @@ crash_original_module(crash-original-math
     src/main/math/scaled_sine.c
     src/main/math/step_halfword.c
     src/main/math/vector_distance.c)
+if(CRASH_GTE_ORACLE)
+    target_include_directories(crash-original-math PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/generated)
+endif()
 
 crash_original_module(crash-original-camera
     src/main/cam/camera.c)
@@ -252,6 +278,7 @@ add_executable(crash-bandicoot-pc
     src/platform/bios.c
     src/platform/ram_code.c
     src/platform/interp.c
+    src/platform/menu.c
     $<TARGET_OBJECTS:crash-platform>
     $<TARGET_OBJECTS:crash-original-math>
     $<TARGET_OBJECTS:crash-original-gte-native>

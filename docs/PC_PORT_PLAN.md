@@ -3,8 +3,9 @@
 ## Current state
 
 The repository was imported from the decompilation at `965a1bd`. Every engine
-function exists as C except the hand-written scratchpad routines in
-`src/main/engine/gte_render.c`; 39 of the original 41 remain to be translated.
+function exists as C, including the hand-written scratchpad routines, which
+are rewritten in C and checked against the original by the GTE oracle
+(docs/ARCHITECTURE.md).
 
 Done so far:
 
@@ -62,9 +63,9 @@ earlier test passing.
    decoding into host structures, and entry pointers that never pass through
    32-bit words. Test it by loading every level's NSD and paging in all entries
    from the real image (skipped without `CRASH_TEST_DISC`).
-4. **Scratchpad routines.** Translate the 41 routines in `gte_render.c` to C
-   on the PsyZ GTE API. Test each one against reference results recorded from
-   the original routine for real level data.
+4. **Scratchpad routines.** Done: rewritten in C on the PsyZ GTE API and
+   checked call by call against a translation of the original
+   (`-DCRASH_GTE_ORACLE=ON`, `tools/scripts/gte_oracle_check.sh`).
 5. **GOOL.** Port the object pool and interpreter. Decide the representation of
    object references in object fields (pool handles instead of raw pointers)
    and apply it consistently in `gool/`, `level/` and `cam/`. Test the
